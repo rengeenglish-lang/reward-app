@@ -1,0 +1,158 @@
+'use server';
+
+import { redirect } from 'next/navigation';
+import argon2 from 'argon2';
+import { z } from 'zod';
+import { sqlClient } from '@/lib/db';
+import { createSession, requireTutor, revokeSession } from '@/lib/session';
+
+const uuid = z.string().uuid();
+const name = z.string().trim().min(1).max(100);
+const criteriaKeys = ['homework_complete','class_participation','speaking_effort','project_complete','class_readiness','speaking_day_rules'] as const;
+const criteriaShape = Object.fromEntries(criteriaKeys.map(k => [k,z.boolean()]));
+const criteriaSchema = z.object(criteriaShape).strict();
+
+export async function signIn(formData: FormData) {
+  const email = z.string().email().safeParse(formData.get('email'));
+  const password = z.string().min(1).safeParse(formData.get('password'));
+  if (!email.success || !password.success) redirect('/login?error=1');
+  const address=email.data.toLowerCase(),sql=sqlClient();
+  const attempts=await sql`SELECT locked_until > now() AS locked FROM tutor_login_attempts WHERE email=${address}`;
+  const rows = attempts[0]?.locked ? [] : await sql`SELECT id,password_hash FROM tutor WHERE email=${address} LIMIT 1`;
+  if (!rows.length || !(await argon2.verify(String(rows[0].password_hash), password.data))) {
+    await sql`INSERT INTO tutor_login_attempts(email,attempts,window_started_at) VALUES(${address},1,now())
+      ON CONFLICT(email) DO UPDATE SET
+      attempts=CASE WHEN tutor_login_attempts.window_started_at < now()-interval '15 minutes' THEN 1 ELSE tutor_login_attempts.attempts+1 END,
+      window_started_at=CASE WHEN tutor_login_attempts.window_started_at < now()-interval '15 minutes' THEN now() ELSE tutor_login_attempts.window_started_at END,
+      locked_until=CASE WHEN tutor_login_attempts.window_started_at < now()-interval '15 minutes' THEN NULL WHEN tutor_login_attempts.attempts >= 4 THEN now()+interval '15 minutes' ELSE tutor_login_attempts.locked_until END`;
+    redirect('/login?error=1');
+  }
+  await sql`DELETE FROM tutor_login_attempts WHERE email=${address}`;
+  await createSession(); redirect('/');
+}
+export async function signOut() { await revokeSession(); redirect('/login'); }
+
+export async function updateTutorSettings(input:{displayName:string;timezone:string;currentPassword?:string;newPassword?:string}) {
+  const tutor=await requireTutor(),displayName=name.parse(input.displayName),timezone=z.string().min(1).max(100).parse(input.timezone);
+  try { new Intl.DateTimeFormat('en-US',{timeZone:timezone}); } catch { throw new Error('Choose a valid timezone'); }
+  const newPassword=input.newPassword?z.string().min(12).max(200).parse(input.newPassword):undefined;
+  const sql=sqlClient();
+  if(newPassword) {
+    if(!input.currentPassword) throw new Error('Enter your current password to change it');
+    const rows=await sql`SELECT password_hash FROM tutor WHERE id=${tutor.id}`;
+    if(!rows.length||!(await argon2.verify(String(rows[0].password_hash),input.currentPassword))) throw new Error('Current password is incorrect');
+    await sql`UPDATE tutor SET display_name=${displayName},timezone=${timezone},password_hash=${await argon2.hash(newPassword,{type:argon2.argon2id})},updated_at=now() WHERE id=${tutor.id}`;
+    await sql`DELETE FROM tutor_sessions`;
+    await createSession();
+  } else await sql`UPDATE tutor SET display_name=${displayName},timezone=${timezone},updated_at=now() WHERE id=${tutor.id}`;
+  return {displayName,timezone};
+}
+
+export async function getInitialData() {
+  const tutor = await requireTutor(), sql = sqlClient();
+  const today = new Intl.DateTimeFormat('en-CA',{timeZone:tutor.timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const [classrooms,groups,students,prizes,recentDraws] = await Promise.all([
+    sql`SELECT id,name FROM classrooms WHERE archived_at IS NULL ORDER BY name`,
+    sql`SELECT g.id,g.name,g.grade_label,g.classroom_id,c.name AS classroom_name FROM groups g JOIN classrooms c ON c.id=g.classroom_id WHERE g.archived_at IS NULL AND c.archived_at IS NULL ORDER BY c.name,g.name`,
+    sql`SELECT s.id,s.display_name,s.avatar_key,s.group_id,br.criteria FROM students s JOIN groups g ON g.id=s.group_id LEFT JOIN behavior_records br ON br.student_id=s.id AND br.record_date=${today} WHERE s.archived_at IS NULL AND g.archived_at IS NULL ORDER BY s.display_name`,
+    sql`SELECT id,name,description,active FROM prizes ORDER BY active DESC,name`,
+    sql`SELECT d.id,d.drawn_at,d.prize_name_snapshot AS prize,s.display_name AS student,s.avatar_key FROM reward_draws d JOIN students s ON s.id=d.student_id ORDER BY d.drawn_at DESC LIMIT 8`
+  ]);
+  return {tutor,today,classrooms,groups,students,prizes,recentDraws};
+}
+
+export async function createClassroom(input: string) {
+  await requireTutor(); const value=name.parse(input); return (await sqlClient()`INSERT INTO classrooms(name) VALUES(${value}) RETURNING id,name`)[0];
+}
+export async function renameClassroom(id: string,input: string) {
+  await requireTutor(); const key=uuid.parse(id),value=name.parse(input); const rows=await sqlClient()`UPDATE classrooms SET name=${value},updated_at=now() WHERE id=${key} AND archived_at IS NULL RETURNING id,name`; if(!rows.length) throw new Error('Classroom not found'); return rows[0];
+}
+export async function archiveClassroom(id: string) {
+  await requireTutor(); const key=uuid.parse(id),sql=sqlClient();
+  await sql`UPDATE classrooms SET archived_at=now(),updated_at=now() WHERE id=${key} AND archived_at IS NULL`;
+  await sql`UPDATE groups SET archived_at=now(),updated_at=now() WHERE classroom_id=${key} AND archived_at IS NULL`;
+  await sql`UPDATE students SET archived_at=now(),updated_at=now() WHERE group_id IN (SELECT id FROM groups WHERE classroom_id=${key}) AND archived_at IS NULL`;
+}
+export async function createGroup(classroomId: string,input: string,gradeLabel?: string) {
+  await requireTutor(); const parent=uuid.parse(classroomId),value=name.parse(input),grade=gradeLabel?name.parse(gradeLabel):null;
+  const rows=await sqlClient()`INSERT INTO groups(classroom_id,name,grade_label) SELECT id,${value},${grade} FROM classrooms WHERE id=${parent} AND archived_at IS NULL RETURNING id,name,classroom_id`;
+  if(!rows.length) throw new Error('Active classroom not found'); return rows[0];
+}
+export async function archiveGroup(id: string) {
+  await requireTutor(); const key=uuid.parse(id),sql=sqlClient();
+  await sql`UPDATE groups SET archived_at=now(),updated_at=now() WHERE id=${key} AND archived_at IS NULL`;
+  await sql`UPDATE students SET archived_at=now(),updated_at=now() WHERE group_id=${key} AND archived_at IS NULL`;
+}
+export async function createStudent(groupId: string,displayName: string,avatarKey: string) {
+  await requireTutor(); const group=uuid.parse(groupId),person=name.parse(displayName),avatar=z.enum(['fox','bear','panda','lion','frog','tiger','koala','unicorn','penguin','octopus']).parse(avatarKey);
+  const rows=await sqlClient()`INSERT INTO students(group_id,display_name,avatar_key) SELECT id,${person},${avatar} FROM groups WHERE id=${group} AND archived_at IS NULL RETURNING id,display_name,avatar_key,group_id`;
+  if(!rows.length) throw new Error('Active group not found'); return rows[0];
+}
+export async function archiveStudent(id: string) { await requireTutor(); const key=uuid.parse(id); await sqlClient()`UPDATE students SET archived_at=now(),updated_at=now() WHERE id=${key} AND archived_at IS NULL`; }
+
+export async function getGroupRoster(groupId: string,recordDate: string) {
+  await requireTutor(); const group=uuid.parse(groupId),date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(recordDate);
+  return sqlClient()`SELECT s.id,s.display_name,s.avatar_key,br.criteria,br.updated_at FROM students s JOIN groups g ON g.id=s.group_id LEFT JOIN behavior_records br ON br.student_id=s.id AND br.record_date=${date} WHERE s.group_id=${group} AND s.archived_at IS NULL AND g.archived_at IS NULL ORDER BY s.display_name`;
+}
+export async function saveBehaviorRecord(studentId: string,groupId: string,recordDate: string,checks: unknown) {
+  await requireTutor(); const student=uuid.parse(studentId),group=uuid.parse(groupId),date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(recordDate),valid=criteriaSchema.parse(checks);
+  const rows=await sqlClient()`INSERT INTO behavior_records(student_id,group_id,record_date,criteria) SELECT s.id,s.group_id,${date},${JSON.stringify(valid)}::jsonb FROM students s JOIN groups g ON g.id=s.group_id WHERE s.id=${student} AND s.group_id=${group} AND s.archived_at IS NULL AND g.archived_at IS NULL ON CONFLICT(student_id,record_date) DO UPDATE SET criteria=EXCLUDED.criteria,updated_at=now() WHERE behavior_records.group_id=EXCLUDED.group_id RETURNING id,criteria,updated_at`;
+  if(!rows.length) throw new Error('Student is not active in this group'); return rows[0];
+}
+
+export async function createPrize(input: string,description?: string) {
+  await requireTutor(); const prize=name.parse(input),detail=description?z.string().trim().max(500).parse(description):null;
+  return (await sqlClient()`INSERT INTO prizes(name,description) VALUES(${prize},${detail}) RETURNING id,name,description,active`)[0];
+}
+export async function updatePrize(id: string,input: string,description?: string) {
+  await requireTutor(); const key=uuid.parse(id),prize=name.parse(input),detail=description?z.string().trim().max(500).parse(description):null;
+  const rows=await sqlClient()`UPDATE prizes SET name=${prize},description=${detail},updated_at=now() WHERE id=${key} RETURNING id,name,description,active`; if(!rows.length) throw new Error('Prize not found'); return rows[0];
+}
+export async function setPrizeActive(id: string,active: boolean) {
+  await requireTutor(); const key=uuid.parse(id),state=z.boolean().parse(active); return (await sqlClient()`UPDATE prizes SET active=${state},updated_at=now() WHERE id=${key} RETURNING id,name,description,active`)[0];
+}
+
+export async function drawReward(input: {idempotencyKey:string;groupId:string;studentId?:string}) {
+  await requireTutor(); const key=uuid.parse(input.idempotencyKey),group=uuid.parse(input.groupId),selected=input.studentId?uuid.parse(input.studentId):null,sql=sqlClient();
+  const existing=await sql`SELECT d.id,d.drawn_at,d.selection_mode,d.prize_name_snapshot AS prize,s.id AS student_id,s.display_name AS student,s.avatar_key FROM reward_draws d JOIN students s ON s.id=d.student_id WHERE d.idempotency_key=${key} LIMIT 1`;
+  if(existing.length) return existing[0];
+  const inserted=await sql`WITH chosen_student AS (
+    SELECT s.id,s.display_name,s.avatar_key FROM students s JOIN groups g ON g.id=s.group_id
+    WHERE s.group_id=${group} AND s.archived_at IS NULL AND g.archived_at IS NULL AND (${selected}::uuid IS NULL OR s.id=${selected})
+    ORDER BY gen_random_bytes(32) LIMIT 1
+  ), chosen_prize AS (
+    SELECT id,name FROM prizes WHERE active=true ORDER BY gen_random_bytes(32) LIMIT 1
+  ), saved AS (
+    INSERT INTO reward_draws(idempotency_key,student_id,group_id,prize_id,prize_name_snapshot,selection_mode)
+    SELECT ${key},s.id,${group},p.id,p.name,${selected?'tutor_selected':'group_random'} FROM chosen_student s CROSS JOIN chosen_prize p
+    ON CONFLICT(idempotency_key) DO NOTHING RETURNING id,drawn_at,selection_mode,prize_name_snapshot,student_id
+  )
+  SELECT saved.id,saved.drawn_at,saved.selection_mode,saved.prize_name_snapshot AS prize,saved.student_id,s.display_name AS student,s.avatar_key
+  FROM saved JOIN students s ON s.id=saved.student_id`;
+  if(inserted.length) return inserted[0];
+  const retry=await sql`SELECT d.id,d.drawn_at,d.selection_mode,d.prize_name_snapshot AS prize,s.id AS student_id,s.display_name AS student,s.avatar_key FROM reward_draws d JOIN students s ON s.id=d.student_id WHERE d.idempotency_key=${key} LIMIT 1`;
+  if(retry.length) return retry[0];
+  const activeGroup=await sql`SELECT 1 FROM groups WHERE id=${group} AND archived_at IS NULL`;
+  if(!activeGroup.length) throw new Error('Choose an active group');
+  const people=selected?await sql`SELECT id FROM students WHERE id=${selected} AND group_id=${group} AND archived_at IS NULL`:await sql`SELECT id FROM students WHERE group_id=${group} AND archived_at IS NULL LIMIT 1`;
+  if(!people.length) throw new Error('Choose an active student or a group with active students');
+  throw new Error('Add or activate a prize before drawing');
+}
+
+export async function getReport(groupId: string,start: string,end: string) {
+  await requireTutor(); const group=uuid.parse(groupId),from=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(start),to=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(end);
+  if(from>to) throw new Error('Invalid report date range');
+  return sqlClient()`SELECT s.id,s.display_name,s.avatar_key,COALESCE(sum(((br.criteria->>'homework_complete')::boolean)::int+((br.criteria->>'class_participation')::boolean)::int+((br.criteria->>'speaking_effort')::boolean)::int+((br.criteria->>'project_complete')::boolean)::int+((br.criteria->>'class_readiness')::boolean)::int+((br.criteria->>'speaking_day_rules')::boolean)::int),0)::int AS total,COALESCE(sum(((br.criteria->>'homework_complete')::boolean)::int),0)::int AS homework_complete,COALESCE(sum(((br.criteria->>'class_participation')::boolean)::int),0)::int AS class_participation,COALESCE(sum(((br.criteria->>'speaking_effort')::boolean)::int),0)::int AS speaking_effort,COALESCE(sum(((br.criteria->>'project_complete')::boolean)::int),0)::int AS project_complete,COALESCE(sum(((br.criteria->>'class_readiness')::boolean)::int),0)::int AS class_readiness,COALESCE(sum(((br.criteria->>'speaking_day_rules')::boolean)::int),0)::int AS speaking_day_rules FROM students s LEFT JOIN behavior_records br ON br.student_id=s.id AND br.record_date BETWEEN ${from} AND ${to} WHERE s.group_id=${group} AND s.archived_at IS NULL GROUP BY s.id ORDER BY s.display_name`;
+}
+
+export async function getPeriodReport(groupId: string,period: 'week'|'month') {
+  const tutor=await requireTutor();
+  const today=new Intl.DateTimeFormat('en-CA',{timeZone:tutor.timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const [year,month,day]=today.split('-').map(Number);
+  const localDate=new Date(Date.UTC(year,month-1,day));
+  let start:Date,end:Date;
+  if(period==='week') { const offset=(localDate.getUTCDay()+6)%7; start=new Date(localDate); start.setUTCDate(start.getUTCDate()-offset); end=new Date(start); end.setUTCDate(end.getUTCDate()+6); }
+  else { start=new Date(Date.UTC(year,month-1,1)); end=new Date(Date.UTC(year,month,0)); }
+  const iso=(date:Date)=>date.toISOString().slice(0,10),from=iso(start),to=iso(end);
+  return {from,to,rows:await getReport(groupId,from,to)};
+}
