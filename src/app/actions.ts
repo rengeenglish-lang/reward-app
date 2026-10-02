@@ -54,7 +54,7 @@ export async function getInitialData() {
   const [classrooms,groups,students,prizes,recentDraws] = await Promise.all([
     sql`SELECT id,name FROM classrooms WHERE archived_at IS NULL ORDER BY name`,
     sql`SELECT g.id,g.name,g.grade_label,g.classroom_id,c.name AS classroom_name FROM groups g JOIN classrooms c ON c.id=g.classroom_id WHERE g.archived_at IS NULL AND c.archived_at IS NULL ORDER BY c.name,g.name`,
-    sql`SELECT s.id,s.display_name,s.avatar_key,s.group_id,br.criteria FROM students s JOIN groups g ON g.id=s.group_id LEFT JOIN behavior_records br ON br.student_id=s.id AND br.record_date=${today} WHERE s.archived_at IS NULL AND g.archived_at IS NULL ORDER BY s.display_name`,
+    sql`SELECT s.id,s.display_name,s.avatar_key,s.group_id,g.classroom_id,c.name AS classroom_name,br.criteria FROM students s JOIN groups g ON g.id=s.group_id JOIN classrooms c ON c.id=g.classroom_id LEFT JOIN behavior_records br ON br.student_id=s.id AND br.record_date=${today} WHERE s.archived_at IS NULL AND g.archived_at IS NULL AND c.archived_at IS NULL ORDER BY s.display_name`,
     sql`SELECT id,name,description,active FROM prizes ORDER BY active DESC,name`,
     sql`SELECT d.id,d.drawn_at,d.prize_name_snapshot AS prize,s.display_name AS student,s.avatar_key FROM reward_draws d JOIN students s ON s.id=d.student_id ORDER BY d.drawn_at DESC LIMIT 8`
   ]);
@@ -83,12 +83,24 @@ export async function archiveGroup(id: string) {
   await sql`UPDATE groups SET archived_at=now(),updated_at=now() WHERE id=${key} AND archived_at IS NULL`;
   await sql`UPDATE students SET archived_at=now(),updated_at=now() WHERE group_id=${key} AND archived_at IS NULL`;
 }
-export async function createStudent(groupId: string,displayName: string,avatarKey: string) {
-  await requireTutor(); const group=uuid.parse(groupId),person=name.parse(displayName),avatar=z.enum(['fox','bear','panda','lion','frog','tiger','koala','unicorn','penguin','octopus']).parse(avatarKey);
-  const rows=await sqlClient()`INSERT INTO students(group_id,display_name,avatar_key) SELECT id,${person},${avatar} FROM groups WHERE id=${group} AND archived_at IS NULL RETURNING id,display_name,avatar_key,group_id`;
-  if(!rows.length) throw new Error('Active group not found'); return rows[0];
+export async function createStudent(classroomId: string,displayName: string,avatarKey: string) {
+  await requireTutor(); const classroom=uuid.parse(classroomId),person=name.parse(displayName),avatar=z.enum(['fox','bear','panda','lion','frog','tiger','koala','unicorn','penguin','octopus']).parse(avatarKey),sql=sqlClient();
+  let groups=await sql`SELECT id FROM groups WHERE classroom_id=${classroom} AND archived_at IS NULL ORDER BY created_at,id LIMIT 1`;
+  if(!groups.length) groups=await sql`INSERT INTO groups(classroom_id,name) SELECT id,'Class roster' FROM classrooms WHERE id=${classroom} AND archived_at IS NULL RETURNING id`;
+  if(!groups.length) throw new Error('Active classroom not found');
+  const rows=await sql`INSERT INTO students(group_id,display_name,avatar_key) VALUES(${groups[0].id},${person},${avatar}) RETURNING id,display_name,avatar_key,group_id`;
+  return rows[0];
 }
 export async function archiveStudent(id: string) { await requireTutor(); const key=uuid.parse(id); await sqlClient()`UPDATE students SET archived_at=now(),updated_at=now() WHERE id=${key} AND archived_at IS NULL`; }
+export async function updateStudent(id:string,displayName:string) { await requireTutor(); const key=uuid.parse(id),person=name.parse(displayName); const rows=await sqlClient()`UPDATE students SET display_name=${person},updated_at=now() WHERE id=${key} AND archived_at IS NULL RETURNING id,display_name`; if(!rows.length) throw new Error('Active student not found'); return rows[0]; }
+export async function createStudents(classroomId:string,displayNames:string[]) {
+  await requireTutor(); const classroom=uuid.parse(classroomId),people=z.array(name).min(1).max(100).parse(displayNames),sql=sqlClient();
+  let groups=await sql`SELECT id FROM groups WHERE classroom_id=${classroom} AND archived_at IS NULL ORDER BY created_at,id LIMIT 1`;
+  if(!groups.length) groups=await sql`INSERT INTO groups(classroom_id,name) SELECT id,'Class roster' FROM classrooms WHERE id=${classroom} AND archived_at IS NULL RETURNING id`;
+  if(!groups.length) throw new Error('Active classroom not found');
+  const group=uuid.parse(String(groups[0].id));
+  return sql`INSERT INTO students(group_id,display_name,avatar_key) SELECT ${group},person,avatars.avatar FROM unnest(${people}::text[]) WITH ORDINALITY AS names(person,n) CROSS JOIN LATERAL (SELECT (ARRAY['koala','unicorn','penguin','octopus','fox','bear','panda','lion','frog','tiger'])[((n-1)%10)+1] AS avatar) avatars RETURNING id,display_name,avatar_key,group_id`;
+}
 
 export async function getGroupRoster(groupId: string,recordDate: string) {
   await requireTutor(); const group=uuid.parse(groupId),date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(recordDate);
@@ -112,19 +124,19 @@ export async function setPrizeActive(id: string,active: boolean) {
   await requireTutor(); const key=uuid.parse(id),state=z.boolean().parse(active); return (await sqlClient()`UPDATE prizes SET active=${state},updated_at=now() WHERE id=${key} RETURNING id,name,description,active`)[0];
 }
 
-export async function drawReward(input: {idempotencyKey:string;groupId:string;studentId?:string}) {
-  await requireTutor(); const key=uuid.parse(input.idempotencyKey),group=uuid.parse(input.groupId),selected=input.studentId?uuid.parse(input.studentId):null,sql=sqlClient();
+export async function drawReward(input: {idempotencyKey:string;classroomId:string;studentId?:string}) {
+  await requireTutor(); const key=uuid.parse(input.idempotencyKey),classroom=uuid.parse(input.classroomId),selected=input.studentId?uuid.parse(input.studentId):null,sql=sqlClient();
   const existing=await sql`SELECT d.id,d.drawn_at,d.selection_mode,d.prize_name_snapshot AS prize,s.id AS student_id,s.display_name AS student,s.avatar_key FROM reward_draws d JOIN students s ON s.id=d.student_id WHERE d.idempotency_key=${key} LIMIT 1`;
   if(existing.length) return existing[0];
   const inserted=await sql`WITH chosen_student AS (
-    SELECT s.id,s.display_name,s.avatar_key FROM students s JOIN groups g ON g.id=s.group_id
-    WHERE s.group_id=${group} AND s.archived_at IS NULL AND g.archived_at IS NULL AND (${selected}::uuid IS NULL OR s.id=${selected})
+    SELECT s.id,s.display_name,s.avatar_key,s.group_id FROM students s JOIN groups g ON g.id=s.group_id
+    WHERE g.classroom_id=${classroom} AND s.archived_at IS NULL AND g.archived_at IS NULL AND (${selected}::uuid IS NULL OR s.id=${selected})
     ORDER BY gen_random_bytes(32) LIMIT 1
   ), chosen_prize AS (
     SELECT id,name FROM prizes WHERE active=true ORDER BY gen_random_bytes(32) LIMIT 1
   ), saved AS (
     INSERT INTO reward_draws(idempotency_key,student_id,group_id,prize_id,prize_name_snapshot,selection_mode)
-    SELECT ${key},s.id,${group},p.id,p.name,${selected?'tutor_selected':'group_random'} FROM chosen_student s CROSS JOIN chosen_prize p
+    SELECT ${key},s.id,s.group_id,p.id,p.name,${selected?'tutor_selected':'group_random'} FROM chosen_student s CROSS JOIN chosen_prize p
     ON CONFLICT(idempotency_key) DO NOTHING RETURNING id,drawn_at,selection_mode,prize_name_snapshot,student_id
   )
   SELECT saved.id,saved.drawn_at,saved.selection_mode,saved.prize_name_snapshot AS prize,saved.student_id,s.display_name AS student,s.avatar_key
@@ -132,20 +144,18 @@ export async function drawReward(input: {idempotencyKey:string;groupId:string;st
   if(inserted.length) return inserted[0];
   const retry=await sql`SELECT d.id,d.drawn_at,d.selection_mode,d.prize_name_snapshot AS prize,s.id AS student_id,s.display_name AS student,s.avatar_key FROM reward_draws d JOIN students s ON s.id=d.student_id WHERE d.idempotency_key=${key} LIMIT 1`;
   if(retry.length) return retry[0];
-  const activeGroup=await sql`SELECT 1 FROM groups WHERE id=${group} AND archived_at IS NULL`;
-  if(!activeGroup.length) throw new Error('Choose an active group');
-  const people=selected?await sql`SELECT id FROM students WHERE id=${selected} AND group_id=${group} AND archived_at IS NULL`:await sql`SELECT id FROM students WHERE group_id=${group} AND archived_at IS NULL LIMIT 1`;
-  if(!people.length) throw new Error('Choose an active student or a group with active students');
+  const people=await sql`SELECT s.id FROM students s JOIN groups g ON g.id=s.group_id WHERE g.classroom_id=${classroom} AND s.archived_at IS NULL AND g.archived_at IS NULL AND (${selected}::uuid IS NULL OR s.id=${selected}) LIMIT 1`;
+  if(!people.length) throw new Error('Choose an active student or a classroom with active students');
   throw new Error('Add or activate a prize before drawing');
 }
 
-export async function getReport(groupId: string,start: string,end: string) {
-  await requireTutor(); const group=uuid.parse(groupId),from=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(start),to=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(end);
+export async function getReport(classroomId: string,start: string,end: string) {
+  await requireTutor(); const classroom=uuid.parse(classroomId),from=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(start),to=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(end);
   if(from>to) throw new Error('Invalid report date range');
-  return sqlClient()`SELECT s.id,s.display_name,s.avatar_key,COALESCE(sum(((br.criteria->>'homework_complete')::boolean)::int+((br.criteria->>'class_participation')::boolean)::int+((br.criteria->>'speaking_effort')::boolean)::int+((br.criteria->>'project_complete')::boolean)::int+((br.criteria->>'class_readiness')::boolean)::int+((br.criteria->>'speaking_day_rules')::boolean)::int),0)::int AS total,COALESCE(sum(((br.criteria->>'homework_complete')::boolean)::int),0)::int AS homework_complete,COALESCE(sum(((br.criteria->>'class_participation')::boolean)::int),0)::int AS class_participation,COALESCE(sum(((br.criteria->>'speaking_effort')::boolean)::int),0)::int AS speaking_effort,COALESCE(sum(((br.criteria->>'project_complete')::boolean)::int),0)::int AS project_complete,COALESCE(sum(((br.criteria->>'class_readiness')::boolean)::int),0)::int AS class_readiness,COALESCE(sum(((br.criteria->>'speaking_day_rules')::boolean)::int),0)::int AS speaking_day_rules FROM students s LEFT JOIN behavior_records br ON br.student_id=s.id AND br.record_date BETWEEN ${from} AND ${to} WHERE s.group_id=${group} AND s.archived_at IS NULL GROUP BY s.id ORDER BY s.display_name`;
+  return sqlClient()`SELECT s.id,s.display_name,s.avatar_key,COALESCE(sum(((br.criteria->>'homework_complete')::boolean)::int+((br.criteria->>'class_participation')::boolean)::int+((br.criteria->>'speaking_effort')::boolean)::int+((br.criteria->>'project_complete')::boolean)::int+((br.criteria->>'class_readiness')::boolean)::int+((br.criteria->>'speaking_day_rules')::boolean)::int),0)::int AS total,COALESCE(sum(((br.criteria->>'homework_complete')::boolean)::int),0)::int AS homework_complete,COALESCE(sum(((br.criteria->>'class_participation')::boolean)::int),0)::int AS class_participation,COALESCE(sum(((br.criteria->>'speaking_effort')::boolean)::int),0)::int AS speaking_effort,COALESCE(sum(((br.criteria->>'project_complete')::boolean)::int),0)::int AS project_complete,COALESCE(sum(((br.criteria->>'class_readiness')::boolean)::int),0)::int AS class_readiness,COALESCE(sum(((br.criteria->>'speaking_day_rules')::boolean)::int),0)::int AS speaking_day_rules FROM students s JOIN groups g ON g.id=s.group_id LEFT JOIN behavior_records br ON br.student_id=s.id AND br.record_date BETWEEN ${from} AND ${to} WHERE g.classroom_id=${classroom} AND g.archived_at IS NULL AND s.archived_at IS NULL GROUP BY s.id ORDER BY s.display_name`;
 }
 
-export async function getPeriodReport(groupId: string,period: 'week'|'month') {
+export async function getPeriodReport(classroomId: string,period: 'week'|'month') {
   const tutor=await requireTutor();
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:tutor.timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const [year,month,day]=today.split('-').map(Number);
@@ -154,5 +164,5 @@ export async function getPeriodReport(groupId: string,period: 'week'|'month') {
   if(period==='week') { const offset=(localDate.getUTCDay()+6)%7; start=new Date(localDate); start.setUTCDate(start.getUTCDate()-offset); end=new Date(start); end.setUTCDate(end.getUTCDate()+6); }
   else { start=new Date(Date.UTC(year,month-1,1)); end=new Date(Date.UTC(year,month,0)); }
   const iso=(date:Date)=>date.toISOString().slice(0,10),from=iso(start),to=iso(end);
-  return {from,to,rows:await getReport(groupId,from,to)};
+  return {from,to,rows:await getReport(classroomId,from,to)};
 }
