@@ -28,7 +28,7 @@ export async function signIn(formData: FormData) {
     redirect('/login?error=1');
   }
   await sql`DELETE FROM tutor_login_attempts WHERE email=${address}`;
-  await createSession(); redirect('/');
+  await createSession(); redirect('/classroom');
 }
 export async function signOut() { await revokeSession(); redirect('/login'); }
 
