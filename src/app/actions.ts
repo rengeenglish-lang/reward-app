@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { createHash, randomBytes } from 'node:crypto';
 import argon2 from 'argon2';
 import { z } from 'zod';
 import { sqlClient } from '@/lib/db';
@@ -11,6 +12,57 @@ const name = z.string().trim().min(1).max(100);
 const criteriaKeys = ['homework_complete','class_participation','speaking_effort','project_complete','class_readiness','speaking_day_rules'] as const;
 const criteriaShape = Object.fromEntries(criteriaKeys.map(k => [k,z.boolean()]));
 const criteriaSchema = z.object(criteriaShape).strict();
+
+const tokenHash = (value:string) => createHash('sha256').update(value).digest('hex');
+
+export async function requestPasswordReset(formData: FormData) {
+  const parsed=z.string().email().safeParse(formData.get('email'));
+  if(!parsed.success) redirect('/login/forgot-password?error=1');
+  const apiKey=process.env.RESEND_API_KEY,from=process.env.PASSWORD_RESET_FROM,appUrl=process.env.APP_URL;
+  if(!apiKey||!from||!appUrl) redirect('/login/forgot-password?setup=1');
+  let origin:string;
+  try { const url=new URL(appUrl); if(!['https:','http:'].includes(url.protocol)) throw new Error(); origin=url.origin; }
+  catch { redirect('/login/forgot-password?setup=1'); }
+
+  const email=parsed.data.toLowerCase(),sql=sqlClient();
+  const token=randomBytes(32).toString('base64url');
+  const rows=await sql`INSERT INTO tutor_password_reset_tokens(tutor_id,token_hash,expires_at,requested_at)
+    SELECT id,${tokenHash(token)},now()+interval '30 minutes',now() FROM tutor WHERE email=${email}
+    ON CONFLICT(tutor_id) DO UPDATE SET token_hash=EXCLUDED.token_hash,expires_at=EXCLUDED.expires_at,requested_at=now(),used_at=NULL
+    WHERE tutor_password_reset_tokens.requested_at < now()-interval '1 minute'
+    RETURNING tutor_id`;
+
+  if(rows.length) {
+    const link=`${origin}/login/reset-password?token=${token}`;
+    try {
+      const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json'},body:JSON.stringify({from,to:email,subject:'Reset your Ezgili Champs password',html:`<p>We received a request to reset your Ezgili Champs tutor password.</p><p><a href="${link}">Choose a new password</a></p><p>This link expires in 30 minutes and can only be used once. If you did not request this, you can ignore this email.</p>`}),signal:AbortSignal.timeout(10000)});
+      if(!response.ok) throw new Error('Password reset email could not be sent');
+    } catch {
+      await sql`DELETE FROM tutor_password_reset_tokens WHERE tutor_id=${rows[0].tutor_id} AND token_hash=${tokenHash(token)}`;
+      redirect('/login/forgot-password?setup=1');
+    }
+  }
+  redirect('/login/forgot-password?sent=1');
+}
+
+export async function resetTutorPassword(formData: FormData) {
+  const token=z.string().min(40).max(100).safeParse(formData.get('token'));
+  const password=z.string().min(12).max(200).safeParse(formData.get('password'));
+  const confirmation=z.string().safeParse(formData.get('confirmation'));
+  if(!token.success||!password.success||!confirmation.success) redirect('/login/reset-password?error=1');
+  if(password.data!==confirmation.data) redirect(`/login/reset-password?token=${encodeURIComponent(token.data)}&mismatch=1`);
+  const hash=await argon2.hash(password.data,{type:argon2.argon2id});
+  const updated=await sqlClient()`WITH valid_token AS (
+    UPDATE tutor_password_reset_tokens SET used_at=now()
+    WHERE token_hash=${tokenHash(token.data)} AND used_at IS NULL AND expires_at>now()
+    RETURNING tutor_id
+  )
+  UPDATE tutor SET password_hash=${hash},updated_at=now() FROM valid_token WHERE tutor.id=valid_token.tutor_id RETURNING tutor.id`;
+  if(!updated.length) redirect('/login/reset-password?invalid=1');
+  await sqlClient()`DELETE FROM tutor_sessions`;
+  redirect('/login?renewed=1');
+}
+
 
 export async function signIn(formData: FormData) {
   const email = z.string().email().safeParse(formData.get('email'));

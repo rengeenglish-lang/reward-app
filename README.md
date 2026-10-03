@@ -15,7 +15,7 @@ The migration is an initial, one-time migration and is not run by the app at req
 
 ## Vercel deployment
 
-Set `DATABASE_URL` and `DATABASE_URL_UNPOOLED` as server-only environment variables in Vercel. Run the migration from a trusted local environment or CI job using the target environment's direct Neon URL. Provision the tutor once against the production database with `TUTOR_EMAIL`, `TUTOR_INITIAL_PASSWORD`, and optional `TUTOR_DISPLAY_NAME`; do not leave the initial password configured as a standing Vercel secret. After deployment, rotate the tutor password through a secure operational process.
+Set `DATABASE_URL` and `DATABASE_URL_UNPOOLED` as server-only environment variables in Vercel. Run `npm run db:migrate` from a trusted local environment or CI job using the target environment's direct Neon URL. For login-page password renewal, also set `RESEND_API_KEY`, a verified `PASSWORD_RESET_FROM` sender, and `APP_URL` to the production origin. Reset links expire after 30 minutes and can only be used once. Provision the tutor once against the production database with `TUTOR_EMAIL`, `TUTOR_INITIAL_PASSWORD`, and optional `TUTOR_DISPLAY_NAME`; do not leave the initial password configured as a standing Vercel secret. After deployment, rotate the tutor password through a secure operational process.
 
 `/api/health` is a liveness endpoint and returns only `{ "status": "ok" }`; it does not query the database or reveal application data.
 

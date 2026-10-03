@@ -1,0 +1,9 @@
+import { redirect } from 'next/navigation';
+import { currentTutor } from '@/lib/session';
+import { resetTutorPassword } from '../../actions';
+
+export default async function ResetPasswordPage({searchParams}:{searchParams:Promise<{token?:string;error?:string;mismatch?:string;invalid?:string}>}) {
+  if(await currentTutor()) redirect('/');
+  const {token,error,mismatch,invalid}=await searchParams;
+  return <main className="login-page"><section className="login-card"><div className="brand login-brand"><div className="brand-mark">✦</div><span>Ezgili Champs</span></div><p className="eyebrow">NEW PASSWORD</p><h1>Choose a fresh<br/><em>password.</em></h1><p className="login-intro">Use at least 12 characters. Your other sessions will be signed out.</p>{invalid&&<p className="login-error" role="alert">This reset link has expired or was already used. Request a new one.</p>}{error&&<p className="login-error" role="alert">This reset link is invalid. Request a new one.</p>}{mismatch&&<p className="login-error" role="alert">Those passwords didn’t match. Please try again.</p>}<form action={resetTutorPassword}><input type="hidden" name="token" value={token||''}/><label htmlFor="password">New password</label><input id="password" name="password" type="password" autoComplete="new-password" minLength={12} maxLength={200} required/><label htmlFor="confirmation">Confirm new password</label><input id="confirmation" name="confirmation" type="password" autoComplete="new-password" minLength={12} maxLength={200} required/><button className="primary-btn" type="submit">Update password <span>→</span></button></form><a className="forgot-password-link" href="/login/forgot-password">Request another reset link</a></section><div className="login-art" aria-hidden="true"><div>🌻</div><span>Small wins<br/>add up!</span><i>✦</i></div></main>;
+}
