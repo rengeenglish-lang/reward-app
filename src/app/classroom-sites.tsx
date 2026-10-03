@@ -2,7 +2,8 @@
 
 import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { upload } from '@vercel/blob/client';
-import { ExternalLink, FileText, Globe2, Maximize2, Minimize2, Plus, X } from 'lucide-react';
+import { ExternalLink, FileText, Globe2, Maximize2, Minimize2, Plus, X, Lightbulb } from 'lucide-react';
+import { readingAnswerBanks } from '@/lib/reading-answers';
 
 type SavedSite = { id: string; name: string; url: string };
 type StoredMaterial = { id: string; name: string; file?: Blob; size: number };
@@ -91,6 +92,8 @@ export default function ClassroomSites() {
   const [materialProgress, setMaterialProgress] = useState(0);
   const [enlarged, setEnlarged] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [answerBankId, setAnswerBankId] = useState(readingAnswerBanks[0]?.id || '');
+  const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(() => new Set());
   const viewerRef = useRef<HTMLElement | null>(null);
   const objectUrlRef = useRef('');
 
@@ -249,6 +252,9 @@ export default function ClassroomSites() {
     setError('');
   };
 
+  const answerBank = readingAnswerBanks.find((bank) => bank.id === answerBankId) || readingAnswerBanks[0];
+  const toggleAnswer = (id: string) => setRevealedAnswers((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+
   const viewerControls = <div className="classroom-site-controls">
     <button className="outline-btn" type="button" onClick={()=>setEnlarged((value)=>!value)} aria-pressed={enlarged}><Maximize2 size={15}/>{enlarged?'Normal size':'Enlarge panel'}</button>
     <button className="outline-btn" type="button" onClick={toggleFullscreen} aria-pressed={isFullscreen}>{isFullscreen?<Minimize2 size={15}/>:<Maximize2 size={15}/>} {isFullscreen?'Exit full screen':'Full screen'}</button>
@@ -294,6 +300,12 @@ export default function ClassroomSites() {
         <header className="classroom-site-viewer-head"><div className="classroom-site-viewer-title"><FileText size={18}/><div><strong>{material.name}</strong><small>{formatSize(material.size)} · This original PDF is displayed without conversion</small></div></div><a className="outline-btn material-open" href={materialUrl} target="_blank" rel="noreferrer"><ExternalLink size={15}/> Open in browser tab</a>{viewerControls}<button className="icon-btn" type="button" aria-label="Close PDF" onClick={()=>setMaterialUrl('')}><X size={18}/></button></header>
         <iframe key={materialUrl} className="classroom-site-frame pdf-material-frame" src={materialUrl} title={`${material.name} PDF`} allow="fullscreen" allowFullScreen/>
         <p className="classroom-site-note">If your in-app browser shows a blank PDF preview, choose <strong>Open in browser tab</strong> to use its PDF reader.</p>
+      </section>}
+
+      {material&&<section className="panel answer-reveal-panel" aria-labelledby="answer-reveal-title">
+        <div className="answer-reveal-heading"><div className="panel-icon purple"><Lightbulb size={19}/></div><div><p className="eyebrow">READ, THINK, THEN REVEAL</p><h2 id="answer-reveal-title">Story answer reveal</h2><p>Choose a reading, then reveal answers one at a time. Matching answers show the complete line.</p></div></div>
+        <label className="answer-reveal-select"><span className="field-label">Reading</span><select className="field-select" value={answerBank?.id || ''} onChange={(event)=>{setAnswerBankId(event.target.value);setRevealedAnswers(new Set())}}>{readingAnswerBanks.map((bank)=><option key={bank.id} value={bank.id}>Unit {bank.unit} · {bank.kind} · {bank.title}</option>)}</select></label>
+        {answerBank&&<><div className="answer-reveal-meta"><strong>Student Book page {answerBank.printedPage}</strong><span>{answerBank.answers.length} answer reveals</span></div><div className="answer-reveal-list">{answerBank.answers.map((item,index)=>{const id=`${answerBank.id}-${index}`;const isRevealed=revealedAnswers.has(id);return <article className={`answer-reveal-item ${isRevealed?'is-revealed':''}`} key={id}><div className="answer-reveal-question"><span className="answer-reveal-number">{index+1}</span><p>{item.prompt}</p></div><button type="button" className="fun-action secondary answer-reveal-button" aria-expanded={isRevealed} onClick={()=>toggleAnswer(id)}>{isRevealed?'Hide answer':'View answer'}</button>{isRevealed&&<p className={`answer-reveal-answer ${item.matching?'matching-answer':''}`}><strong>{item.matching?'Answer line':'Answer'}:</strong> {item.answer}</p>}</article>})}</div></>}
       </section>}
     </div>
   );
