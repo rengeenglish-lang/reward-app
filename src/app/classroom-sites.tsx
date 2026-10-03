@@ -1,14 +1,17 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { upload } from '@vercel/blob/client';
 import { ExternalLink, FileText, Globe2, Maximize2, Minimize2, Plus, X } from 'lucide-react';
 
 type SavedSite = { id: string; name: string; url: string };
-type StoredMaterial = { id: string; name: string; file: Blob; size: number };
+type StoredMaterial = { id: string; name: string; file?: Blob; size: number };
+type CloudMaterial = { name: string; size: number; updatedAt: string };
 const STORAGE_KEY = 'ezgili-classroom-sites';
 const MATERIAL_DB = 'ezgili-classroom-materials';
 const MATERIAL_STORE = 'materials';
 const MATERIAL_ID = 'shared-pdf';
+const MATERIAL_PATH = 'classroom-materials/shared.pdf';
 
 function readSites(): SavedSite[] {
   try {
@@ -84,10 +87,45 @@ export default function ClassroomSites() {
   const [material, setMaterial] = useState<StoredMaterial | null>(null);
   const [materialUrl, setMaterialUrl] = useState('');
   const [materialBusy, setMaterialBusy] = useState(false);
+  const [materialProgress, setMaterialProgress] = useState(0);
   const [enlarged, setEnlarged] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const viewerRef = useRef<HTMLElement | null>(null);
   const objectUrlRef = useRef('');
+
+  const uploadToSite = useCallback(async (file: Blob, fileName: string) => {
+    setMaterialBusy(true);
+    setMaterialProgress(0);
+    setError('');
+    try {
+      await upload(MATERIAL_PATH, file, {
+        access: 'private',
+        handleUploadUrl: '/api/classroom-material/upload',
+        contentType: 'application/pdf',
+        clientPayload: JSON.stringify({ fileName }),
+        multipart: true,
+        onUploadProgress: ({ percentage }) => setMaterialProgress(Math.round(percentage)),
+      });
+      const response = await fetch('/api/classroom-material/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName }),
+      });
+      const payload = await response.json() as { material?: CloudMaterial; error?: string };
+      if (!response.ok || !payload.material) throw new Error(payload.error || 'Could not finish saving the PDF.');
+      await deleteMaterial().catch(() => undefined);
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = '';
+      setMaterial({ id: MATERIAL_ID, name: payload.material.name, size: payload.material.size });
+      setMaterialUrl('/api/classroom-material/file');
+      setActiveSite(null);
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? `${uploadError.message} Your saved PDF on this browser is still available.` : 'Could not save this PDF to the site. Your local copy is still available.');
+    } finally {
+      setMaterialBusy(false);
+      setMaterialProgress(0);
+    }
+  }, []);
 
   useEffect(() => {
     setSites(readSites());
@@ -96,19 +134,38 @@ export default function ClassroomSites() {
     };
     window.addEventListener('storage', handleStorage);
     let cancelled = false;
-    void readMaterial().then((saved) => {
-      if (!saved || cancelled) return;
-      const blobUrl = URL.createObjectURL(saved.file);
-      objectUrlRef.current = blobUrl;
-      setMaterial(saved);
-      setMaterialUrl(blobUrl);
-    }).catch(() => setError('Could not open the saved PDF on this browser.'));
+    void (async () => {
+      try {
+        const response = await fetch('/api/classroom-material', { cache: 'no-store' });
+        if (response.ok) {
+          const payload = await response.json() as { material: CloudMaterial | null };
+          if (payload.material) {
+            setMaterial({ id: MATERIAL_ID, name: payload.material.name, size: payload.material.size });
+            setMaterialUrl('/api/classroom-material/file');
+            await deleteMaterial().catch(() => undefined);
+            return;
+          }
+        }
+      } catch { /* try an existing local PDF below */ }
+      try {
+        const saved = await readMaterial();
+        if (!saved || cancelled || !saved.file) return;
+        const blobUrl = URL.createObjectURL(saved.file);
+        objectUrlRef.current = blobUrl;
+        setMaterial(saved);
+        setMaterialUrl(blobUrl);
+        // Move the existing one-time browser upload into shared private storage.
+        void uploadToSite(saved.file, saved.name);
+      } catch {
+        if (!cancelled) setError('Could not open the saved PDF on this browser.');
+      }
+    })();
     return () => {
       cancelled = true;
       window.removeEventListener('storage', handleStorage);
       if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     };
-  }, []);
+  }, [uploadToSite]);
 
   useEffect(() => {
     const syncFullscreen = () => setIsFullscreen(document.fullscreenElement === viewerRef.current);
@@ -152,28 +209,16 @@ export default function ClassroomSites() {
       return;
     }
     if (file.size > 150 * 1024 * 1024) {
-      setError('This PDF is over the 150 MB browser storage limit.');
+      setError('This PDF is over the 150 MB upload limit.');
       return;
     }
-    setMaterialBusy(true);
-    setError('');
-    try {
-      await saveMaterial(file);
-      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
-      const blobUrl = URL.createObjectURL(file);
-      objectUrlRef.current = blobUrl;
-      setMaterial({ id: MATERIAL_ID, name: file.name, file, size: file.size });
-      setMaterialUrl(blobUrl);
-      setActiveSite(null);
-    } catch {
-      setError('Could not save this PDF in browser storage. Check available device storage and try again.');
-    } finally {
-      setMaterialBusy(false);
-    }
+    await uploadToSite(file, file.name);
   };
 
   const removePdf = async () => {
     try {
+      const response = await fetch('/api/classroom-material/delete', { method: 'DELETE' });
+      if (!response.ok) throw new Error('Could not remove the shared PDF.');
       await deleteMaterial();
       if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
       objectUrlRef.current = '';
@@ -208,7 +253,7 @@ export default function ClassroomSites() {
     <div className="page-wrap alternate classroom-sites-page">
       <p className="eyebrow">YOUR CLASSROOM WEB LAUNCHPAD</p>
       <h1>Bring a website <em>in.</em></h1>
-      <p className="subhead">Your saved websites and PDF material stay available in every classroom on this browser.</p>
+      <p className="subhead">Your saved websites stay in this browser. Your PDF material is shared securely across classrooms and devices.</p>
 
       <section className="panel classroom-site-add">
         <div className="panel-title"><div className="panel-icon purple"><Globe2 size={19}/></div><div><h2>Add a website</h2><p>Links you save here are shared across all classrooms on this browser.</p></div></div>
@@ -220,8 +265,8 @@ export default function ClassroomSites() {
       </section>
 
       <section className="panel classroom-material-add">
-        <div className="panel-title"><div className="panel-icon coral"><FileText size={19}/></div><div><h2>Shared PDF material</h2><p>Stored on this browser only and available in every classroom. PDFs open unchanged in the browser viewer.</p></div></div>
-        <div className="material-upload-row"><label className="outline-btn material-upload-label"><Plus size={16}/>{materialBusy?'Saving PDF…':material?'Replace PDF material':'Add a PDF'}<input type="file" accept="application/pdf,.pdf" onChange={uploadPdf} disabled={materialBusy}/></label>{material&&<div className="material-current"><FileText size={16}/><span><strong>{material.name}</strong><small>{formatSize(material.size)} · Shared across classrooms in this browser</small></span><button type="button" className="outline-btn material-open" onClick={()=>{setActiveSite(null);setMaterialUrl(objectUrlRef.current)}}>Open PDF</button><button type="button" className="material-remove" onClick={removePdf} aria-label="Remove PDF material">Remove</button></div>}</div>
+        <div className="panel-title"><div className="panel-icon coral"><FileText size={19}/></div><div><h2>Shared PDF material</h2><p>Upload once and it stays in every classroom on every device. PDFs open unchanged in the browser viewer.</p></div></div>
+        <div className="material-upload-row"><label className="outline-btn material-upload-label"><Plus size={16}/>{materialBusy?`Saving PDF… ${materialProgress}%`:material?'Replace PDF material':'Add a PDF'}<input type="file" accept="application/pdf,.pdf" onChange={uploadPdf} disabled={materialBusy}/></label>{materialBusy&&<progress className="material-upload-progress" max="100" value={materialProgress} aria-label="PDF upload progress"/>}{material&&<div className="material-current"><FileText size={16}/><span><strong>{material.name}</strong><small>{formatSize(material.size)} · Shared securely across classrooms and devices</small></span><button type="button" className="outline-btn material-open" onClick={()=>{setActiveSite(null);setMaterialUrl(objectUrlRef.current||'/api/classroom-material/file')}}>Open PDF</button><button type="button" className="material-remove" onClick={removePdf} aria-label="Remove PDF material">Remove</button></div>}</div>
       </section>
 
       {error&&<p className="form-error classroom-sites-error" role="alert">{error}</p>}
