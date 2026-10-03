@@ -8,14 +8,14 @@ BrightSteps is a single-tutor classroom dashboard built with Next.js, TypeScript
 2. Copy `.env.example` to `.env.local` and add the two database URLs.
 3. Install packages with `npm install`.
 4. Apply the initial schema and starter prizes with `npm run db:migrate`.
-5. Provision the single tutor once. Set `TUTOR_EMAIL`, `TUTOR_INITIAL_PASSWORD` (12+ characters), and optionally `TUTOR_DISPLAY_NAME` in the shell, then run `npm run tutor:setup`. The script hashes the password with Argon2id and refuses to create a second tutor. Remove the initial password from the shell/deployment environment after setup.
+5. Provision the single tutor once. Set `TUTOR_EMAIL`, `TUTOR_INITIAL_PASSWORD` (8+ characters), and optionally `TUTOR_DISPLAY_NAME` in the shell, then run `npm run tutor:setup`. The script hashes the password with Argon2id and refuses to create a second tutor. Remove the initial password from the shell/deployment environment after setup.
 6. Run `npm run dev` and sign in at `/login`.
 
 The migration is an initial, one-time migration and is not run by the app at request time. Back up the database before making manual schema changes. Use separate Neon branches and credentials for preview and production.
 
 ## Vercel deployment
 
-Set `DATABASE_URL` and `DATABASE_URL_UNPOOLED` as server-only environment variables in Vercel. Run `npm run db:migrate` from a trusted local environment or CI job using the target environment's direct Neon URL. For login-page password renewal, also set `RESEND_API_KEY`, a verified `PASSWORD_RESET_FROM` sender, and `APP_URL` to the production origin. Reset links expire after 30 minutes and can only be used once. Provision the tutor once against the production database with `TUTOR_EMAIL`, `TUTOR_INITIAL_PASSWORD`, and optional `TUTOR_DISPLAY_NAME`; do not leave the initial password configured as a standing Vercel secret. After deployment, rotate the tutor password through a secure operational process.
+Set `DATABASE_URL` and `DATABASE_URL_UNPOOLED` as server-only environment variables in Vercel. Run `npm run db:migrate` from a trusted local environment or CI job using the target environment's direct Neon URL. Passwords can be changed from the authenticated Settings screen without email; passwords must be at least 8 characters, with no character-type requirements. Changing a password requires the current password and signs out other sessions. Classroom interface themes are saved per classroom in the browser. Provision the tutor once against the production database with `TUTOR_EMAIL`, `TUTOR_INITIAL_PASSWORD`, and optional `TUTOR_DISPLAY_NAME`; do not leave the initial password configured as a standing Vercel secret. After deployment, rotate the tutor password through a secure operational process.
 
 `/api/health` is a liveness endpoint and returns only `{ "status": "ok" }`; it does not query the database or reveal application data.
 
