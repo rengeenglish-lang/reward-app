@@ -8,6 +8,7 @@ import { createSession, requireTutor, revokeSession } from '@/lib/session';
 
 const uuid = z.string().uuid();
 const name = z.string().trim().min(1).max(100);
+const avatarKeys = ['fox','bear','panda','lion','frog','tiger','koala','unicorn','penguin','octopus','dolphin','whale','turtle','butterfly','bee','ladybug','parrot','flamingo','peacock','rabbit','cat','dog','hamster','monkey','elephant','giraffe','zebra','crocodile','dinosaur','dragon','owl','chick','hedgehog','raccoon','squirrel','otter','seal','sloth','llama','deer','horse','mouse','wolf','bird','shell','star','rainbow','rocket','heart','sun','flower','cherry','cupcake','icecream','robot','alien'] as const;
 const criteriaKeys = ['homework_complete','class_participation','speaking_effort','project_complete','class_readiness','speaking_day_rules'] as const;
 const criteriaShape = Object.fromEntries(criteriaKeys.map(k => [k,z.boolean()]));
 const criteriaSchema = z.object(criteriaShape).strict();
@@ -86,7 +87,7 @@ export async function archiveGroup(id: string) {
   await sql`UPDATE students SET archived_at=now(),updated_at=now() WHERE group_id=${key} AND archived_at IS NULL`;
 }
 export async function createStudent(classroomId: string,displayName: string,avatarKey: string) {
-  await requireTutor(); const classroom=uuid.parse(classroomId),person=name.parse(displayName),avatar=z.enum(['fox','bear','panda','lion','frog','tiger','koala','unicorn','penguin','octopus']).parse(avatarKey),sql=sqlClient();
+  await requireTutor(); const classroom=uuid.parse(classroomId),person=name.parse(displayName),avatar=z.enum(avatarKeys).parse(avatarKey),sql=sqlClient();
   let groups=await sql`SELECT id FROM groups WHERE classroom_id=${classroom} AND archived_at IS NULL ORDER BY created_at,id LIMIT 1`;
   if(!groups.length) groups=await sql`INSERT INTO groups(classroom_id,name) SELECT id,'Class roster' FROM classrooms WHERE id=${classroom} AND archived_at IS NULL RETURNING id`;
   if(!groups.length) throw new Error('Active classroom not found');
@@ -95,13 +96,14 @@ export async function createStudent(classroomId: string,displayName: string,avat
 }
 export async function archiveStudent(id: string) { await requireTutor(); const key=uuid.parse(id); await sqlClient()`UPDATE students SET archived_at=now(),updated_at=now() WHERE id=${key} AND archived_at IS NULL`; }
 export async function updateStudent(id:string,displayName:string) { await requireTutor(); const key=uuid.parse(id),person=name.parse(displayName); const rows=await sqlClient()`UPDATE students SET display_name=${person},updated_at=now() WHERE id=${key} AND archived_at IS NULL RETURNING id,display_name`; if(!rows.length) throw new Error('Active student not found'); return rows[0]; }
+export async function updateStudentAvatar(id:string,avatarKey:string) { await requireTutor(); const key=uuid.parse(id),avatar=z.enum(avatarKeys).parse(avatarKey); const rows=await sqlClient()`UPDATE students SET avatar_key=${avatar},updated_at=now() WHERE id=${key} AND archived_at IS NULL RETURNING id,avatar_key`; if(!rows.length) throw new Error('Active student not found'); return rows[0]; }
 export async function createStudents(classroomId:string,displayNames:string[]) {
   await requireTutor(); const classroom=uuid.parse(classroomId),people=z.array(name).min(1).max(100).parse(displayNames),sql=sqlClient();
   let groups=await sql`SELECT id FROM groups WHERE classroom_id=${classroom} AND archived_at IS NULL ORDER BY created_at,id LIMIT 1`;
   if(!groups.length) groups=await sql`INSERT INTO groups(classroom_id,name) SELECT id,'Class roster' FROM classrooms WHERE id=${classroom} AND archived_at IS NULL RETURNING id`;
   if(!groups.length) throw new Error('Active classroom not found');
   const group=uuid.parse(String(groups[0].id));
-  return sql`INSERT INTO students(group_id,display_name,avatar_key) SELECT ${group},person,avatars.avatar FROM unnest(${people}::text[]) WITH ORDINALITY AS names(person,n) CROSS JOIN LATERAL (SELECT (ARRAY['koala','unicorn','penguin','octopus','fox','bear','panda','lion','frog','tiger'])[((n-1)%10)+1] AS avatar) avatars RETURNING id,display_name,avatar_key,group_id`;
+  return sql`INSERT INTO students(group_id,display_name,avatar_key) SELECT ${group},person,avatars.avatar FROM unnest(${people}::text[]) WITH ORDINALITY AS names(person,n) CROSS JOIN LATERAL (SELECT (ARRAY['fox','bear','panda','lion','frog','tiger','koala','unicorn','penguin','octopus','dolphin','whale','turtle','butterfly','bee','ladybug','parrot','flamingo','peacock','rabbit','cat','dog','hamster','monkey','elephant','giraffe','zebra','crocodile','dinosaur','dragon','owl','chick','hedgehog','raccoon','squirrel','otter','seal','sloth','llama','deer','horse','mouse','wolf','bird','shell','star','rainbow','rocket','heart','sun','flower','cherry','cupcake','icecream','robot','alien'])[((n-1)%56)+1] AS avatar) avatars RETURNING id,display_name,avatar_key,group_id`;
 }
 
 export async function getGroupRoster(groupId: string,recordDate: string) {
