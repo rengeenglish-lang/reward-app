@@ -16,7 +16,7 @@ const seedStudents = [
   { id: 6, name: 'Ethan Brown', avatar: '🐯', color: 'peach', checks: [true,false,false,true,true,true], streak: 2 },
 ];
 const starterPrizes = ['Choose the read-aloud book','Pick the warm-up game','Be the line leader','10 minutes of drawing time','A colorful sticker','Choose a classroom song'];
-const classroomThemeOptions=[{id:'sunshine',label:'Sunshine yellow'},{id:'ocean',label:'Ocean blue'},{id:'lavender',label:'Lavender'},{id:'coral',label:'Coral pink'},{id:'forest',label:'Forest green'}] as const;
+const classroomThemeOptions=[{id:'sunshine',label:'Sunshine yellow'},{id:'ocean',label:'Ocean blue'},{id:'lavender',label:'Lavender'},{id:'coral',label:'Coral pink'},{id:'forest',label:'Forest green'},{id:'mint',label:'Mint green'},{id:'sky',label:'Sky blue'},{id:'peach',label:'Peach orange'},{id:'berry',label:'Berry pink'},{id:'grape',label:'Grape purple'},{id:'lagoon',label:'Lagoon teal'}] as const;
 type Student = {id:string;name:string;avatar:string;color:string;checks:boolean[];streak:number;groupId:string};
 type Draw = { name:string; prize:string; avatar:string; at:string };
 

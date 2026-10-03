@@ -76,10 +76,40 @@ body{background:radial-gradient(ellipse at 95% 4%,#fff3c9 0 8%,transparent 24%),
 @media(prefers-reduced-motion:reduce){.champion-bubble,.celebration-student-avatar,.applause-cheer,.celebration-spark,.champion-celebration-card,.celebration-confetti i{animation:none!important}.celebration-confetti i{opacity:.8;transform:translateY(45vh)}}
 
 .theme-settings{grid-column:1/-1}.theme-setting-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:11px 0;border-bottom:1px solid #f0f1ec}.theme-setting-row:last-child{border-bottom:0}.theme-setting-row>div{display:flex;flex-direction:column;gap:4px}.theme-setting-row strong{font-size:11px;color:#42565f}.theme-setting-row small{font-size:9px;color:#8d9a9d}.theme-setting-row .field-select{width:min(100%,230px);margin:0}
-.app-shell[data-theme="ocean"]{--teal:#2589ad;--teal-dark:#176f93}.app-shell[data-theme="ocean"] .primary-btn,.app-shell[data-theme="ocean"] .check-button.checked,.app-shell[data-theme="ocean"] .progress-track span{background:#2589ad;border-color:#2589ad}.app-shell[data-theme="ocean"] .nav-item.active{background:#e6f5fb;color:#176f93}.app-shell[data-theme="ocean"] .nav-item.active:before{background:#2589ad}
-.app-shell[data-theme="lavender"]{--teal:#8066b7;--teal-dark:#654c9b}.app-shell[data-theme="lavender"] .primary-btn,.app-shell[data-theme="lavender"] .check-button.checked,.app-shell[data-theme="lavender"] .progress-track span{background:#8066b7;border-color:#8066b7}.app-shell[data-theme="lavender"] .nav-item.active{background:#f0ebfa;color:#654c9b}.app-shell[data-theme="lavender"] .nav-item.active:before{background:#8066b7}
-.app-shell[data-theme="coral"]{--teal:#d66f60;--teal-dark:#b95347}.app-shell[data-theme="coral"] .primary-btn,.app-shell[data-theme="coral"] .check-button.checked,.app-shell[data-theme="coral"] .progress-track span{background:#d66f60;border-color:#d66f60}.app-shell[data-theme="coral"] .nav-item.active{background:#fff0ed;color:#b95347}.app-shell[data-theme="coral"] .nav-item.active:before{background:#d66f60}
-.app-shell[data-theme="forest"]{--teal:#638b48;--teal-dark:#4d7137}.app-shell[data-theme="forest"] .primary-btn,.app-shell[data-theme="forest"] .check-button.checked,.app-shell[data-theme="forest"] .progress-track span{background:#638b48;border-color:#638b48}.app-shell[data-theme="forest"] .nav-item.active{background:#edf5e8;color:#4d7137}.app-shell[data-theme="forest"] .nav-item.active:before{background:#638b48}
+.app-shell[data-theme="sunshine"]{--theme-accent:#d99a18;--theme-dark:#805900;--theme-canvas:#fff9e8;--theme-side:#fffdf6;--theme-soft:#fff0bf;--theme-line:#f1dfb0}
+.app-shell[data-theme="ocean"]{--theme-accent:#2589ad;--theme-dark:#17617e;--theme-canvas:#eef9fc;--theme-side:#f8fdff;--theme-soft:#dff2f8;--theme-line:#c9e7ef}
+.app-shell[data-theme="lavender"]{--theme-accent:#8066b7;--theme-dark:#5f478f;--theme-canvas:#f6f2ff;--theme-side:#fcfaff;--theme-soft:#ece4fb;--theme-line:#ded2f3}
+.app-shell[data-theme="coral"]{--theme-accent:#d66f60;--theme-dark:#9f493d;--theme-canvas:#fff3f0;--theme-side:#fffaf8;--theme-soft:#ffe2db;--theme-line:#f4d0c8}
+.app-shell[data-theme="forest"]{--theme-accent:#638b48;--theme-dark:#466633;--theme-canvas:#f2f8ee;--theme-side:#fbfdf8;--theme-soft:#e3efd9;--theme-line:#d5e5ca}
+.app-shell[data-theme="mint"]{--theme-accent:#31967f;--theme-dark:#176b59;--theme-canvas:#effaf6;--theme-side:#fbfefc;--theme-soft:#d9f1e8;--theme-line:#c9e8dc}
+.app-shell[data-theme="sky"]{--theme-accent:#4789d2;--theme-dark:#2d5f9c;--theme-canvas:#f0f7ff;--theme-side:#fbfdff;--theme-soft:#dfedff;--theme-line:#cfdef2}
+.app-shell[data-theme="peach"]{--theme-accent:#dc854a;--theme-dark:#9b5225;--theme-canvas:#fff6ef;--theme-side:#fffdfa;--theme-soft:#ffe8d5;--theme-line:#f3dccb}
+.app-shell[data-theme="berry"]{--theme-accent:#c4507b;--theme-dark:#8d2e55;--theme-canvas:#fff2f6;--theme-side:#fffbfc;--theme-soft:#f9dfeb;--theme-line:#efd0dd}
+.app-shell[data-theme="grape"]{--theme-accent:#795fc7;--theme-dark:#554093;--theme-canvas:#f5f2ff;--theme-side:#fcfbff;--theme-soft:#e8e1fb;--theme-line:#d9d0f2}
+.app-shell[data-theme="lagoon"]{--theme-accent:#168f91;--theme-dark:#10686b;--theme-canvas:#eefafa;--theme-side:#faffff;--theme-soft:#d9f1f0;--theme-line:#c7e7e6}
+.app-shell[data-theme]{--teal:var(--theme-accent);--teal-dark:var(--theme-dark);background:var(--theme-canvas)}
+.app-shell[data-theme] .main-area{background:var(--theme-canvas)}
+.app-shell[data-theme] .sidebar{background:var(--theme-side);border-color:var(--theme-line)}
+.app-shell[data-theme] .topbar{background:#fff;border-color:var(--theme-line)}
+.app-shell[data-theme] .toolbar{border-color:var(--theme-line)}
+.app-shell[data-theme] .nav-item.active{background:var(--theme-soft);color:var(--theme-dark)}
+.app-shell[data-theme] .nav-item.active:before{background:var(--theme-accent)}
+.app-shell[data-theme] .group-item.selected,.app-shell[data-theme] .live-badge{background:var(--theme-soft);color:var(--theme-dark)}
+.app-shell[data-theme] .primary-btn,.app-shell[data-theme] .check-button.checked{background:var(--theme-accent);border-color:var(--theme-accent)}
+.app-shell[data-theme] .primary-btn{box-shadow:0 4px 0 color-mix(in srgb,var(--theme-dark),transparent 18%)}
+.app-shell[data-theme] .primary-btn:hover{background:var(--theme-dark)}
+.app-shell[data-theme] .progress-track span,.app-shell[data-theme] .nav-dot{background:var(--theme-accent)}
+.app-shell[data-theme] .brand,.app-shell[data-theme] .text-link,.app-shell[data-theme] .classroom-body .add-group{color:var(--theme-dark)}
+.app-shell[data-theme] .brand-mark,.app-shell[data-theme] .switch-icon{background:var(--theme-soft);color:var(--theme-dark);box-shadow:none}
+.app-shell[data-theme] .outline-btn:hover,.app-shell[data-theme] .class-switch:hover,.app-shell[data-theme] .nav-item:hover,.app-shell[data-theme] .group-item:hover{background:var(--theme-soft);border-color:var(--theme-line);color:var(--theme-dark)}
+.app-shell[data-theme] .stat-card,.app-shell[data-theme] .roster-card,.app-shell[data-theme] .panel,.app-shell[data-theme] .classroom-card,.app-shell[data-theme] .new-class-card,.app-shell[data-theme] .champion-section{background:#fff;border-color:var(--theme-line);box-shadow:0 4px 0 color-mix(in srgb,var(--theme-line),white 28%),0 9px 22px #27364b0b}
+.app-shell[data-theme] .classroom-banner{filter:saturate(.8)}
+.app-shell[data-theme] .champion-section{background:linear-gradient(120deg,var(--theme-soft),#fff 50%,var(--theme-canvas))}
+.app-shell[data-theme] .champion-heading .eyebrow,.app-shell[data-theme] .champion-hint{color:var(--theme-dark)}
+.app-shell[data-theme] .champion-hint{background:var(--theme-soft)}
+.app-shell[data-theme] .section-heading h2,.app-shell[data-theme] .classroom-top h2,.app-shell[data-theme] .panel-title h2{color:var(--ink)}
+.app-shell[data-theme] .field-select:focus,.app-shell[data-theme] .searchbox:focus-within{outline-color:var(--theme-accent);border-color:var(--theme-accent)}
+.app-shell[data-theme] .theme-setting-row{border-color:var(--theme-line)}
 @media(max-width:560px){.theme-setting-row{align-items:flex-start;flex-direction:column;gap:8px}.theme-setting-row .field-select{width:100%}.theme-settings{grid-column:auto}}
 
 .forgot-password-link{display:block;width:max-content;max-width:100%;margin:14px auto 0;color:#39877a;font-size:10px;font-weight:700;text-decoration:none}.forgot-password-link:hover{text-decoration:underline}.login-success{padding:10px 11px;border-radius:8px;background:#eaf5ef;color:#397667;font-size:10px;line-height:1.55}
