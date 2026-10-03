@@ -47,6 +47,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(result);
   } catch (error) {
+    console.error('Classroom PDF upload endpoint failed', error);
     const message = error instanceof Error && error.message === 'Authentication required' ? 'Sign in to upload classroom material.' : 'Could not prepare this PDF upload.';
     return NextResponse.json({ error: message }, { status: message.startsWith('Sign in') ? 401 : 400 });
   }

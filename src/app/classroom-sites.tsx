@@ -85,6 +85,7 @@ export default function ClassroomSites() {
   const [error, setError] = useState('');
   const [activeSite, setActiveSite] = useState<SavedSite | null>(null);
   const [material, setMaterial] = useState<StoredMaterial | null>(null);
+  const [materialIsCloud, setMaterialIsCloud] = useState(false);
   const [materialUrl, setMaterialUrl] = useState('');
   const [materialBusy, setMaterialBusy] = useState(false);
   const [materialProgress, setMaterialProgress] = useState(0);
@@ -117,6 +118,7 @@ export default function ClassroomSites() {
       if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
       objectUrlRef.current = '';
       setMaterial({ id: MATERIAL_ID, name: payload.material.name, size: payload.material.size });
+      setMaterialIsCloud(true);
       setMaterialUrl('/api/classroom-material/file');
       setActiveSite(null);
     } catch (uploadError) {
@@ -141,6 +143,7 @@ export default function ClassroomSites() {
           const payload = await response.json() as { material: CloudMaterial | null };
           if (payload.material) {
             setMaterial({ id: MATERIAL_ID, name: payload.material.name, size: payload.material.size });
+            setMaterialIsCloud(true);
             setMaterialUrl('/api/classroom-material/file');
             await deleteMaterial().catch(() => undefined);
             return;
@@ -153,6 +156,7 @@ export default function ClassroomSites() {
         const blobUrl = URL.createObjectURL(saved.file);
         objectUrlRef.current = blobUrl;
         setMaterial(saved);
+        setMaterialIsCloud(false);
         setMaterialUrl(blobUrl);
         // Move the existing one-time browser upload into shared private storage.
         void uploadToSite(saved.file, saved.name);
@@ -223,6 +227,7 @@ export default function ClassroomSites() {
       if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
       objectUrlRef.current = '';
       setMaterial(null);
+      setMaterialIsCloud(false);
       setMaterialUrl('');
     } catch {
       setError('Could not remove the saved PDF from this browser.');
@@ -266,7 +271,7 @@ export default function ClassroomSites() {
 
       <section className="panel classroom-material-add">
         <div className="panel-title"><div className="panel-icon coral"><FileText size={19}/></div><div><h2>Shared PDF material</h2><p>Upload once and it stays in every classroom on every device. PDFs open unchanged in the browser viewer.</p></div></div>
-        <div className="material-upload-row"><label className="outline-btn material-upload-label"><Plus size={16}/>{materialBusy?`Saving PDF… ${materialProgress}%`:material?'Replace PDF material':'Add a PDF'}<input type="file" accept="application/pdf,.pdf" onChange={uploadPdf} disabled={materialBusy}/></label>{materialBusy&&<progress className="material-upload-progress" max="100" value={materialProgress} aria-label="PDF upload progress"/>}{material&&<div className="material-current"><FileText size={16}/><span><strong>{material.name}</strong><small>{formatSize(material.size)} · Shared securely across classrooms and devices</small></span><button type="button" className="outline-btn material-open" onClick={()=>{setActiveSite(null);setMaterialUrl(objectUrlRef.current||'/api/classroom-material/file')}}>Open PDF</button><button type="button" className="material-remove" onClick={removePdf} aria-label="Remove PDF material">Remove</button></div>}</div>
+        <div className="material-upload-row"><label className="outline-btn material-upload-label"><Plus size={16}/>{materialBusy?`Saving PDF… ${materialProgress}%`:material?'Replace PDF material':'Add a PDF'}<input type="file" accept="application/pdf,.pdf" onChange={uploadPdf} disabled={materialBusy}/></label>{materialBusy&&<progress className="material-upload-progress" max="100" value={materialProgress} aria-label="PDF upload progress"/>}{material&&<div className="material-current"><FileText size={16}/><span><strong>{material.name}</strong><small>{formatSize(material.size)} · {materialIsCloud?'Shared securely across classrooms and devices':'Saved on this browser; moving it to shared storage…'}</small></span><button type="button" className="outline-btn material-open" onClick={()=>{setActiveSite(null);setMaterialUrl(objectUrlRef.current||'/api/classroom-material/file')}}>Open PDF</button><button type="button" className="material-remove" onClick={removePdf} aria-label="Remove PDF material">Remove</button></div>}</div>
       </section>
 
       {error&&<p className="form-error classroom-sites-error" role="alert">{error}</p>}
