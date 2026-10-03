@@ -35,6 +35,21 @@ export default function MascotParade({ classroomId }: { classroomId: string }) {
     const syncMascot = () => setMascot(readMascot(classroomId));
     syncMascot();
 
+    const startParade = () => {
+      const now = Date.now();
+      lastParadeRef.current = now;
+      try {
+        localStorage.setItem(storageKey, String(now));
+      } catch {}
+      const gestures: ParadeGesture[] = ['thumbs', 'clap', 'bow', 'karate'];
+      setGesture(gestures[Math.floor(Math.random() * gestures.length)]);
+      syncMascot();
+      setParadeId((current) => current + 1);
+      setParading(true);
+      if (hideRef.current) clearTimeout(hideRef.current);
+      hideRef.current = setTimeout(() => setParading(false), 7100);
+    };
+
     let last = 0;
     try {
       last = Number(localStorage.getItem(storageKey)) || 0;
@@ -55,24 +70,16 @@ export default function MascotParade({ classroomId }: { classroomId: string }) {
       } catch {}
       if (now - storedLast < PARADE_INTERVAL) return;
 
-      lastParadeRef.current = now;
-      try {
-        localStorage.setItem(storageKey, String(now));
-      } catch {}
-      const gestures: ParadeGesture[] = ['thumbs', 'clap', 'bow', 'karate'];
-      setGesture(gestures[Math.floor(Math.random() * gestures.length)]);
-      syncMascot();
-      setParadeId((current) => current + 1);
-      setParading(true);
-      if (hideRef.current) clearTimeout(hideRef.current);
-      hideRef.current = setTimeout(() => setParading(false), 7100);
+      startParade();
     };
 
     const interval = window.setInterval(checkParade, 5000);
+    window.addEventListener('ezgili-mascot-parade-trigger', startParade);
     window.addEventListener('ezgili-classroom-fun-updated', syncMascot);
     window.addEventListener('storage', syncMascot);
     return () => {
       window.clearInterval(interval);
+      window.removeEventListener('ezgili-mascot-parade-trigger', startParade);
       window.removeEventListener('ezgili-classroom-fun-updated', syncMascot);
       window.removeEventListener('storage', syncMascot);
       if (hideRef.current) clearTimeout(hideRef.current);
