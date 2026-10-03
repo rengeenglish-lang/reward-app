@@ -4,6 +4,7 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState, useTransition } from
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ClassroomFun, { ClassGoalMeter, displayStudentName, type ClassroomThemeOption } from './classroom-fun';
+import MascotParade from './mascot-parade';
 import { archiveClassroom, archiveStudent, createClassroom, createStudents, createStudent, createPrize, drawReward, getPeriodReport, saveBehaviorRecord, setPrizeActive, signOut, updateStudent, updateStudentAvatar, updateTutorSettings, changeTutorPassword } from './actions';
 import { Activity, Archive, ArrowDownRight, ArrowRight, Award, BarChart3, Bell, BookOpen, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardCheck, Clock3, Coffee, Gamepad2, Gift, GraduationCap, Heart, Home, Leaf, LogOut, Menu, MoreHorizontal, Pencil, Plus, Search, Settings, ShieldCheck, Smile, Sparkles, Star, Trophy, Users, X } from 'lucide-react';
 import { createWorker } from 'tesseract.js';
@@ -118,6 +119,7 @@ export default function HomePage({initialData}:{initialData:InitialData}) {
   const chartBars=categoryValues.map(value=>Math.max(5,value/Math.max(1,...categoryValues)*100));
 
   return <main className="app-shell" data-theme={activeTheme}>
+    <MascotParade classroomId={classroomId}/>
     <aside className={`sidebar ${sidebar?'':'collapsed'} ${mobileMenuOpen?'mobile-open':''}`}>
       <div className="brand"><Link href="/" className="brand-home" aria-label="Ezgili Champs landing page"><div className="brand-mark"><Sparkles size={20}/></div><span>Ezgili Champs</span></Link><button aria-label={sidebar?'Collapse sidebar':'Expand sidebar'} title={sidebar?'Collapse sidebar':'Expand sidebar'} className="icon-btn collapse-btn" onClick={()=>setSidebar(!sidebar)}>{sidebar?<ChevronLeft size={17}/>:<ChevronRight size={17}/>}</button></div>
       <div className="workspace-label">YOUR CLASSROOM</div>
