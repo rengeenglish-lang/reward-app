@@ -21,12 +21,13 @@ function readMascot(classroomId: string): MascotSetting {
   }
 }
 
-export default function MascotParade({ classroomId }: { classroomId: string }) {
+export default function MascotParade({ classroomId, triggerKey }: { classroomId: string; triggerKey: number }) {
   const [mascot, setMascot] = useState<MascotSetting>({ emoji: '🦊', name: 'Champs' });
   const [parading, setParading] = useState(false);
   const [gesture, setGesture] = useState<ParadeGesture>('thumbs');
   const [paradeId, setParadeId] = useState(0);
   const lastParadeRef = useRef(0);
+  const startParadeRef = useRef<() => void>(() => {});
   const hideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function MascotParade({ classroomId }: { classroomId: string }) {
       if (hideRef.current) clearTimeout(hideRef.current);
       hideRef.current = setTimeout(() => setParading(false), 7100);
     };
+    startParadeRef.current = startParade;
 
     let last = 0;
     try {
@@ -74,17 +76,19 @@ export default function MascotParade({ classroomId }: { classroomId: string }) {
     };
 
     const interval = window.setInterval(checkParade, 5000);
-    window.addEventListener('ezgili-mascot-parade-trigger', startParade);
     window.addEventListener('ezgili-classroom-fun-updated', syncMascot);
     window.addEventListener('storage', syncMascot);
     return () => {
       window.clearInterval(interval);
-      window.removeEventListener('ezgili-mascot-parade-trigger', startParade);
       window.removeEventListener('ezgili-classroom-fun-updated', syncMascot);
       window.removeEventListener('storage', syncMascot);
       if (hideRef.current) clearTimeout(hideRef.current);
     };
   }, [classroomId]);
+
+  useEffect(() => {
+    if (triggerKey > 0) startParadeRef.current();
+  }, [triggerKey]);
 
   if (!parading) return null;
   const finish = gestureDetails[gesture];
