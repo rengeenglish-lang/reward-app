@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Home } from 'lucide-react';
 
 export default function LandingPage() {
   return <main className="landing-page">
@@ -6,7 +7,7 @@ export default function LandingPage() {
     <div className="landing-sunburst landing-sunburst-two" aria-hidden="true">✿</div>
     <div className="landing-orbit landing-orbit-one" aria-hidden="true"/>
     <div className="landing-orbit landing-orbit-two" aria-hidden="true"/>
-    <header className="landing-header"><Link className="landing-brand" href="/"><span>✦</span> Ezgili Champs</Link><span className="landing-header-note">Little wins. Big smiles.</span></header>
+    <header className="landing-header"><Link className="landing-brand" href="/"><span>✦</span> Ezgili Champs</Link><span className="landing-header-note">Little wins. Big smiles.</span><Link className="site-home-button public-home-button" href="/" aria-label="Go to home page"><Home size={16}/><span>Home</span></Link></header>
     <section className="landing-hero" aria-labelledby="landing-title">
       <div className="landing-sticker landing-sticker-left" aria-hidden="true"><span>🌟</span><small>KINDNESS<br/>COUNTS!</small></div>
       <div className="landing-sticker landing-sticker-right" aria-hidden="true"><span>🎈</span><small>YOU’VE<br/>GOT THIS!</small></div>
