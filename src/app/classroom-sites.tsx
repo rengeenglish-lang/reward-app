@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, FormEvent, MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { upload } from '@vercel/blob/client';
 import { ExternalLink, FileText, Globe2, Maximize2, Minimize2, Plus, X, Lightbulb } from 'lucide-react';
 import { readingAnswerBanks } from '@/lib/reading-answers';
@@ -253,6 +253,19 @@ export default function ClassroomSites() {
   };
 
   const answerBank = readingAnswerBanks.find((bank) => bank.id === answerBankId) || readingAnswerBanks[0];
+  const openExercisePage = (event: MouseEvent<HTMLAnchorElement>, pdfPage: number) => {
+    event.preventDefault();
+    if (!material) {
+      setError('Add the shared PDF first, then these links will jump to the matching exercise page.');
+      document.querySelector('.classroom-material-add')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    const source = materialIsCloud ? '/api/classroom-material/file' : (objectUrlRef.current || materialUrl.split('#')[0]);
+    if (!source) return;
+    setActiveSite(null);
+    setMaterialUrl(`${source.split('#')[0]}#page=${pdfPage}`);
+    window.setTimeout(() => viewerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  };
   const toggleAnswer = (id: string) => setRevealedAnswers((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
 
   const viewerControls = <div className="classroom-site-controls">
@@ -275,7 +288,7 @@ export default function ClassroomSites() {
         </form>
       </section>
 
-      <section className="panel classroom-material-add">
+      <section id="pdf-material" className="panel classroom-material-add">
         <div className="panel-title"><div className="panel-icon coral"><FileText size={19}/></div><div><h2>Shared PDF material</h2><p>Upload once and it stays in every classroom on every device. PDFs open unchanged in the browser viewer.</p></div></div>
         <div className="material-upload-row"><label className="outline-btn material-upload-label"><Plus size={16}/>{materialBusy?`Saving PDF… ${materialProgress}%`:material?'Replace PDF material':'Add a PDF'}<input type="file" accept="application/pdf,.pdf" onChange={uploadPdf} disabled={materialBusy}/></label>{materialBusy&&<progress className="material-upload-progress" max="100" value={materialProgress} aria-label="PDF upload progress"/>}{material&&<div className="material-current"><FileText size={16}/><span><strong>{material.name}</strong><small>{formatSize(material.size)} · {materialIsCloud?'Shared securely across classrooms and devices':'Saved on this browser; moving it to shared storage…'}</small></span><button type="button" className="outline-btn material-open" onClick={()=>{setActiveSite(null);setMaterialUrl(objectUrlRef.current||'/api/classroom-material/file')}}>Open PDF</button><button type="button" className="material-remove" onClick={removePdf} aria-label="Remove PDF material">Remove</button></div>}</div>
       </section>
@@ -304,8 +317,8 @@ export default function ClassroomSites() {
 
       <section className="panel answer-reveal-panel" aria-labelledby="answer-reveal-title">
         <div className="answer-reveal-heading"><div className="panel-icon purple"><Lightbulb size={19}/></div><div><p className="eyebrow">READ, THINK, THEN REVEAL</p><h2 id="answer-reveal-title">Story answer reveal</h2><p>Choose a reading, then reveal answers one at a time. Matching answers show the complete line.</p></div></div>
-        <label className="answer-reveal-select"><span className="field-label">Reading</span><select className="field-select" value={answerBank?.id || ''} onChange={(event)=>{setAnswerBankId(event.target.value);setRevealedAnswers(new Set())}}>{readingAnswerBanks.map((bank)=><option key={bank.id} value={bank.id}>Unit {bank.unit} · {bank.kind} · {bank.title}</option>)}</select></label>
-        {answerBank&&<><div className="answer-reveal-meta"><strong>Student Book page {answerBank.printedPage}</strong><span>{answerBank.answers.length} answer reveals</span></div><div className="answer-reveal-list">{answerBank.answers.map((item,index)=>{const id=`${answerBank.id}-${index}`;const isRevealed=revealedAnswers.has(id);return <article className={`answer-reveal-item ${isRevealed?'is-revealed':''}`} key={id}><div className="answer-reveal-question"><span className="answer-reveal-number">{index+1}</span><p>{item.prompt}</p></div><button type="button" className="fun-action secondary answer-reveal-button" aria-expanded={isRevealed} onClick={()=>toggleAnswer(id)}>{isRevealed?'Hide answer':'View answer'}</button>{isRevealed&&<p className={`answer-reveal-answer ${item.matching?'matching-answer':''}`}><strong>{item.matching?'Answer line':'Answer'}:</strong> {item.answer}</p>}</article>})}</div></>}
+        <label className="answer-reveal-select"><span className="field-label">Reading</span><select className="field-select" value={answerBank?.id || ''} onChange={(event)=>{setAnswerBankId(event.target.value);setRevealedAnswers(new Set())}}>{readingAnswerBanks.map((bank)=><option key={bank.id} value={bank.id}>Unit {bank.unit} · {bank.kind} · {bank.title} · Exercise p. {bank.printedPage}</option>)}</select></label>
+        {answerBank&&<><div className="answer-reveal-meta"><strong>Exercises: Student Book p. {answerBank.printedPage}</strong><span>PDF page {answerBank.pdfPage} · {answerBank.answers.length} answer reveals</span></div><div className="answer-reveal-list">{answerBank.answers.map((item,index)=>{const id=`${answerBank.id}-${index}`;const isRevealed=revealedAnswers.has(id);return <article className={`answer-reveal-item ${isRevealed?'is-revealed':''}`} key={id}><div className="answer-reveal-question"><span className="answer-reveal-number">{index+1}</span><div><p>{item.prompt}</p><a className="answer-reveal-pdf-link" href={material ? `${materialIsCloud?'/api/classroom-material/file':objectUrlRef.current}#page=${answerBank.pdfPage}` : '#pdf-material'} onClick={(event)=>openExercisePage(event,answerBank.pdfPage)}>Student Book p. {answerBank.printedPage} · Open in PDF</a></div></div><button type="button" className="fun-action secondary answer-reveal-button" aria-expanded={isRevealed} onClick={()=>toggleAnswer(id)}>{isRevealed?'Hide answer':'View answer'}</button>{isRevealed&&<p className={`answer-reveal-answer ${item.matching?'matching-answer':''}`}><strong>{item.matching?'Answer line':'Answer'}:</strong> {item.answer}</p>}</article>})}</div></>}
       </section>
     </div>
   );

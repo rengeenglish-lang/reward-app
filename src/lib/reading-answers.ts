@@ -1,6 +1,7 @@
 export type ReadingAnswer = { prompt: string; answer: string; matching?: boolean };
-export type ReadingAnswerBank = { id: string; unit: number; title: string; kind: 'Fiction' | 'Nonfiction'; printedPage: number; answers: ReadingAnswer[] };
-const bank = (id:string,unit:number,title:string,kind:ReadingAnswerBank['kind'],printedPage:number,items:Array<[string,string,boolean?]>):ReadingAnswerBank => ({id,unit,title,kind,printedPage,answers:items.map(([prompt,answer,matching])=>({prompt,answer,matching}))});
+export type ReadingAnswerBank = { id: string; unit: number; title: string; kind: 'Fiction' | 'Nonfiction'; printedPage: number; pdfPage: number; answers: ReadingAnswer[] };
+const exercisePdfPages: Record<number, number> = { 8: 17, 14: 29, 20: 41, 28: 57, 36: 73, 42: 85, 48: 97, 58: 117, 68: 137, 74: 149, 82: 165, 88: 177, 96: 193, 102: 205, 112: 225, 118: 237, 128: 257, 134: 269 };
+const bank = (id:string,unit:number,title:string,kind:ReadingAnswerBank['kind'],printedPage:number,items:Array<[string,string,boolean?]>):ReadingAnswerBank => ({id,unit,title,kind,printedPage,pdfPage:exercisePdfPages[printedPage],answers:items.map(([prompt,answer,matching])=>({prompt,answer,matching}))});
 
 // Answer key prepared by reading the supplied scanned anthology. Open-ended personal responses are omitted.
 export const readingAnswerBanks: ReadingAnswerBank[] = [
