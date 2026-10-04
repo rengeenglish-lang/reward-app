@@ -267,6 +267,19 @@ export default function ClassroomSites() {
     window.setTimeout(() => viewerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   };
   const toggleAnswer = (id: string) => setRevealedAnswers((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const allExerciseAnswersRevealed = Boolean(answerBank?.answers.length) && answerBank!.answers.every((_, index) => revealedAnswers.has(`${answerBank!.id}-${index}`));
+  const toggleAllExerciseAnswers = () => {
+    if (!answerBank) return;
+    setRevealedAnswers((current) => {
+      const next = new Set(current);
+      answerBank.answers.forEach((_, index) => {
+        const id = `${answerBank.id}-${index}`;
+        if (allExerciseAnswersRevealed) next.delete(id);
+        else next.add(id);
+      });
+      return next;
+    });
+  };
 
   const viewerControls = <div className="classroom-site-controls">
     <button className="outline-btn" type="button" onClick={()=>setEnlarged((value)=>!value)} aria-pressed={enlarged}><Maximize2 size={15}/>{enlarged?'Normal size':'Enlarge panel'}</button>
@@ -316,9 +329,9 @@ export default function ClassroomSites() {
       </section>}
 
       <section className="panel answer-reveal-panel" aria-labelledby="answer-reveal-title">
-        <div className="answer-reveal-heading"><div className="panel-icon purple"><Lightbulb size={19}/></div><div><p className="eyebrow">READ, THINK, THEN REVEAL</p><h2 id="answer-reveal-title">Story answer reveal</h2><p>Choose a reading, then reveal answers one at a time. Matching answers show the complete line.</p></div></div>
+        <div className="answer-reveal-heading"><div className="panel-icon purple"><Lightbulb size={19}/></div><div><p className="eyebrow">READ, THINK, THEN REVEAL</p><h2 id="answer-reveal-title">Story answer reveal</h2><p>Reveal answers individually or show all answers for the selected exercise. Matching answers show the complete line.</p></div></div>
         <label className="answer-reveal-select"><span className="field-label">Reading</span><select className="field-select" value={answerBank?.id || ''} onChange={(event)=>{setAnswerBankId(event.target.value);setRevealedAnswers(new Set())}}>{readingAnswerBanks.map((bank)=><option key={bank.id} value={bank.id}>Unit {bank.unit} · {bank.kind} · {bank.title} · Exercise p. {bank.printedPage}</option>)}</select></label>
-        {answerBank&&<><div className="answer-reveal-meta"><strong>Exercises: Student Book p. {answerBank.printedPage}</strong><span>PDF page {answerBank.pdfPage} · {answerBank.answers.length} answer reveals</span></div><div className="answer-reveal-list">{answerBank.answers.map((item,index)=>{const id=`${answerBank.id}-${index}`;const isRevealed=revealedAnswers.has(id);return <article className={`answer-reveal-item ${isRevealed?'is-revealed':''}`} key={id}><div className="answer-reveal-question"><span className="answer-reveal-number">{index+1}</span><div><p>{item.prompt}</p><a className="answer-reveal-pdf-link" href={material ? `${materialIsCloud?'/api/classroom-material/file':objectUrlRef.current}#page=${answerBank.pdfPage}` : '#pdf-material'} onClick={(event)=>openExercisePage(event,answerBank.pdfPage)}>Student Book p. {answerBank.printedPage} · Open in PDF</a></div></div><button type="button" className="fun-action secondary answer-reveal-button" aria-expanded={isRevealed} onClick={()=>toggleAnswer(id)}>{isRevealed?'Hide answer':'View answer'}</button>{isRevealed&&<p className={`answer-reveal-answer ${item.matching?'matching-answer':''}`}><strong>{item.matching?'Answer line':'Answer'}:</strong> {item.answer}</p>}</article>})}</div></>}
+        {answerBank&&<><div className="answer-reveal-meta"><strong>Exercises: Student Book p. {answerBank.printedPage}</strong><span>PDF page {answerBank.pdfPage} · {answerBank.answers.length} answer reveals</span></div><div className="answer-reveal-tools"><span>Choose how to reveal answers</span><button type="button" className="fun-action secondary answer-reveal-all-button" aria-controls="answer-reveal-list" aria-expanded={allExerciseAnswersRevealed} onClick={toggleAllExerciseAnswers}>{allExerciseAnswersRevealed?'Hide all answers in this exercise':'Reveal all answers in this exercise'}</button></div><div id="answer-reveal-list" className="answer-reveal-list">{answerBank.answers.map((item,index)=>{const id=`${answerBank.id}-${index}`;const isRevealed=revealedAnswers.has(id);return <article className={`answer-reveal-item ${isRevealed?'is-revealed':''}`} key={id}><div className="answer-reveal-question"><span className="answer-reveal-number">{index+1}</span><div><p>{item.prompt}</p><a className="answer-reveal-pdf-link" href={material ? `${materialIsCloud?'/api/classroom-material/file':objectUrlRef.current}#page=${answerBank.pdfPage}` : '#pdf-material'} onClick={(event)=>openExercisePage(event,answerBank.pdfPage)}>Student Book p. {answerBank.printedPage} · Open in PDF</a></div></div><button type="button" className="fun-action secondary answer-reveal-button" aria-expanded={isRevealed} onClick={()=>toggleAnswer(id)}>{isRevealed?'Hide answer':'View answer'}</button>{isRevealed&&<p className={`answer-reveal-answer ${item.matching?'matching-answer':''}`}><strong>{item.matching?'Answer line':'Answer'}:</strong> {item.answer}</p>}</article>})}</div></>}
       </section>
     </div>
   );
