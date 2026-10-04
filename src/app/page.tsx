@@ -1,8 +1,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Home } from 'lucide-react';
+import StudentBubbles from './student-bubbles';
+import { getPublicStudentBubbles } from '@/lib/public-students';
 
-export default function LandingPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function LandingPage() {
+  const students = await getPublicStudentBubbles();
   return <main className="landing-page">
     <div className="landing-sunburst landing-sunburst-one" aria-hidden="true">✦</div>
     <div className="landing-sunburst landing-sunburst-two" aria-hidden="true">✿</div>
@@ -20,6 +25,7 @@ export default function LandingPage() {
         <p>Big cheers for brave tries, kind hearts, and every little win.</p>
         <Link className="landing-signin" href="/login">Sign in <span aria-hidden="true">→</span></Link>
         <div className="landing-cheer"><span>⭐</span><span>🌈</span><span>💛</span> A brighter day is one click away!</div>
+        <StudentBubbles students={students} label="Student name bubbles on the welcome page" />
       </div>
       <div className="landing-floating landing-floating-left" aria-hidden="true">+1 <span>kindness</span></div>
       <div className="landing-floating landing-floating-right" aria-hidden="true">✨ SUPERSTAR ✨</div>
