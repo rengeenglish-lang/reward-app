@@ -130,7 +130,7 @@ body{background:radial-gradient(ellipse at 95% 4%,#fff3c9 0 8%,transparent 24%),
 
 .landing-page{--landing-ink:#293553;min-height:100svh;position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;padding:22px clamp(20px,5vw,76px) 18px;background:radial-gradient(ellipse at 12% 10%,#fff18b 0 8%,transparent 31%),radial-gradient(ellipse at 88% 80%,#7ce8e5 0 8%,transparent 31%),linear-gradient(130deg,#ffb34f 0%,#ff7384 34%,#c76cda 68%,#7775ed 100%);color:var(--landing-ink)}
 .landing-page:before,.landing-page:after{content:"";position:absolute;z-index:-1;border-radius:50%;pointer-events:none}.landing-page:before{width:48vw;height:48vw;min-width:360px;min-height:360px;right:-12vw;top:-21vw;background:linear-gradient(135deg,#ffef8f88,#fff9)}.landing-page:after{width:43vw;height:43vw;min-width:330px;min-height:330px;left:-17vw;bottom:-23vw;background:linear-gradient(135deg,#75e5e688,#fff8)}
-.landing-header,.landing-footer{display:flex;align-items:center;justify-content:space-between;gap:14px}.landing-brand{display:inline-flex;align-items:center;gap:9px;text-decoration:none;color:#fff;font:700 17px var(--display);text-shadow:0 2px 8px #67348a35}.landing-brand span{display:grid;place-items:center;width:31px;height:31px;border-radius:11px;background:#fff;color:#ed687e;text-shadow:none;box-shadow:0 4px 0 #743eaa24}.landing-header-note{color:#fff;font-size:12px;font-weight:700;text-shadow:0 2px 8px #67348a35}
+.landing-header,.landing-footer{display:flex;align-items:center;justify-content:space-between;gap:14px}.landing-brand{display:inline-flex;align-items:center;gap:9px;text-decoration:none;color:#fff;font:700 17px var(--display);text-shadow:0 2px 8px #67348a35}.landing-brand img{width:38px;height:38px;object-fit:contain;border-radius:11px;background:#fff1c7;box-shadow:0 4px 0 #743eaa24}.landing-brand span{display:inline}.landing-header-note{color:#fff;font-size:12px;font-weight:700;text-shadow:0 2px 8px #67348a35}
 .landing-hero{position:relative;display:grid;place-items:center;width:min(100%,1040px);min-height:610px;margin:0 auto}.landing-hero-card{position:relative;z-index:2;width:min(100%,620px);padding:clamp(34px,6vw,62px) clamp(24px,6vw,60px) 35px;text-align:center;background:#ffffffed;border:3px solid #fff;border-radius:36px;box-shadow:0 12px 0 #593c8f25,0 30px 85px #46315c35;backdrop-filter:blur(8px)}
 .landing-pill{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:#fff3ce;color:#78571c;font-size:10px;font-weight:800;letter-spacing:1px}.landing-pill span{width:8px;height:8px;border-radius:50%;background:#f2a932;box-shadow:0 0 0 4px #f2a9322a}
 .landing-wordmark{margin:24px 0 0;font-family:var(--display);line-height:.98;letter-spacing:-2px}.landing-wordmark span,.landing-wordmark strong{display:block}.landing-wordmark span{font-size:clamp(42px,8vw,68px);font-weight:700;color:#3c5baa}.landing-wordmark strong{font-size:clamp(60px,12vw,100px);font-weight:700;letter-spacing:-4px;background:linear-gradient(95deg,#ff765d,#f24688 48%,#865de4);background-clip:text;-webkit-background-clip:text;color:transparent;filter:drop-shadow(0 4px 0 #f5dcef)}
@@ -257,11 +257,14 @@ body{background:radial-gradient(ellipse at 95% 4%,#fff3c9 0 8%,transparent 24%),
 
 /* Desktop sidebar control, mobile navigation drawer, and routes back home. */
 .brand-home{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;min-width:0}
+.brand-logo-icon{width:38px;height:38px;object-fit:contain;flex:none;border-radius:11px;background:#fff1c7}
 .sidebar.collapsed .brand-home{justify-content:center}
 .sidebar.collapsed .brand-home>span{display:none}
 .sidebar.collapsed .collapse-btn{display:grid;flex:none;margin-left:0}
 .brand-home:hover .brand-mark{transform:scale(1.05)}
 .brand-mark{transition:transform .16s ease}
+.landing-logo{display:block;width:min(100%,285px);height:auto;max-height:285px;object-fit:contain;margin:12px auto 0;filter:drop-shadow(0 9px 8px #29355320)}
+.login-form-panel .login-brand img{width:40px;height:40px;object-fit:contain;border-radius:12px;background:#fff1c7}
 .mobile-menu-btn{display:none;flex:none;color:#fff!important}
 .landing-shortcut{display:flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 10px;border:1px solid #ffffff42;border-radius:10px;color:#fff;text-decoration:none;font-size:11px;font-weight:700;transition:background .15s ease,transform .15s ease}
 .landing-shortcut:hover{background:#ffffff1c;transform:translateY(-1px)}

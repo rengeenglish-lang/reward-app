@@ -3,6 +3,7 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import ClassroomFun, { ClassGoalMeter, displayStudentName, type ClassroomThemeOption } from './classroom-fun';
 import ClassroomSites from './classroom-sites';
 import MascotParade from './mascot-parade';
@@ -125,7 +126,7 @@ export default function HomePage({initialData}:{initialData:InitialData}) {
   return <main className="app-shell" data-theme={activeTheme}>
     <MascotParade classroomId={classroomId} triggerKey={mascotParadeTrigger}/>
     <aside className={`sidebar ${sidebar?'':'collapsed'} ${mobileMenuOpen?'mobile-open':''}`}>
-      <div className="brand"><Link href="/" className="brand-home" aria-label="Ezgili Champs landing page"><div className="brand-mark"><Sparkles size={20}/></div><span>Ezgili Champs</span></Link><button aria-label={sidebar?'Collapse sidebar':'Expand sidebar'} title={sidebar?'Collapse sidebar':'Expand sidebar'} className="icon-btn collapse-btn" onClick={()=>setSidebar(!sidebar)}>{sidebar?<ChevronLeft size={17}/>:<ChevronRight size={17}/>}</button></div>
+      <div className="brand"><Link href="/" className="brand-home" aria-label="Ezgili Champs landing page"><Image className="brand-logo-icon" src="/brand/ezgili-champs-mascot.png" alt="" width={38} height={38}/><span>Ezgili Champs</span></Link><button aria-label={sidebar?'Collapse sidebar':'Expand sidebar'} title={sidebar?'Collapse sidebar':'Expand sidebar'} className="icon-btn collapse-btn" onClick={()=>setSidebar(!sidebar)}>{sidebar?<ChevronLeft size={17}/>:<ChevronRight size={17}/>}</button></div>
       <div className="workspace-label">YOUR CLASSROOM</div>
       <button className="class-switch" onClick={()=>{setTab('Classrooms');setMobileMenuOpen(false)}}><span className="switch-icon"><GraduationCap size={17}/></span><span><strong>{classroom}</strong><small>Selected classroom</small></span><ChevronDown size={15}/></button>
       <div className="nav-label">MENU</div><nav>{nav.map(item=><button key={item.label} onClick={()=>{setTab(item.label);setMobileMenuOpen(false)}} className={`nav-item ${tab===item.label?'active':''}`}><item.icon size={18}/><span>{item.label}</span>{item.label==='Reward draw'&&<span className="nav-dot"/>}</button>)}</nav>
