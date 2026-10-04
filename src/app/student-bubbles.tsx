@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-type StudentBubble = { id: string; name: string; avatar: string };
+type StudentBubble = { id: string; name: string; avatar: string; points: number };
 
 export default function StudentBubbles({ students, label = 'Our classroom champs' }: { students: StudentBubble[]; label?: string }) {
   const [popping, setPopping] = useState<Set<string>>(() => new Set());
@@ -18,6 +18,9 @@ export default function StudentBubbles({ students, label = 'Our classroom champs
 
   if (!students.length) return null;
   const remaining = students.filter(student => !popped.has(student.id));
+  const scores = students.map(student => student.points);
+  const lowest = Math.min(...scores);
+  const highest = Math.max(...scores);
 
   return <section className="student-bubble-section" aria-label={label}>
     <div className="student-bubble-heading"><span aria-hidden="true">✨</span><strong>Our Champs are here!</strong><small>Tap a name bubble to pop it</small></div>
@@ -27,12 +30,17 @@ export default function StudentBubbles({ students, label = 'Our classroom champs
         type="button"
         className={`student-name-bubble student-bubble-${index % 6}${popping.has(student.id) ? ' is-popping' : ''}`}
         onClick={() => pop(student.id)}
-        aria-label={`Pop ${student.name}'s bubble`}
+        aria-label={`Pop ${student.name}'s bubble, ${student.points} ${student.points === 1 ? 'point' : 'points'}`}
+        title={`${student.name} · ${student.points} ${student.points === 1 ? 'point' : 'points'}`}
         disabled={popping.has(student.id)}
-        style={{ '--bubble-delay': `${(index % 7) * -0.28}s` } as React.CSSProperties}
+        style={{
+          '--bubble-delay': `${(index % 7) * -0.28}s`,
+          '--bubble-size': `${highest === lowest ? 82 : 68 + ((student.points - lowest) / (highest - lowest)) * 56}px`,
+        } as React.CSSProperties}
       >
         <span className="student-bubble-avatar" aria-hidden="true">{student.avatar}</span>
         <span className="student-bubble-name">{student.name}</span>
+        <span className="student-bubble-points">{student.points} {student.points === 1 ? 'pt' : 'pts'}</span>
         <span className="student-bubble-burst" aria-hidden="true">✦　✧　✦</span>
       </button>)}
       {!remaining.length && <p className="student-bubble-all-popped">Hooray for everyone! 🎉</p>}

@@ -150,10 +150,10 @@ body{background:radial-gradient(ellipse at 95% 4%,#fff3c9 0 8%,transparent 24%),
 .student-bubble-heading{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:5px 7px;margin-bottom:11px;color:#3c4770;font-size:11px}
 .student-bubble-heading>span{font-size:14px}.student-bubble-heading small{width:100%;color:#8791a3;font-size:9px;text-align:center}
 .student-bubble-field{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;overflow:visible;padding:3px 2px 7px}
-.student-name-bubble{--bubble:#fff;position:relative;display:flex;flex:0 0 76px;width:76px;height:76px;flex-direction:column;align-items:center;justify-content:center;gap:2px;overflow:hidden;border:2px solid #fff;border-radius:50%;background:var(--bubble);box-shadow:0 4px 0 #2633561b,0 0 0 1px #ffffffa8;color:#283553;cursor:pointer;animation:student-bubble-float 3.1s ease-in-out infinite;animation-delay:var(--bubble-delay);transition:transform .16s,box-shadow .16s}
+.student-name-bubble{--bubble:#fff;position:relative;display:flex;flex:0 0 var(--bubble-size);width:var(--bubble-size);height:var(--bubble-size);flex-direction:column;align-items:center;justify-content:center;gap:2px;overflow:hidden;border:2px solid #fff;border-radius:50%;background:var(--bubble);box-shadow:0 4px 0 #2633561b,0 0 0 1px #ffffffa8;color:#283553;cursor:pointer;animation:student-bubble-float 3.1s ease-in-out infinite;animation-delay:var(--bubble-delay);transition:transform .16s,box-shadow .16s}
 .student-name-bubble:hover,.student-name-bubble:focus-visible{z-index:2;transform:translateY(-4px) scale(1.06);box-shadow:0 7px 0 #26335620,0 0 0 3px #fff8;outline:none}
 .student-bubble-0{--bubble:#ffe28a}.student-bubble-1{--bubble:#a9e9e3}.student-bubble-2{--bubble:#e8d7ff}.student-bubble-3{--bubble:#ffb8ab}.student-bubble-4{--bubble:#c3edb9}.student-bubble-5{--bubble:#b8dcff}
-.student-bubble-avatar{font-size:23px;line-height:1.05;filter:drop-shadow(0 2px 1px #26335618)}.student-bubble-name{max-width:68px;overflow:hidden;color:#27364b;font-size:8px;font-weight:900;line-height:1.1;text-align:center;text-overflow:ellipsis;white-space:nowrap}
+.student-bubble-avatar{font-size:23px;line-height:1.05;filter:drop-shadow(0 2px 1px #26335618)}.student-bubble-name{max-width:calc(var(--bubble-size) - 12px);overflow:hidden;color:#27364b;font-size:8px;font-weight:900;line-height:1.1;text-align:center;text-overflow:ellipsis;white-space:nowrap}.student-bubble-points{color:#56627a;font-size:7px;font-weight:800;line-height:1}
 .student-bubble-burst{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:18px;opacity:0;pointer-events:none;text-shadow:0 1px 5px #805bd4}
 .student-name-bubble.is-popping{animation:student-bubble-pop .42s ease-in forwards;pointer-events:none}.student-name-bubble.is-popping .student-bubble-burst{animation:student-bubble-spark .42s ease-out forwards}
 .student-bubble-all-popped{width:100%;margin:12px 0;color:#6f4cad;font:700 13px var(--display);text-align:center}
@@ -164,7 +164,7 @@ body{background:radial-gradient(ellipse at 95% 4%,#fff3c9 0 8%,transparent 24%),
 .login-welcome-panel .student-bubble-heading{color:white}.login-welcome-panel .student-bubble-heading small{color:#fff9}
 .login-welcome-panel .student-bubble-field{overflow:visible}
 @media(max-width:760px){.login-welcome-panel .student-bubble-section{margin-top:24px}.login-welcome-panel .student-bubble-field{overflow:visible}.login-welcome-bubbles{position:static;margin:22px 0 0}}
-@media(max-width:420px){.student-bubble-field{gap:6px}.student-name-bubble{flex-basis:66px;width:66px;height:66px}.student-bubble-avatar{font-size:20px}.student-bubble-name{max-width:59px;font-size:7px}.student-bubble-section{padding-inline:6px}}
+@media(max-width:420px){.student-bubble-field{gap:6px}.student-bubble-avatar{font-size:20px}.student-bubble-name{font-size:7px}.student-bubble-section{padding-inline:6px}}
 @media(prefers-reduced-motion:reduce){.student-name-bubble{animation:none}.student-name-bubble.is-popping{animation-duration:.01ms}}
 
 /* Bright avatar chooser */
