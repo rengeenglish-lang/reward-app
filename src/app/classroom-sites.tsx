@@ -302,11 +302,11 @@ export default function ClassroomSites() {
         <p className="classroom-site-note">If your in-app browser shows a blank PDF preview, choose <strong>Open in browser tab</strong> to use its PDF reader.</p>
       </section>}
 
-      {material&&<section className="panel answer-reveal-panel" aria-labelledby="answer-reveal-title">
+      <section className="panel answer-reveal-panel" aria-labelledby="answer-reveal-title">
         <div className="answer-reveal-heading"><div className="panel-icon purple"><Lightbulb size={19}/></div><div><p className="eyebrow">READ, THINK, THEN REVEAL</p><h2 id="answer-reveal-title">Story answer reveal</h2><p>Choose a reading, then reveal answers one at a time. Matching answers show the complete line.</p></div></div>
         <label className="answer-reveal-select"><span className="field-label">Reading</span><select className="field-select" value={answerBank?.id || ''} onChange={(event)=>{setAnswerBankId(event.target.value);setRevealedAnswers(new Set())}}>{readingAnswerBanks.map((bank)=><option key={bank.id} value={bank.id}>Unit {bank.unit} · {bank.kind} · {bank.title}</option>)}</select></label>
         {answerBank&&<><div className="answer-reveal-meta"><strong>Student Book page {answerBank.printedPage}</strong><span>{answerBank.answers.length} answer reveals</span></div><div className="answer-reveal-list">{answerBank.answers.map((item,index)=>{const id=`${answerBank.id}-${index}`;const isRevealed=revealedAnswers.has(id);return <article className={`answer-reveal-item ${isRevealed?'is-revealed':''}`} key={id}><div className="answer-reveal-question"><span className="answer-reveal-number">{index+1}</span><p>{item.prompt}</p></div><button type="button" className="fun-action secondary answer-reveal-button" aria-expanded={isRevealed} onClick={()=>toggleAnswer(id)}>{isRevealed?'Hide answer':'View answer'}</button>{isRevealed&&<p className={`answer-reveal-answer ${item.matching?'matching-answer':''}`}><strong>{item.matching?'Answer line':'Answer'}:</strong> {item.answer}</p>}</article>})}</div></>}
-      </section>}
+      </section>
     </div>
   );
 }
