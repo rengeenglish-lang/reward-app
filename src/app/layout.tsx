@@ -8,7 +8,12 @@ const playful = Fredoka({ subsets: ['latin'], weight: 'variable', variable: '--f
 export const metadata: Metadata = {
   title: 'Ezgili Champs · Classroom rewards',
   description: 'A cheerful classroom rewards dashboard for growing minds.',
-  icons: { apple: '/brand/ezgili-champs-mascot.png' },
+  icons: {
+    icon: [
+      { url: '/favicon.ico?v=20261004-2', type: 'image/x-icon', sizes: 'any' },
+    ],
+    apple: '/brand/ezgili-champs-mascot.png?v=20261004-2',
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
