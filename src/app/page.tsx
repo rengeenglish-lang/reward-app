@@ -14,6 +14,7 @@ export default async function LandingPage() {
     <div className="landing-orbit landing-orbit-one" aria-hidden="true"/>
     <div className="landing-orbit landing-orbit-two" aria-hidden="true"/>
     <header className="landing-header"><Link className="landing-brand" href="/" aria-label="Ezgili Champs home"><Image src="/brand/ezgili-champs-mascot.png" alt="" width={38} height={38}/><span>Ezgili Champs</span></Link><span className="landing-header-note">Little wins. Big smiles.</span><Link className="site-home-button public-home-button" href="/" aria-label="Go to home page"><Home size={16}/><span>Home</span></Link></header>
+    <StudentBubbles students={students} label="Student name bubbles on the welcome page" />
     <section className="landing-hero" aria-labelledby="landing-title">
       <div className="landing-sticker landing-sticker-left" aria-hidden="true"><span>🌟</span><small>KINDNESS<br/>COUNTS!</small></div>
       <div className="landing-sticker landing-sticker-right" aria-hidden="true"><span>🎈</span><small>YOU’VE<br/>GOT THIS!</small></div>
@@ -25,7 +26,6 @@ export default async function LandingPage() {
         <p>Big cheers for brave tries, kind hearts, and every little win.</p>
         <Link className="landing-signin" href="/login">Sign in <span aria-hidden="true">→</span></Link>
         <div className="landing-cheer"><span>⭐</span><span>🌈</span><span>💛</span> A brighter day is one click away!</div>
-        <StudentBubbles students={students} label="Student name bubbles on the welcome page" />
       </div>
       <div className="landing-floating landing-floating-left" aria-hidden="true">+1 <span>kindness</span></div>
       <div className="landing-floating landing-floating-right" aria-hidden="true">✨ SUPERSTAR ✨</div>
