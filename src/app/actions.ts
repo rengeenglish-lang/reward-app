@@ -29,7 +29,7 @@ export async function signIn(formData: FormData) {
     redirect('/login?error=1');
   }
   await sql`DELETE FROM tutor_login_attempts WHERE email=${address}`;
-  await createSession(); redirect('/classroom');
+  await createSession(String(rows[0].id)); redirect('/classroom');
 }
 export async function signOut() { await revokeSession(); redirect('/login'); }
 
@@ -46,8 +46,8 @@ export async function changeTutorPassword(input:{currentPassword:string;newPassw
   const sql=sqlClient(),rows=await sql`SELECT password_hash FROM tutor WHERE id=${tutor.id}`;
   if(!rows.length||!(await argon2.verify(String(rows[0].password_hash),currentPassword))) throw new Error('Current password is incorrect');
   await sql`UPDATE tutor SET password_hash=${await argon2.hash(newPassword,{type:argon2.argon2id})},updated_at=now() WHERE id=${tutor.id}`;
-  await sql`DELETE FROM tutor_sessions`;
-  await createSession();
+  await sql`DELETE FROM tutor_sessions WHERE tutor_id=${tutor.id}`;
+  await createSession(tutor.id);
   return true;
 }
 

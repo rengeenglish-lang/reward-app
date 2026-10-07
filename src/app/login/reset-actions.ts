@@ -30,7 +30,7 @@ async function recordMiss(sql: Sql, key: string) {
 async function setPassword(sql: Sql, tutorId: string, password: string) {
   const hash = await argon2.hash(password, { type: argon2.argon2id });
   await sql`UPDATE tutor SET password_hash=${hash},updated_at=now() WHERE id=${tutorId}`;
-  await sql`DELETE FROM tutor_sessions`;
+  await sql`DELETE FROM tutor_sessions WHERE tutor_id=${tutorId}`;
   await sql`DELETE FROM tutor_password_reset_tokens WHERE tutor_id=${tutorId}`;
 }
 
@@ -38,25 +38,27 @@ async function setPassword(sql: Sql, tutorId: string, password: string) {
 export async function requestReset(formData: FormData) {
   const cfg = resetConfig();
   if (!cfg.email) redirect('/login/forgot?error=unavailable');
-  // With a fixed inbox the form needs no email: the single tutor account is reset and the link goes to RESET_EMAIL_TO.
+  // The tutor email picks the account. With a fixed inbox (RESET_EMAIL_TO) it may be left empty
+  // as long as there is exactly one tutor; the link then goes to that inbox.
   const email = z.string().email().safeParse(formData.get('email'));
   if (!cfg.to && !email.success) redirect('/login/forgot?error=invalid');
-  const address = cfg.to || (email.success ? email.data.toLowerCase() : '');
-  const throttleKey = cfg.to ? 'reset:request' : `reset:${address}`;
+  const address = email.success ? email.data.toLowerCase() : '';
+  const throttleKey = address ? `reset:${address}` : 'reset:request';
   const sql = sqlClient();
   if (!(await isLocked(sql, throttleKey))) {
     await recordMiss(sql, throttleKey); // counts every request, so mail cannot be flooded
-    const rows = cfg.to
+    const found = address
       ? await sql`SELECT t.id, r.requested_at > now()-interval '60 seconds' AS recent
-          FROM tutor t LEFT JOIN tutor_password_reset_tokens r ON r.tutor_id=t.id LIMIT 1`
+          FROM tutor t LEFT JOIN tutor_password_reset_tokens r ON r.tutor_id=t.id WHERE t.email=${address} LIMIT 1`
       : await sql`SELECT t.id, r.requested_at > now()-interval '60 seconds' AS recent
-          FROM tutor t LEFT JOIN tutor_password_reset_tokens r ON r.tutor_id=t.id WHERE t.email=${address} LIMIT 1`;
+          FROM tutor t LEFT JOIN tutor_password_reset_tokens r ON r.tutor_id=t.id LIMIT 2`;
+    const rows = address || found.length === 1 ? found : [];
     if (rows.length && !rows[0].recent) {
       const token = randomBytes(32).toString('base64url');
       await sql`INSERT INTO tutor_password_reset_tokens(tutor_id,token_hash,expires_at,requested_at,used_at)
         VALUES(${rows[0].id},${digest(token).toString('hex')},now()+${`${RESET_TOKEN_MINUTES} minutes`}::interval,now(),NULL)
         ON CONFLICT(tutor_id) DO UPDATE SET token_hash=EXCLUDED.token_hash,expires_at=EXCLUDED.expires_at,requested_at=now(),used_at=NULL`;
-      await sendResetEmail(address, `${await siteOrigin()}/login/reset?token=${encodeURIComponent(token)}`);
+      await sendResetEmail(cfg.to || address, `${await siteOrigin()}/login/reset?token=${encodeURIComponent(token)}`);
     }
   }
   redirect('/login/forgot?sent=1');

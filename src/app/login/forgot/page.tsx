@@ -21,10 +21,9 @@ export default async function ForgotPasswordPage({ searchParams }: { searchParam
     {error && MESSAGES[error] && <p className="login-error" role="alert">{MESSAGES[error]}</p>}
     {sent && <p className="login-intro" role="status"><strong>Check your email.</strong> If reset email is set up, a reset link is on its way. It works for 1 hour. Look in spam if you do not see it.</p>}
     {cfg.email && <form action={requestReset}>
-      {cfg.to
-        ? <p className="login-intro">We will email a reset link to <strong>{maskEmail(cfg.to)}</strong>.</p>
-        : <><label htmlFor="reset-email">Tutor email</label>
-          <input id="reset-email" name="email" type="email" autoComplete="username" required/></>}
+      {cfg.to && <p className="login-intro">The reset link will be emailed to <strong>{maskEmail(cfg.to)}</strong>.</p>}
+      <label htmlFor="reset-email">Tutor email{cfg.to ? ' (leave empty if there is only one account)' : ''}</label>
+      <input id="reset-email" name="email" type="email" autoComplete="username" required={!cfg.to}/>
       <button className="primary-btn" type="submit">Email me a reset link <span>→</span></button>
     </form>}
     {cfg.key && <details open={!cfg.email} style={{marginTop: cfg.email ? 18 : 0}}>
