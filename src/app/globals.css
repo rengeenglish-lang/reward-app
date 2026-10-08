@@ -371,3 +371,7 @@ body{background:radial-gradient(ellipse at 95% 4%,#fff3c9 0 8%,transparent 24%),
 
 .answer-reveal-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0 4px;color:#657487;font-size:11px}.answer-reveal-all-button{white-space:nowrap;min-height:36px;padding:7px 12px}@media(max-width:620px){.answer-reveal-tools{align-items:flex-start;flex-direction:column}}
 .answer-reveal-pdf-link{display:inline-flex;align-items:center;gap:4px;margin-top:5px;color:#6245a4;font-size:11px;font-weight:750;text-decoration:underline;text-underline-offset:2px}.answer-reveal-pdf-link:hover{color:#402778}.answer-reveal-pdf-link:focus-visible{outline:2px solid #7554bc;outline-offset:3px;border-radius:3px}
+
+/* Picture mascots scale with the surrounding emoji font size. */
+.mascot-img{display:inline-block;width:1em;height:1em;object-fit:contain;vertical-align:middle;border-radius:22%;background:#fff}
+.mascot-choices button .mascot-img{width:1.15em;height:1.15em}
