@@ -23,7 +23,7 @@ function permutation(n: number) {
 
 const serverApi: BookApi = { getBooks: () => getBooks() as Promise<Book[]>, pickBook: (id) => pickBook(id) as Promise<Book> };
 
-export default function BookPickerCard({ classroomId, classroom, api = serverApi }: { classroomId: string; classroom: string; api?: BookApi }) {
+export default function BookPickerCard({ classroomId, classroom, api = serverApi, active }: { classroomId: string; classroom: string; api?: BookApi; active?: boolean }) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [books, setBooks] = useState<Book[]>([]);
   const [picked, setPicked] = useState<Book | null>(null);
@@ -114,7 +114,7 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
 
   return (
     <>
-      <section className="fun-card book-card">
+      <section className={`fun-card book-card${active === undefined ? '' : ' tool-pane'}${active ? ' is-active' : ''}`}>
         <div className="fun-card-title">
           <div className="fun-panel-icon"><BookOpen size={18} /></div>
           <div><h2>Book picker</h2><p>Shuffle the library and pick a book for {classroom || 'your class'}.</p></div>

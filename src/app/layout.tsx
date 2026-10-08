@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Fredoka, Nunito } from 'next/font/google';
 import './globals.css';
+import './ui-refresh.css';
 
 const rounded = Nunito({ subsets: ['latin'], weight: 'variable', variable: '--font-rounded', display: 'swap' });
 const playful = Fredoka({ subsets: ['latin'], weight: 'variable', variable: '--font-playful', display: 'swap' });

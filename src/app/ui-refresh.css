@@ -1,0 +1,58 @@
+/* UI refresh: tools first, less scrolling. Loaded after globals.css so it can be removed in one step. */
+
+/* ---------- Quick tools dock ---------- */
+.tool-dock{position:sticky;top:0;z-index:30;display:flex;gap:9px;padding:10px 26px;overflow-x:auto;scrollbar-width:none;background:color-mix(in srgb,var(--theme-canvas,#fffaf0) 90%,white);backdrop-filter:blur(10px);border-bottom:1px solid var(--theme-line,#ebe8df)}
+.tool-dock::-webkit-scrollbar{display:none}
+.tool-dock-btn{flex:1 0 auto;min-width:94px;display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 10px 7px;border:2px solid transparent;border-radius:16px;background:#fff;color:#33445c;font:inherit;font-size:12px;font-weight:800;line-height:1.15;cursor:pointer;box-shadow:0 3px 0 #e9e4d6;transition:transform .12s,box-shadow .12s,border-color .12s}
+.tool-dock-btn:hover{transform:translateY(-2px)}
+.tool-dock-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #e9e4d6}
+.tool-dock-btn:focus-visible{outline:3px solid var(--theme-accent,#168f83);outline-offset:2px}
+.tool-dock-btn.is-active{border-color:var(--theme-accent,#168f83);box-shadow:0 3px 0 var(--theme-accent,#168f83)}
+.tool-dock-icon{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;color:#fff;background:#218c79}
+.tone-checkin .tool-dock-icon{background:#218c79}.tone-picker .tool-dock-icon{background:#7057c9}.tone-timer .tool-dock-icon{background:#35a6d0}
+.tone-lesson .tool-dock-icon{background:#ee7259}.tone-draw .tool-dock-icon{background:#e5588a}.tone-book .tool-dock-icon{background:#d99a18}
+.tone-badges .tool-dock-icon{background:#c4507b}.tone-parade .tool-dock-icon{background:#8b5de0}
+.tool-dock-btn.is-live{border-color:#ee7259}
+.tool-dock-btn.is-live .tool-dock-icon{animation:dockPulse 1.4s ease-in-out infinite}
+@keyframes dockPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.tool-dock-label{white-space:nowrap}
+
+/* On phones the dock moves to the bottom, where thumbs reach */
+@media (max-width:760px){
+  .tool-dock{position:fixed;top:auto;bottom:0;left:0;right:0;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));border-bottom:0;border-top:1px solid var(--theme-line,#ebe8df);box-shadow:0 -10px 26px #0000001a;background:#fffffff2}
+  .tool-dock-btn{min-width:68px;padding:6px 6px 5px;font-size:10.5px;box-shadow:none;background:transparent}
+  .tool-dock-btn:active{box-shadow:none}
+  .tool-dock-btn.is-active{background:#fff}
+  .tool-dock-icon{width:34px;height:34px;border-radius:12px}
+  .main-area{padding-bottom:92px}
+}
+
+/* ---------- Today: the daily check-in comes first ---------- */
+.page-wrap.today-layout{display:flex;flex-direction:column;padding-top:18px}
+.today-layout>*{order:6}
+.today-layout>.welcome-row{order:1}.today-layout>.toolbar{order:2}.today-layout>.lesson-start-card{order:3}
+.today-layout>.section-heading{order:4}.today-layout>.roster-card{order:5}
+.today-layout>.fun-goal-strip{order:6}.today-layout>.stats-grid{order:7}.today-layout>.champion-section{order:8}
+.today-layout>.bottom-grid{order:9}.today-layout>.page-footer{order:10}
+.today-layout .welcome-row{min-height:0;padding-bottom:4px}
+.today-layout .welcome-row h1{font-size:clamp(24px,3.4vw,32px);line-height:1.12}
+.today-layout .welcome-row h1 .desktop-break{display:none}
+.today-layout .hero-art{display:none}
+.today-layout .toolbar{padding:10px 0 12px}
+
+/* ---------- Fun & focus: pick a tool, use it, no long scroll ---------- */
+.tool-launcher{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:10px;margin:0 0 16px}
+.tool-tile{display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--theme-line,#ebe8df);border-radius:16px;background:#fff;color:#33445c;font:inherit;font-size:13px;font-weight:800;text-align:left;cursor:pointer;box-shadow:0 3px 0 #e9e4d6;transition:transform .12s,border-color .12s}
+.tool-tile:hover{transform:translateY(-2px)}
+.tool-tile:focus-visible{outline:3px solid var(--theme-accent,#168f83);outline-offset:2px}
+.tool-tile.is-active{border-color:var(--theme-accent,#168f83);background:color-mix(in srgb,var(--theme-soft,#e6f5ff) 70%,white);box-shadow:0 3px 0 var(--theme-accent,#168f83)}
+.tool-tile-icon{flex:none;width:34px;height:34px;border-radius:12px;display:grid;place-items:center;color:#fff;background:var(--theme-accent,#168f83)}
+.classroom-fun-page .tool-pane{display:none}
+.classroom-fun-page .tool-pane.is-active{display:block;animation:toolIn .22s ease-out}
+.classroom-fun-page .fun-feature-grid{display:block;max-width:780px;margin-inline:auto}
+.classroom-fun-page .fun-goal-card.tool-pane.is-active,.classroom-fun-page .timer-panel.tool-pane.is-active{max-width:780px;margin-inline:auto}
+@keyframes toolIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.tool-dock-btn,.tool-tile,.classroom-fun-page .tool-pane.is-active,.tool-dock-btn.is-live .tool-dock-icon{animation:none;transition:none}}
+
+/* Phones: the six check-in columns show their numbers only (full names stay as tooltips) so headers no longer overlap */
+@media (max-width:620px){.criteria-head .criterion-label{font-size:0;display:flex;justify-content:center}.criteria-head .criterion-index{font-size:12px}}
