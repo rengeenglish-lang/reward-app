@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import MascotFace from './mascot-face';
 
 type ParadeGesture = 'thumbs' | 'clap' | 'bow' | 'karate';
 type MascotSetting = { emoji: string; name: string };
@@ -96,7 +97,7 @@ export default function MascotParade({ classroomId, triggerKey }: { classroomId:
     <div key={paradeId} className="mascot-parade" aria-live="polite" aria-label={`${mascot.name} is celebrating`}>
       <div className={`mascot-parade-track gesture-${gesture}`}>
         <div className="mascot-cartoon">
-          <span className="mascot-parade-head" aria-hidden="true">{mascot.emoji}</span>
+          <span className="mascot-parade-head" aria-hidden="true"><MascotFace value={mascot.emoji}/></span>
           <span className="mascot-parade-body" aria-hidden="true" />
           <span className="mascot-parade-arm arm-left" aria-hidden="true" />
           <span className="mascot-parade-arm arm-right" aria-hidden="true" />
