@@ -29,7 +29,7 @@ export async function signIn(formData: FormData) {
     redirect('/login?error=1');
   }
   await sql`DELETE FROM tutor_login_attempts WHERE email=${address}`;
-  await createSession(); redirect('/classroom');
+  await createSession(String(rows[0].id)); redirect('/classroom');
 }
 export async function signOut() { await revokeSession(); redirect('/login'); }
 
@@ -46,8 +46,8 @@ export async function changeTutorPassword(input:{currentPassword:string;newPassw
   const sql=sqlClient(),rows=await sql`SELECT password_hash FROM tutor WHERE id=${tutor.id}`;
   if(!rows.length||!(await argon2.verify(String(rows[0].password_hash),currentPassword))) throw new Error('Current password is incorrect');
   await sql`UPDATE tutor SET password_hash=${await argon2.hash(newPassword,{type:argon2.argon2id})},updated_at=now() WHERE id=${tutor.id}`;
-  await sql`DELETE FROM tutor_sessions`;
-  await createSession();
+  await sql`DELETE FROM tutor_sessions WHERE tutor_id=${tutor.id}`;
+  await createSession(tutor.id);
   return true;
 }
 
@@ -61,7 +61,43 @@ export async function getInitialData() {
     sql`SELECT id,name,description,active FROM prizes ORDER BY active DESC,name`,
     sql`SELECT d.id,d.drawn_at,d.prize_name_snapshot AS prize,s.display_name AS student,s.avatar_key FROM reward_draws d JOIN students s ON s.id=d.student_id ORDER BY d.drawn_at DESC LIMIT 8`
   ]);
-  return {tutor,today,classrooms,groups,students,prizes,recentDraws};
+  // "Book returned" lives in a column added by migration 0006. Read it separately so the page still loads before that migration is applied.
+  const returned = new Map<string, boolean>();
+  try {
+    if (recentDraws.length) {
+      const flags = await sql`SELECT id,book_returned FROM reward_draws WHERE id = ANY(${recentDraws.map(d=>String(d.id))}::uuid[])`;
+      for (const f of flags) returned.set(String(f.id), Boolean(f.book_returned));
+    }
+  } catch { /* column not there yet */ }
+  return {tutor,today,classrooms,groups,students,prizes,recentDraws:recentDraws.map(d=>({...d,book_returned:returned.get(String(d.id))??false}))};
+}
+
+export async function setBookReturned(drawId: string, returned: boolean) {
+  await requireTutor(); const id=uuid.parse(drawId),flag=z.boolean().parse(returned);
+  const rows=await sqlClient()`UPDATE reward_draws SET book_returned=${flag} WHERE id=${id} RETURNING id,book_returned`;
+  if(!rows.length) throw new Error('Reward not found'); return rows[0];
+}
+
+export async function getBooks() {
+  await requireTutor();
+  return sqlClient()`SELECT id,title,series,level,cover_path,aspect::float AS aspect,position FROM books WHERE active ORDER BY position`;
+}
+
+/** Picks a random book for the class. The newest earlier pick for that class is excluded, so a class never gets the same book twice in a row. */
+export async function pickBook(classroomId: string) {
+  await requireTutor(); const classroom=uuid.parse(classroomId),sql=sqlClient();
+  const rows=await sql`WITH last_pick AS (
+    SELECT book_id FROM class_book_picks WHERE classroom_id=${classroom}::uuid ORDER BY picked_at DESC LIMIT 1
+  ), chosen AS (
+    SELECT b.id,b.title,b.series,b.level,b.cover_path,b.aspect::float AS aspect,b.position FROM books b
+    WHERE b.active AND b.id IS DISTINCT FROM (SELECT book_id FROM last_pick)
+    ORDER BY gen_random_bytes(32) LIMIT 1
+  ), saved AS (
+    INSERT INTO class_book_picks(classroom_id,book_id) SELECT ${classroom}::uuid,id FROM chosen RETURNING book_id
+  )
+  SELECT c.* FROM chosen c JOIN saved s ON s.book_id=c.id`;
+  if(!rows.length) throw new Error('Add at least two active books before picking');
+  return rows[0];
 }
 
 export async function createClassroom(input: string) {
