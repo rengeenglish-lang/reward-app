@@ -1,67 +1,71 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { PointerEvent as ReactPointerEvent } from 'react';
 import './quiz.css';
+import { MIXED, TYPE_INFO } from './types';
+import type { Done, Persona, Q, QType, Quiz } from './types';
+import { SAMPLE_ALL, SAMPLE_GRAMMAR, SAMPLE_PERSONALITY } from './samples';
+import {
+  ArithView, BlanksView, CardsView, ChoiceView, CrosswordView, DictationView, DragWordsView, EssayView, MarkWordsView,
+  MatchView, MemoryView, PersonalityView, SortParasView, SortWordsView, SummaryView, TrueFalseView, WordSearchView, shuffle,
+} from './question-views';
 
-type OrderQ = { type: 'order'; chunks: string[]; explain: string };
-type McqQ = { type: 'mcq'; q: string; options: string[]; answer: number; explain: string };
-type Q = OrderQ | McqQ;
-type Chip = { id: number; t: string; o: number };
-type Verdict = { ok: boolean; gain: number; extra: string };
+type Verdict = { ok: boolean; gain: number; note: string };
 type Game = {
-  qs: Q[]; i: number; xp: number; streak: number; best: number; lives: number; right: number;
-  miss: number[]; tray: Chip[]; bank: Chip[]; verdict: Verdict | null; picked: number | null;
+  quiz: Quiz; i: number; run: number; xp: number; streak: number; best: number; lives: number;
+  right: number; miss: number[]; verdict: Verdict | null; tally: number[];
 };
-type Screen = 'home' | 'review' | 'game' | 'result';
+type Screen = 'home' | 'options' | 'review' | 'game' | 'result';
 type Status = { msg: string; err: boolean; busy: boolean };
 type Particle = { x: number; y: number; vx: number; vy: number; r: number; c: string; a: number; rot: number };
-
-const SAMPLE: Q[] = [
-  { type: 'order', chunks: ['She', 'has', 'lived', 'in', 'Istanbul', 'for', 'ten years'], explain: 'Present perfect with for + a period of time.' },
-  { type: 'mcq', q: 'If it rains tomorrow, we ___ the picnic.', options: ['cancel', 'will cancel', 'would cancel', 'cancelled'], answer: 1, explain: 'First conditional: if + present simple, will + base verb.' },
-  { type: 'order', chunks: ['Could', 'you', 'tell', 'me', 'where', 'the station', 'is?'], explain: 'In an indirect question the verb follows the subject: where the station is.' },
-  { type: 'mcq', q: 'Choose the sentence with the correct article.', options: ['He is an university student.', 'He is a university student.', 'He is the university student.', 'He is university student.'], answer: 1, explain: 'University starts with the sound /ju:/, so we use a.' },
-  { type: 'order', chunks: ['I', 'wish', 'I', 'had', 'studied', 'harder'], explain: 'Wish + past perfect talks about a regret about the past.' },
-  { type: 'mcq', q: 'By next year, they ___ the new bridge.', options: ['finish', 'are finishing', 'will have finished', 'have finished'], answer: 2, explain: 'Future perfect: will have + past participle, for an action completed before a future time.' },
-];
+type Op = '+' | '-' | '×' | '÷';
 
 const BEST_KEY = 'snapquiz.best';
+const info = (t: QType) => TYPE_INFO.find((x) => x.id === t);
 
-function shuffle<T>(list: T[]): T[] {
-  const a = list.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+function promptOf(q: Q): string {
+  switch (q.type) {
+    case 'blanks': return 'Type the missing words.';
+    case 'dragwords': return 'Drag each word into the right gap.';
+    case 'sortwords': return 'Put the pieces in the right order.';
+    case 'dictation': return 'Listen and type what you hear.';
+    case 'arith': return `${q.a} ${q.op} ${q.b} = ?`;
+    case 'memory': return q.q || 'Find the matching pairs.';
+    case 'wordsearch': return q.q || 'Find all the hidden words.';
+    case 'crossword': return q.q || 'Solve the crossword.';
+    default: return q.q;
   }
-  return a;
 }
 
-function makeBank(q: Q): Chip[] {
-  if (q.type !== 'order') return [];
-  const base = q.chunks.map((t, id) => ({ id, t, o: 0 }));
-  let ordered = base;
-  for (let tries = 0; tries < 8; tries++) {
-    ordered = shuffle(base);
-    if (ordered.map((c) => c.t).join(' ') !== q.chunks.join(' ')) break;
+function summarise(q: Q): string {
+  switch (q.type) {
+    case 'blanks': case 'dragwords': case 'markwords': return q.text.replace(/\*/g, '_');
+    case 'sortwords': return q.chunks.join(' ');
+    case 'sortparas': return q.items.join(' → ');
+    case 'summary': return q.q;
+    case 'match': case 'memory': return `${q.q || 'Pairs'} (${q.pairs.length} pairs)`;
+    case 'cards': return `${q.q || 'Flashcards'} (${q.cards.length} cards)`;
+    case 'wordsearch': return `${q.q || 'Word search'}: ${q.words.join(', ')}`;
+    case 'crossword': return `${q.q || 'Crossword'} (${q.entries.length} words)`;
+    case 'dictation': return q.sentence;
+    case 'arith': return `${q.a} ${q.op} ${q.b}`;
+    default: return q.q;
   }
-  return ordered.map((c, o) => ({ ...c, o }));
 }
 
-function newGame(qs: Q[]): Game {
-  return { qs, i: 0, xp: 0, streak: 0, best: 0, lives: 3, right: 0, miss: [], tray: [], bank: makeBank(qs[0]), verdict: null, picked: null };
-}
-
-function moveChip(g: Game, id: number, to: 'tray' | 'bank', idx?: number): Game {
-  const fromTray = g.tray.findIndex((c) => c.id === id);
-  const fromBank = g.bank.findIndex((c) => c.id === id);
-  const chip = fromTray >= 0 ? g.tray[fromTray] : g.bank[fromBank];
-  if (!chip) return g;
-  const tray = g.tray.filter((c) => c.id !== id);
-  const bank = g.bank.filter((c) => c.id !== id);
-  if (to === 'tray') tray.splice(Math.min(idx ?? tray.length, tray.length), 0, chip);
-  else bank.push(chip);
-  return { ...g, tray, bank };
+function makeArithmetic(ops: Op[], count: number): Q[] {
+  const rnd = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1));
+  return Array.from({ length: count }, () => {
+    const op = ops[rnd(0, ops.length - 1)];
+    let a = rnd(2, 40);
+    let b = rnd(2, 20);
+    let answer = 0;
+    if (op === '+') answer = a + b;
+    else if (op === '-') { if (b > a) [a, b] = [b, a]; answer = a - b; }
+    else if (op === '×') { a = rnd(2, 12); b = rnd(2, 12); answer = a * b; }
+    else { b = rnd(2, 12); answer = rnd(2, 12); a = b * answer; }
+    return { type: 'arith', a, b, op, answer, explain: '' } as Q;
+  });
 }
 
 async function prepareImage(file: File): Promise<string> {
@@ -81,31 +85,54 @@ async function prepareImage(file: File): Promise<string> {
   return canvas.toDataURL('image/jpeg', 0.85).split(',')[1] ?? '';
 }
 
+function renderQuestion(q: Q, onDone: (d: Done) => void) {
+  switch (q.type) {
+    case 'mcq': case 'single': return <ChoiceView q={q} onDone={onDone} />;
+    case 'truefalse': return <TrueFalseView q={q} onDone={onDone} />;
+    case 'blanks': return <BlanksView q={q} onDone={onDone} />;
+    case 'dragwords': return <DragWordsView q={q} onDone={onDone} />;
+    case 'markwords': return <MarkWordsView q={q} onDone={onDone} />;
+    case 'sortwords': return <SortWordsView q={q} onDone={onDone} />;
+    case 'sortparas': return <SortParasView q={q} onDone={onDone} />;
+    case 'summary': return <SummaryView q={q} onDone={onDone} />;
+    case 'match': return <MatchView q={q} onDone={onDone} />;
+    case 'memory': return <MemoryView q={q} onDone={onDone} />;
+    case 'cards': return <CardsView q={q} onDone={onDone} />;
+    case 'essay': return <EssayView q={q} onDone={onDone} />;
+    case 'wordsearch': return <WordSearchView q={q} onDone={onDone} />;
+    case 'crossword': return <CrosswordView q={q} onDone={onDone} />;
+    case 'dictation': return <DictationView q={q} onDone={onDone} />;
+    case 'personality': return <PersonalityView q={q} onDone={onDone} />;
+    case 'arith': return <ArithView q={q} onDone={onDone} />;
+  }
+}
+
 export default function QuizApp({ canGenerate }: { canGenerate: boolean }) {
   const [screen, setScreen] = useState<Screen>('home');
-  const [title, setTitle] = useState('Your quiz');
-  const [quiz, setQuiz] = useState<Q[]>([]);
+  const [quiz, setQuiz] = useState<Quiz>({ title: 'Your quiz', qs: [] });
   const [game, setGame] = useState<Game | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
   const [thumb, setThumb] = useState<string | null>(null);
   const [over, setOver] = useState(false);
   const [status, setStatus] = useState<Status>({ msg: '', err: false, busy: false });
   const [bestXp, setBestXp] = useState(0);
-  const [hover, setHover] = useState<'tray' | 'bank' | null>(null);
+  const [picked, setPicked] = useState<Set<QType>>(new Set(MIXED));
+  const [count, setCount] = useState(8);
+  const [ops, setOps] = useState<Op[]>(['+', '-', '×']);
 
-  const trayRef = useRef<HTMLDivElement>(null);
-  const bankRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const dragRef = useRef<{ id: number; el: HTMLElement; x: number; y: number; on: boolean; ghost: HTMLElement | null; pid: number } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const partsRef = useRef<Particle[]>([]);
   const rafRef = useRef(0);
+  const gameRef = useRef<Game | null>(null);
+  gameRef.current = game;
 
   useEffect(() => {
     try { setBestXp(parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0); } catch { /* storage unavailable */ }
   }, []);
   useEffect(() => () => { if (thumb) URL.revokeObjectURL(thumb); }, [thumb]);
   useEffect(() => { window.scrollTo({ top: 0 }); }, [screen]);
+  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
 
   /* ---------- confetti ---------- */
   const burst = useCallback((n: number) => {
@@ -138,9 +165,8 @@ export default function QuizApp({ canGenerate }: { canGenerate: boolean }) {
     };
     if (!rafRef.current) rafRef.current = requestAnimationFrame(tick);
   }, []);
-  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
 
-  /* ---------- home: photo → quiz ---------- */
+  /* ---------- home and options ---------- */
   function pickPhoto(file: File | undefined | null) {
     if (!file) return;
     setPhoto(file);
@@ -148,7 +174,26 @@ export default function QuizApp({ canGenerate }: { canGenerate: boolean }) {
     setStatus({ msg: '', err: false, busy: false });
   }
 
-  async function makeQuiz() {
+  function toggleType(t: QType) {
+    setPicked((cur) => {
+      const n = new Set(cur);
+      const ex = info(t)?.exclusive;
+      if (n.has(t)) { n.delete(t); return n; }
+      if (ex) return new Set([t]);
+      Array.from(n).forEach((x) => { if (info(x)?.exclusive) n.delete(x); });
+      n.add(t);
+      return n;
+    });
+  }
+  const toggleOp = (o: Op) => setOps((cur) => (cur.includes(o) ? (cur.length > 1 ? cur.filter((x) => x !== o) : cur) : [...cur, o]));
+
+  async function createQuiz() {
+    const types = Array.from(picked);
+    if (!types.length) return;
+    if (types.includes('arith')) {
+      openReview({ title: 'Arithmetic quiz', qs: makeArithmetic(ops, Math.min(count, 15)) });
+      return;
+    }
     if (!photo) return;
     const ctl = new AbortController();
     abortRef.current = ctl;
@@ -158,13 +203,13 @@ export default function QuizApp({ canGenerate }: { canGenerate: boolean }) {
       const res = await fetch('/api/quiz/generate', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ image, mediaType: 'image/jpeg' }),
+        body: JSON.stringify({ image, mediaType: 'image/jpeg', types, count }),
         signal: ctl.signal,
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string; title?: string; questions?: Q[] };
+      const data = (await res.json().catch(() => ({}))) as { error?: string; title?: string; questions?: Q[]; outcomes?: Persona[] };
       if (!res.ok || !data.questions) throw new Error(data.error || 'Something went wrong while reading the photo. Try again.');
       setStatus({ msg: '', err: false, busy: false });
-      openReview(data.questions, data.title || 'Your quiz');
+      openReview({ title: data.title || 'Your quiz', qs: data.questions, outcomes: data.outcomes });
     } catch (e) {
       if (ctl.signal.aborted) setStatus({ msg: '', err: false, busy: false });
       else setStatus({ msg: e instanceof Error ? e.message : 'Something went wrong. Try again.', err: true, busy: false });
@@ -173,155 +218,83 @@ export default function QuizApp({ canGenerate }: { canGenerate: boolean }) {
     }
   }
 
-  function openReview(qs: Q[], name: string) {
-    setQuiz(qs);
-    setTitle(name);
+  function openReview(qz: Quiz) {
+    setQuiz(qz);
     setScreen('review');
   }
 
   /* ---------- game ---------- */
-  function begin(qs: Q[]) {
-    if (!qs.length) return;
-    setGame(newGame(qs));
+  function begin(qz: Quiz) {
+    if (!qz.qs.length) return;
+    setGame({
+      quiz: qz, i: 0, run: (gameRef.current?.run ?? 0) + 1, xp: 0, streak: 0, best: 0, lives: qz.lives ?? 3,
+      right: 0, miss: [], verdict: null, tally: Array(Math.max(qz.outcomes?.length ?? 0, 1)).fill(0),
+    });
     setScreen('game');
   }
 
-  function award(g: Game, ok: boolean): { g: Game; gain: number } {
-    if (!ok) return { g: { ...g, streak: 0, lives: g.lives - 1, miss: [...g.miss, g.i] }, gain: 0 };
-    const streak = g.streak + 1;
-    const gain = 10 + Math.min(streak - 1, 5) * 3;
-    return { g: { ...g, streak, best: Math.max(g.best, streak), right: g.right + 1, xp: g.xp + gain }, gain };
+  function finish(g: Game) {
+    if (g.xp > bestXp) {
+      setBestXp(g.xp);
+      try { localStorage.setItem(BEST_KEY, String(g.xp)); } catch { /* ignore */ }
+    }
+    setScreen('result');
+    const done = g.right + g.miss.length;
+    if (g.quiz.qs[0]?.type === 'personality' || (done ? g.right / done : 0) >= 0.6) burst(90);
   }
 
-  function settle(g: Game, ok: boolean, extra: string, picked: number | null) {
-    const r = award(g, ok);
-    setGame({ ...r.g, verdict: { ok, gain: r.gain, extra }, picked });
-    if (ok && r.g.streak >= 3) burst(24);
+  function advance(g: Game) {
+    if (g.i >= g.quiz.qs.length - 1 || g.lives <= 0) { finish(g); return; }
+    setGame({ ...g, i: g.i + 1, verdict: null });
   }
 
-  function checkOrder() {
-    if (!game || game.verdict) return;
-    const q = game.qs[game.i];
-    if (q.type !== 'order') return;
-    const want = q.chunks.join(' ');
-    const ok = game.tray.map((c) => c.t).join(' ') === want;
-    settle(game, ok, ok ? '' : `Correct sentence: ${want}`, null);
-  }
-
-  function answerMcq(k: number) {
-    if (!game || game.verdict) return;
-    const q = game.qs[game.i];
-    if (q.type !== 'mcq') return;
-    const ok = k === q.answer;
-    settle(game, ok, ok ? '' : `Right answer: ${q.options[q.answer]}`, k);
-  }
-
-  function next() {
-    if (!game) return;
-    if (game.i >= game.qs.length - 1 || game.lives <= 0) {
-      const done = game.right + game.miss.length;
-      const acc = done ? Math.round((game.right / done) * 100) : 0;
-      if (game.xp > bestXp) {
-        setBestXp(game.xp);
-        try { localStorage.setItem(BEST_KEY, String(game.xp)); } catch { /* ignore */ }
-      }
-      setScreen('result');
-      if (acc >= 60) burst(90);
+  const onDone = useCallback((d: Done) => {
+    const g = gameRef.current;
+    if (!g || g.verdict) return;
+    const q = g.quiz.qs[g.i];
+    if (q.type === 'personality') {
+      const tally = g.tally.slice();
+      if (d.pick !== undefined) tally[d.pick] = (tally[d.pick] ?? 0) + 1;
+      const ng = { ...g, tally };
+      setTimeout(() => { const cur = gameRef.current; if (cur && cur.i === g.i && cur.run === g.run) advance({ ...ng }); }, 450);
+      setGame(ng);
       return;
     }
-    const i = game.i + 1;
-    setGame({ ...game, i, tray: [], bank: makeBank(game.qs[i]), verdict: null, picked: null });
-  }
-
-  /* ---------- drag and drop (pointer events: mouse, pen and touch) ---------- */
-  function zoneAt(x: number, y: number): 'tray' | 'bank' | null {
-    const pad = 14;
-    const inside = (el: HTMLElement | null) => {
-      if (!el) return false;
-      const r = el.getBoundingClientRect();
-      return x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad;
-    };
-    if (inside(trayRef.current)) return 'tray';
-    if (inside(bankRef.current)) return 'bank';
-    return null;
-  }
-
-  function onPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
-    const chip = (e.target as HTMLElement).closest<HTMLElement>('[data-chip]');
-    if (!chip || !game || game.verdict || e.button > 0) return;
-    dragRef.current = { id: Number(chip.dataset.chip), el: chip, x: e.clientX, y: e.clientY, on: false, ghost: null, pid: e.pointerId };
-    try { chip.setPointerCapture(e.pointerId); } catch { /* ignore */ }
-  }
-
-  function onPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
-    const d = dragRef.current;
-    if (!d || e.pointerId !== d.pid) return;
-    if (!d.on && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6) {
-      d.on = true;
-      const ghost = d.el.cloneNode(true) as HTMLElement;
-      ghost.className = 'sq-chipbtn sq-ghostchip';
-      document.body.append(ghost);
-      d.ghost = ghost;
-      d.el.classList.add('sq-lifting');
+    let ng: Game;
+    let gain = 0;
+    if (d.ok) {
+      const streak = g.streak + 1;
+      gain = 10 + Math.min(streak - 1, 5) * 3 + (d.bonus ?? 0);
+      ng = { ...g, streak, best: Math.max(g.best, streak), right: g.right + 1, xp: g.xp + gain };
+    } else {
+      ng = { ...g, streak: 0, lives: g.lives - 1, miss: [...g.miss, g.i] };
     }
-    if (d.on && d.ghost) {
-      d.ghost.style.left = `${e.clientX}px`;
-      d.ghost.style.top = `${e.clientY}px`;
-      setHover(zoneAt(e.clientX, e.clientY));
+    ng.verdict = { ok: d.ok, gain, note: d.note ?? '' };
+    setGame(ng);
+    if (d.ok && ng.streak >= 3) burst(24);
+    if (d.ok && q.type === 'single') {
+      setTimeout(() => { const cur = gameRef.current; if (cur && cur.i === g.i && cur.run === g.run && cur.verdict) advance(cur); }, 900);
     }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [burst, bestXp]);
 
-  function endDrag(e: ReactPointerEvent<HTMLDivElement>, cancelled: boolean) {
-    const d = dragRef.current;
-    if (!d || e.pointerId !== d.pid) return;
-    dragRef.current = null;
-    d.ghost?.remove();
-    d.el.classList.remove('sq-lifting');
-    setHover(null);
-    if (cancelled) return;
-    if (!d.on) { // a tap sends the piece to the other side
-      setGame((g) => (g ? moveChip(g, d.id, g.tray.some((c) => c.id === d.id) ? 'bank' : 'tray') : g));
-      return;
-    }
-    const zone = zoneAt(e.clientX, e.clientY);
-    if (zone === 'tray') {
-      let idx = 0;
-      trayRef.current?.querySelectorAll<HTMLElement>('[data-chip]').forEach((el) => {
-        if (Number(el.dataset.chip) === d.id) return;
-        const r = el.getBoundingClientRect();
-        if (e.clientY > r.bottom || (e.clientY >= r.top && e.clientX > r.left + r.width / 2)) idx++;
-      });
-      setGame((g) => (g ? moveChip(g, d.id, 'tray', idx) : g));
-    } else if (zone === 'bank') {
-      setGame((g) => (g ? moveChip(g, d.id, 'bank') : g));
-    }
-  }
-
-  /* ---------- render ---------- */
-  const q = game ? game.qs[game.i] : null;
+  /* ---------- derived ---------- */
+  const qs = game?.quiz.qs ?? [];
+  const q = game ? qs[game.i] : null;
+  const personality = qs[0]?.type === 'personality';
   const done = game ? game.right + game.miss.length : 0;
   const acc = done ? Math.round(((game?.right ?? 0) / done) * 100) : 0;
-  const outOfLives = !!game && game.lives <= 0 && done < game.qs.length;
+  const outOfLives = !!game && !personality && game.lives <= 0 && game.i < qs.length - 1;
   const stars = outOfLives ? (acc >= 60 ? 1 : 0) : acc >= 90 ? 3 : acc >= 60 ? 2 : 1;
-  const missedQs = game
-    ? [...game.miss, ...Array.from({ length: Math.max(game.qs.length - done, 0) }, (_, k) => done + k)].map((i) => game.qs[i]).filter(Boolean)
-    : [];
-  const canPhoto = canGenerate;
-
-  const chipButton = (c: Chip, verdictClass: string) => (
-    <button
-      key={c.id}
-      type="button"
-      data-chip={c.id}
-      className={`sq-chipbtn${verdictClass}`}
-      onClick={(e) => {
-        if (e.detail !== 0 || !game || game.verdict) return; // pointer taps are handled on pointerup
-        setGame(moveChip(game, c.id, game.tray.some((t) => t.id === c.id) ? 'bank' : 'tray'));
-      }}
-    >
-      {c.t}
-    </button>
-  );
+  const missedQs: Q[] = game ? game.miss.map((i) => qs[i]).concat(qs.slice(game.i + 1)).filter(Boolean) : [];
+  const persona = (() => {
+    if (!game || !personality) return null;
+    const top = game.tally.reduce((b, v, i) => (v > game.tally[b] ? i : b), 0);
+    return game.quiz.outcomes?.[top] ?? null;
+  })();
+  const needsPhoto = Array.from(picked).some((t) => info(t)?.photo);
+  const canCreate = picked.size > 0 && (!needsPhoto || (!!photo && canGenerate)) && !status.busy;
+  const isLast = !!game && (game.i >= qs.length - 1 || game.lives <= 0);
 
   return (
     <div className="sq-root">
@@ -336,54 +309,109 @@ export default function QuizApp({ canGenerate }: { canGenerate: boolean }) {
           <section className="sq-card">
             <div className="sq-hero">
               <h1>Photograph a worksheet. Play it as a quiz.</h1>
-              <p className="sq-muted">Upload a picture of questions or a text. SnapQuiz turns it into sentence-builder and multiple-choice rounds with XP, streaks and lives.</p>
+              <p className="sq-muted">Upload a picture of questions or a text, then choose the kind of quiz: multiple choice, drag the words, crossword, memory game and more. Earn XP, build streaks and keep your lives.</p>
             </div>
             <label
-              className={`sq-drop${over ? ' sq-over' : ''}${canPhoto ? '' : ' sq-off'}`}
+              className={`sq-drop${over ? ' sq-over' : ''}${canGenerate ? '' : ' sq-off'}`}
               htmlFor="sq-file"
-              onDragEnter={(e) => { e.preventDefault(); if (canPhoto) setOver(true); }}
-              onDragOver={(e) => { e.preventDefault(); if (canPhoto) setOver(true); }}
+              onDragEnter={(e) => { e.preventDefault(); if (canGenerate) setOver(true); }}
+              onDragOver={(e) => { e.preventDefault(); if (canGenerate) setOver(true); }}
               onDragLeave={(e) => { e.preventDefault(); setOver(false); }}
-              onDrop={(e) => { e.preventDefault(); setOver(false); if (canPhoto) pickPhoto(e.dataTransfer.files[0]); }}
+              onDrop={(e) => { e.preventDefault(); setOver(false); if (canGenerate) pickPhoto(e.dataTransfer.files[0]); }}
             >
               <strong>Drop a photo here or tap to choose one</strong>
               <div className="sq-muted sq-small">JPG, PNG or WebP. Printed text works best.</div>
-              <input id="sq-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={!canPhoto || status.busy} onChange={(e) => pickPhoto(e.target.files?.[0])} />
+              <input id="sq-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={!canGenerate} onChange={(e) => pickPhoto(e.target.files?.[0])} />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {thumb && <img className="sq-thumb" src={thumb} alt="Selected photo" />}
             </label>
             <div className="sq-row" style={{ marginTop: 14 }}>
-              <button className="sq-btn" disabled={!photo || status.busy || !canPhoto} onClick={makeQuiz}>Make my quiz</button>
-              {status.busy && <button className="sq-btn sq-ghost" onClick={() => abortRef.current?.abort()}>Stop</button>}
-              <button className="sq-btn sq-sun" disabled={status.busy} onClick={() => openReview(SAMPLE.map((s) => ({ ...s })), 'Sample quiz: English grammar')}>Play the sample quiz</button>
+              <button className="sq-btn" disabled={!photo || !canGenerate} onClick={() => setScreen('options')}>Choose quiz type</button>
+              <button className="sq-btn sq-sun" onClick={() => openReview({ title: 'Sample quiz: English grammar', qs: SAMPLE_GRAMMAR.map((s) => ({ ...s })) })}>Play the sample quiz</button>
             </div>
-            {!canPhoto && (
-              <div className="sq-status" role="status">Photo quizzes need the tutor to be signed in. <a href="/login">Sign in</a> to use them, or play the sample quiz.</div>
+            <div className="sq-row" style={{ marginTop: 10 }}>
+              <button className="sq-btn sq-ghost" onClick={() => openReview({ title: 'Every quiz type', qs: SAMPLE_ALL.map((s) => ({ ...s })), lives: 9 })}>Try every quiz type</button>
+              <button className="sq-btn sq-ghost" onClick={() => openReview({ title: 'Personality quiz: what kind of learner are you?', qs: SAMPLE_PERSONALITY.qs, outcomes: SAMPLE_PERSONALITY.outcomes })}>Personality quiz</button>
+              <button className="sq-btn sq-ghost" onClick={() => { setPicked(new Set<QType>(['arith'])); setScreen('options'); }}>Arithmetic practice</button>
+            </div>
+            {!canGenerate && (
+              <div className="sq-status" role="status">Photo quizzes need the tutor to be signed in. <a href="/login">Sign in</a> to use them. The samples and arithmetic practice work without signing in.</div>
             )}
-            {status.msg && <div className={`sq-status${status.err ? ' sq-err' : ''}`} role="status">{status.msg}</div>}
             <div className="sq-how">
-              <div><b>Build it</b>Drag word pieces into the right order to make a correct sentence.</div>
-              <div><b>Pick it</b>Choose the right answer from four options.</div>
-              <div><b>Keep going</b>Correct answers build a streak that multiplies your XP. Three wrong answers end the round.</div>
+              <div><b>1. Upload</b>Take a photo of a worksheet, textbook page or notes.</div>
+              <div><b>2. Choose</b>Pick one or more quiz types and how many questions.</div>
+              <div><b>3. Play</b>Correct answers build a streak that multiplies your XP. Three wrong answers end the round.</div>
             </div>
+          </section>
+        )}
+
+        {screen === 'options' && (
+          <section className="sq-card">
+            <h2>Choose your quiz type</h2>
+            <p className="sq-muted sq-small" style={{ margin: '6px 0 0' }}>Select one or more. Quiz types match the H5P interactive content types.</p>
+            {thumb && needsPhoto && (
+              <div className="sq-optphoto">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={thumb} alt="Your photo" /><span className="sq-muted sq-small">Questions will be made from this photo.</span>
+              </div>
+            )}
+            <div className="sq-row" style={{ marginTop: 12 }}>
+              <button className="sq-btn sq-sun" onClick={() => setPicked(new Set(MIXED))}>Mixed quiz</button>
+              <button className="sq-btn sq-ghost" onClick={() => setPicked(new Set(TYPE_INFO.filter((t) => !t.exclusive && t.photo).map((t) => t.id)))}>Select all</button>
+              <button className="sq-btn sq-ghost" onClick={() => setPicked(new Set())}>Clear</button>
+            </div>
+            <div className="sq-types" role="group" aria-label="Quiz types">
+              {TYPE_INFO.map((t) => {
+                const on = picked.has(t.id);
+                const off = t.photo && !photo;
+                return (
+                  <button key={t.id} type="button" className={`sq-type${on ? ' sq-on' : ''}`} aria-pressed={on} disabled={off} onClick={() => toggleType(t.id)}>
+                    <b>{t.title}</b>
+                    <span>{t.blurb}</span>
+                    <small>H5P: {t.h5p}</small>
+                  </button>
+                );
+              })}
+            </div>
+            {!photo && <p className="sq-muted sq-small">Upload a photo on the first screen to unlock the other types.</p>}
+            <div className="sq-row" style={{ marginTop: 14 }}>
+              <label className="sq-small" htmlFor="sq-count"><b>How many questions</b></label>
+              <select id="sq-count" className="sq-select" value={count} onChange={(e) => setCount(Number(e.target.value))}>
+                {[4, 6, 8, 10, 12, 15].map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+            {picked.has('arith') && (
+              <div className="sq-row" style={{ marginTop: 10 }}>
+                <b className="sq-small">Sums:</b>
+                {(['+', '-', '×', '÷'] as Op[]).map((o) => (
+                  <button key={o} type="button" className={`sq-op${ops.includes(o) ? ' sq-on' : ''}`} aria-pressed={ops.includes(o)} onClick={() => toggleOp(o)}>{o === '-' ? '−' : o}</button>
+                ))}
+              </div>
+            )}
+            <div className="sq-row" style={{ marginTop: 16 }}>
+              <button className="sq-btn" disabled={!canCreate} onClick={createQuiz}>{status.busy ? 'Working…' : 'Create quiz'}</button>
+              {status.busy && <button className="sq-btn sq-ghost" onClick={() => abortRef.current?.abort()}>Stop</button>}
+              <button className="sq-btn sq-ghost" disabled={status.busy} onClick={() => setScreen('home')}>Back</button>
+            </div>
+            {status.msg && <div className={`sq-status${status.err ? ' sq-err' : ''}`} role="status">{status.msg}</div>}
           </section>
         )}
 
         {screen === 'review' && (
           <section className="sq-card">
-            <h2>{title}</h2>
+            <h2>{quiz.title}</h2>
             <p className="sq-muted sq-small" style={{ margin: '6px 0 0' }}>Remove any question that was read wrongly, then start.</p>
             <ul className="sq-qlist">
-              {quiz.map((item, i) => (
+              {quiz.qs.map((item, i) => (
                 <li key={i}>
-                  <span className={`sq-tag ${item.type === 'order' ? 'sq-order' : ''}`}>{item.type === 'order' ? 'Build' : 'Choose'}</span>
-                  <span className="sq-txt">{item.type === 'order' ? item.chunks.join(' ') : item.q}</span>
-                  <button className="sq-x" aria-label={`Remove question ${i + 1}`} onClick={() => setQuiz(quiz.filter((_, k) => k !== i))}>×</button>
+                  <span className="sq-tag">{info(item.type)?.title ?? item.type}</span>
+                  <span className="sq-txt">{summarise(item)}</span>
+                  <button className="sq-x" aria-label={`Remove question ${i + 1}`} onClick={() => setQuiz({ ...quiz, qs: quiz.qs.filter((_, k) => k !== i) })}>×</button>
                 </li>
               ))}
             </ul>
             <div className="sq-row" style={{ marginTop: 16 }}>
-              <button className="sq-btn" disabled={!quiz.length} onClick={() => begin(quiz)}>Start the quiz</button>
+              <button className="sq-btn" disabled={!quiz.qs.length} onClick={() => begin(quiz)}>Start the quiz</button>
               <button className="sq-btn sq-ghost" onClick={() => setScreen('home')}>Back</button>
             </div>
           </section>
@@ -392,83 +420,70 @@ export default function QuizApp({ canGenerate }: { canGenerate: boolean }) {
         {screen === 'game' && game && q && (
           <section className="sq-card">
             <div className="sq-hud">
-              <div className="sq-hearts" aria-label={`${game.lives} lives left`}>
-                {[0, 1, 2].map((k) => <span key={k} className={k >= game.lives ? 'sq-gone' : ''}>♥</span>)}
+              <div className="sq-hearts" aria-label={personality ? 'No lives in this quiz' : `${game.lives} lives left`}>
+                {!personality && Array.from({ length: Math.min(game.quiz.lives ?? 3, 5) }, (_, k) => <span key={k} className={k >= game.lives ? 'sq-gone' : ''}>♥</span>)}
               </div>
-              <div className="sq-bar" role="progressbar" aria-label="Progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round((game.i / game.qs.length) * 100)}>
-                <i style={{ width: `${(game.i / game.qs.length) * 100}%` }} />
+              <div className="sq-bar" role="progressbar" aria-label="Progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round((game.i / qs.length) * 100)}>
+                <i style={{ width: `${(game.i / qs.length) * 100}%` }} />
               </div>
               <div className="sq-score">
-                <span>{game.xp}</span> XP
+                {!personality && <><span>{game.xp}</span> XP</>}
                 {game.streak >= 2 && <span className="sq-streak">{game.streak} in a row</span>}
               </div>
             </div>
 
             <div style={{ marginTop: 18 }}>
-              <div className="sq-kind">{q.type === 'order' ? 'Build the sentence' : 'Choose the answer'}</div>
-              <div className="sq-prompt">{q.type === 'order' ? 'Put the pieces in the right order.' : q.q}</div>
+              <div className="sq-kind">{info(q.type)?.title} · {game.i + 1} of {qs.length}</div>
+              <div className="sq-prompt">{promptOf(q)}</div>
+              <div key={`${game.run}-${game.i}`}>{renderQuestion(q, onDone)}</div>
 
-              {q.type === 'order' ? (
-                <div onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={(e) => endDrag(e, false)} onPointerCancel={(e) => endDrag(e, true)}>
-                  <div ref={trayRef} className={`sq-tray${game.tray.length ? '' : ' sq-hint'}${hover === 'tray' ? ' sq-over' : ''}`}>
-                    {game.tray.length ? game.tray.map((c) => chipButton(c, game.verdict ? (game.verdict.ok ? ' sq-ok' : ' sq-no') : '')) : 'Drag the pieces here to build the sentence'}
-                  </div>
-                  <div ref={bankRef} className={`sq-bank${hover === 'bank' ? ' sq-over' : ''}`}>
-                    {game.bank.slice().sort((a, b) => a.o - b.o).map((c) => chipButton(c, ''))}
-                  </div>
-                </div>
-              ) : (
-                <div className="sq-opts">
-                  {q.options.map((o, k) => {
-                    const cls = game.verdict ? (k === q.answer ? ' sq-ok' : k === game.picked ? ' sq-no' : '') : '';
-                    return (
-                      <button key={k} type="button" className={`sq-opt${cls}`} disabled={!!game.verdict} onClick={() => answerMcq(k)}>
-                        <span className="sq-letter">{'ABCD'[k]}</span>
-                        <span>{o}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {game.verdict && (
+              {game.verdict && !personality && (
                 <div className={`sq-fb ${game.verdict.ok ? 'sq-ok' : 'sq-no'}`} role="status">
                   <h3>{game.verdict.ok ? `Correct! +${game.verdict.gain} XP${game.streak >= 3 ? ` · streak x${game.streak}` : ''}` : 'Not quite'}</h3>
-                  {game.verdict.extra && <p>{game.verdict.extra}</p>}
+                  {game.verdict.note && <p>{game.verdict.note}</p>}
                   {q.explain && <p className="sq-small">{q.explain}</p>}
                 </div>
               )}
-
-              <div className="sq-foot">
-                {game.verdict ? (
-                  <button className="sq-btn" autoFocus onClick={next}>{game.i >= game.qs.length - 1 || game.lives <= 0 ? 'See results' : 'Continue'}</button>
-                ) : q.type === 'order' ? (
-                  <button className="sq-btn" disabled={game.bank.length > 0} onClick={checkOrder}>Check</button>
-                ) : null}
-              </div>
+              {game.verdict && !personality && (
+                <div className="sq-foot">
+                  <button className="sq-btn" autoFocus onClick={() => advance(game)}>{isLast ? 'See results' : 'Continue'}</button>
+                </div>
+              )}
             </div>
           </section>
         )}
 
         {screen === 'result' && game && (
           <section className="sq-card">
-            <div className="sq-stars" aria-hidden="true">
-              {[0, 1, 2].map((k) => <span key={k} className={k < stars ? 'sq-on' : ''}>★</span>)}
-            </div>
-            <h2 style={{ marginTop: 10 }}>{outOfLives ? 'Out of lives. Good effort.' : acc === 100 ? 'Perfect round!' : acc >= 60 ? 'Nice work!' : 'Keep practising!'}</h2>
-            <p className="sq-muted" style={{ margin: '6px 0 0' }}>
-              {outOfLives ? `You answered ${done} of ${game.qs.length} questions before running out.` : `${game.right} of ${game.qs.length} correct.`}
-            </p>
-            <div className="sq-stats">
-              <div><b>{game.xp}</b><span className="sq-muted sq-small">XP earned</span></div>
-              <div><b>{acc}%</b><span className="sq-muted sq-small">Accuracy</span></div>
-              <div><b>{game.best}</b><span className="sq-muted sq-small">Best streak</span></div>
-            </div>
-            <div className="sq-row">
-              <button className="sq-btn" onClick={() => begin(game.qs)}>Play again</button>
-              {missedQs.length > 0 && <button className="sq-btn sq-sun" onClick={() => begin(missedQs)}>Practise missed ones</button>}
-              <button className="sq-btn sq-ghost" onClick={() => setScreen('home')}>New photo</button>
-            </div>
+            {personality ? (
+              <>
+                <div className="sq-kind">Your result</div>
+                <h2 style={{ marginTop: 8 }}>{persona?.title ?? 'All done!'}</h2>
+                <p className="sq-muted" style={{ margin: '8px 0 0' }}>{persona?.description ?? 'Thanks for playing.'}</p>
+                <div className="sq-row" style={{ marginTop: 18 }}>
+                  <button className="sq-btn" onClick={() => begin(game.quiz)}>Play again</button>
+                  <button className="sq-btn sq-ghost" onClick={() => setScreen('home')}>Home</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="sq-stars" aria-hidden="true">{[0, 1, 2].map((k) => <span key={k} className={k < stars ? 'sq-on' : ''}>★</span>)}</div>
+                <h2 style={{ marginTop: 10 }}>{outOfLives ? 'Out of lives. Good effort.' : acc === 100 ? 'Perfect round!' : acc >= 60 ? 'Nice work!' : 'Keep practising!'}</h2>
+                <p className="sq-muted" style={{ margin: '6px 0 0' }}>
+                  {outOfLives ? `You answered ${done} of ${qs.length} questions before running out.` : `${game.right} of ${qs.length} correct.`}
+                </p>
+                <div className="sq-stats">
+                  <div><b>{game.xp}</b><span className="sq-muted sq-small">XP earned</span></div>
+                  <div><b>{acc}%</b><span className="sq-muted sq-small">Accuracy</span></div>
+                  <div><b>{game.best}</b><span className="sq-muted sq-small">Best streak</span></div>
+                </div>
+                <div className="sq-row">
+                  <button className="sq-btn" onClick={() => begin({ ...game.quiz, qs: shuffle(game.quiz.qs) })}>Play again</button>
+                  {missedQs.length > 0 && <button className="sq-btn sq-sun" onClick={() => begin({ ...game.quiz, qs: missedQs })}>Practise missed ones</button>}
+                  <button className="sq-btn sq-ghost" onClick={() => setScreen('home')}>New photo</button>
+                </div>
+              </>
+            )}
           </section>
         )}
       </div>
