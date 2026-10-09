@@ -6,6 +6,7 @@ export const mascotPictures = [
   { id: 'img:babapiro', src: '/mascots/babapiro.webp', name: 'Babapiro' },
   { id: 'img:mahmut', src: '/mascots/mahmut.webp', name: 'Mahmut' },
   { id: 'img:banana', src: '/mascots/banana.webp', name: 'Banana' },
+  { id: 'img:deniz', src: '/mascots/deniz.svg', name: 'Deniz' },
 ] as const;
 
 export default function MascotFace({ value }: { value: string }) {
