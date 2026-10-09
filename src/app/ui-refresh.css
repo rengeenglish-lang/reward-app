@@ -340,3 +340,29 @@ button.student-avatar:hover{transform:scale(1.06)}
 @keyframes wkPop{from{opacity:0;transform:scale(.6) rotate(-4deg)}to{opacity:1;transform:none}}
 @media (max-width:640px){.wk-add{grid-template-columns:1fr 90px}.wk-add .fun-action{grid-column:1 / -1}.wk-edit-list li{grid-template-columns:24px minmax(0,1fr) 80px 28px}}
 @media (prefers-reduced-motion:reduce){.wk-fill,.wk-knob{transition:none}.wk-confetti i,.wk-celebrate-card{animation:none}}
+
+/* ===== Secret ballot ===== */
+.ballot-head{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.ballot-emoji{flex:none;width:56px;height:56px;border-radius:18px;background:#e6defa;display:grid;place-items:center;font-size:30px}
+.ballot-head h2{margin:0;font-size:24px}
+.ballot-head p{margin:3px 0 0;font-size:13px;color:#5d6a7d}
+.ballot-step{margin:6px 0 10px;font-size:18px}
+.ballot-note{margin:0 0 12px;font-size:13px;color:#5d6a7d}
+.ballot-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.ballot-person{width:100%;display:grid;justify-items:center;gap:4px;padding:12px 8px;border:3px solid #e4dcc6;border-radius:20px;background:#fff;font:inherit;cursor:pointer;transition:transform .1s,border-color .1s}
+.ballot-person span{font-size:34px;line-height:1}
+.ballot-person b{font-size:14px;color:#27364b;text-align:center}
+.ballot-person:hover:not(:disabled){transform:translateY(-3px);border-color:#9b86e6}
+.ballot-person.picked{border-color:#7057c9;background:#efe9ff;box-shadow:0 0 0 3px #d8cdfb}
+.ballot-person.used{opacity:.45;background:#f4f1ea}
+.ballot-person small{font-size:11px;font-weight:700;color:#7a8696}
+.ballot-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px}
+.ballot-thanks{display:grid;justify-items:center;gap:6px;padding:34px 16px;text-align:center}
+.ballot-thanks span{font-size:64px}
+.ballot-thanks h3{margin:0;font-size:24px}
+.ballot-thanks p{margin:0;color:#5d6a7d}
+.ballot-teacher{margin-top:20px;padding-top:12px;border-top:2px dashed #eadfc8}
+.ballot-results{display:grid;gap:8px;margin-top:10px}
+.ballot-results ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ballot-results li{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border-radius:12px;background:#f7f3e8;font-size:14px}
+.ballot-results .fun-action{justify-self:start}

@@ -256,3 +256,43 @@ export async function getPeriodReport(classroomId: string,period: 'week'|'month'
   const iso=(date:Date)=>date.toISOString().slice(0,10),from=iso(start),to=iso(end);
   return {from,to,rows:await getReport(classroomId,from,to)};
 }
+
+/* ---------- Secret ballot ---------- */
+
+/** Who a student has already nominated. The answer is only used to grey out those classmates on that student's own screen. */
+export async function getBallot(classroomId: string, voterId?: string) {
+  await requireTutor(); const classroom=uuid.parse(classroomId),sql=sqlClient();
+  if(!voterId){ await sql`SELECT 1 FROM student_ballots WHERE classroom_id=${classroom}::uuid LIMIT 1`; return {nominated:[] as string[]}; }
+  const rows=await sql`SELECT nominee_id FROM student_ballots WHERE voter_id=${uuid.parse(voterId)}::uuid`;
+  return {nominated:rows.map(r=>String(r.nominee_id))};
+}
+
+/** Records one nomination. The database refuses a student nominating themselves or the same classmate twice. */
+export async function castBallot(classroomId: string, voterId: string, nomineeId: string) {
+  await requireTutor(); const classroom=uuid.parse(classroomId),voter=uuid.parse(voterId),nominee=uuid.parse(nomineeId);
+  if(voter===nominee) throw new Error('You cannot choose yourself');
+  const rows=await sqlClient()`INSERT INTO student_ballots(classroom_id,voter_id,nominee_id)
+    SELECT ${classroom}::uuid,v.id,n.id FROM students v JOIN groups gv ON gv.id=v.group_id
+    CROSS JOIN students n JOIN groups gn ON gn.id=n.group_id
+    WHERE v.id=${voter}::uuid AND n.id=${nominee}::uuid AND gv.classroom_id=${classroom}::uuid AND gn.classroom_id=${classroom}::uuid
+      AND v.archived_at IS NULL AND n.archived_at IS NULL
+    ON CONFLICT (voter_id,nominee_id) DO NOTHING RETURNING id`;
+  if(!rows.length) throw new Error('That classmate was already chosen');
+  return true;
+}
+
+/** Teacher view: how many nominations each student received, never who chose whom. */
+export async function getBallotResults(classroomId: string) {
+  await requireTutor(); const classroom=uuid.parse(classroomId),sql=sqlClient();
+  const tally=await sql`SELECT n.id,n.display_name AS student,n.avatar_key,count(*)::int AS votes
+    FROM student_ballots b JOIN students n ON n.id=b.nominee_id WHERE b.classroom_id=${classroom}::uuid
+    GROUP BY n.id,n.display_name,n.avatar_key ORDER BY votes DESC,n.display_name`;
+  const voters=await sql`SELECT count(DISTINCT voter_id)::int AS voters FROM student_ballots WHERE classroom_id=${classroom}::uuid`;
+  return {tally,voters:Number(voters[0]?.voters??0)};
+}
+
+export async function resetBallot(classroomId: string) {
+  await requireTutor(); const classroom=uuid.parse(classroomId);
+  await sqlClient()`DELETE FROM student_ballots WHERE classroom_id=${classroom}::uuid`;
+  return true;
+}
