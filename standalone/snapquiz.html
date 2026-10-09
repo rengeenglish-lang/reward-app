@@ -1,0 +1,529 @@
+<title>SnapQuiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;500;700&display=swap">
+<style>
+/* Layout: one centred column, a game card that swaps screens (home, review, play, results). */
+:root{
+  --bg:#f3f5fb; --card:#ffffff; --ink:#16204a; --muted:#5d6788; --line:#dde2f0;
+  --accent:#3a4cf0; --accent-ink:#ffffff; --sun:#ffb81f; --good:#14a36b; --good-bg:#dff6ec; --bad:#e2423f; --bad-bg:#fde6e5;
+  --chip:#eef1fb; --shadow:0 2px 0 var(--line);
+  --f-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10142b; --card:#1a2040; --ink:#eef0ff; --muted:#9aa3c9; --line:#2b3463;
+    --accent:#7d8bff; --accent-ink:#10142b; --sun:#ffc53d; --good:#3ed598; --good-bg:#12372f; --bad:#ff7a76; --bad-bg:#40202b;
+    --chip:#232b55; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10142b; --card:#1a2040; --ink:#eef0ff; --muted:#9aa3c9; --line:#2b3463;
+  --accent:#7d8bff; --accent-ink:#10142b; --sun:#ffc53d; --good:#3ed598; --good-bg:#12372f; --bad:#ff7a76; --bad-bg:#40202b;
+  --chip:#232b55; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--f-body);padding-inline:16px;padding-block:20px 40px;margin:0}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.1}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:640px;margin-inline:auto;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{font-family:var(--f-display);font-weight:800;font-size:1.5rem;letter-spacing:-.02em}
+.logo b{color:var(--accent)}
+.best{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.card{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:20px;box-shadow:var(--shadow);min-width:0}
+.btn{border:0;border-radius:14px;padding:12px 20px;font-weight:700;background:var(--accent);color:var(--accent-ink);box-shadow:0 4px 0 rgba(0,0,0,.22);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.22)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:0 4px 0 rgba(0,0,0,.22)}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+.btn.sun{background:var(--sun);color:#2b1d00}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+
+/* home */
+.hero h1{font-size:clamp(1.9rem,6vw,2.6rem);font-weight:800;letter-spacing:-.02em}
+.hero p{margin:10px 0 0;max-width:46ch}
+.drop{margin-top:18px;border:2.5px dashed var(--line);border-radius:18px;padding:28px 16px;text-align:center;background:var(--chip);transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--accent)}
+.drop strong{font-family:var(--f-display);font-size:1.15rem}
+.drop input{display:none}
+.thumb{max-height:150px;border-radius:12px;margin-top:10px}
+.status{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--chip);font-weight:500}
+.status.err{background:var(--bad-bg);color:var(--bad)}
+.dots::after{content:"";animation:dots 1.2s steps(4,end) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:18px}
+.how div{background:var(--chip);border-radius:14px;padding:12px 14px;font-size:.9rem}
+.how b{display:block;font-family:var(--f-display);font-size:1rem}
+
+/* review */
+.qlist{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.qlist li{display:flex;gap:10px;align-items:flex-start;border:2px solid var(--line);border-radius:14px;padding:10px 12px}
+.qlist .tag{flex:none;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:99px;background:var(--chip);color:var(--muted);margin-top:2px}
+.qlist .tag.order{background:var(--sun);color:#2b1d00}
+.qlist .txt{flex:1;min-width:0;overflow-wrap:anywhere}
+.qlist .x{flex:none;border:0;background:transparent;color:var(--muted);font-size:1.2rem;line-height:1;padding:4px 8px;border-radius:8px}
+.qlist .x:hover{color:var(--bad)}
+
+/* hud */
+.hud{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px}
+.hearts{font-size:1.25rem;letter-spacing:.1em;color:var(--bad);white-space:nowrap}
+.hearts .gone{color:var(--line)}
+.bar{height:14px;background:var(--chip);border-radius:99px;overflow:hidden;border:2px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .35s ease}
+.score{font-family:var(--f-display);font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.streak{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:99px;background:var(--sun);color:#2b1d00;font-size:.8rem;font-weight:700}
+.streak[hidden]{display:none}
+.kind{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.prompt{font-family:var(--f-display);font-weight:600;font-size:1.35rem;margin:6px 0 16px;line-height:1.25;overflow-wrap:anywhere}
+
+/* order question */
+.tray{min-height:76px;border:2.5px dashed var(--line);border-radius:16px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;background:var(--chip);transition:border-color .15s}
+.tray.over,.bank.over{border-color:var(--accent)}
+.tray:empty::before{content:"Drag the pieces here to build the sentence";color:var(--muted);font-size:.9rem;align-self:center;margin:auto}
+.bank{margin-top:14px;min-height:56px;display:flex;flex-wrap:wrap;gap:8px;padding:6px;border:2.5px solid transparent;border-radius:16px}
+.chip{touch-action:none;user-select:none;-webkit-user-select:none;border:2px solid var(--line);background:var(--card);border-radius:12px;padding:8px 14px;font-weight:700;box-shadow:0 3px 0 var(--line);cursor:grab;max-width:100%;overflow-wrap:anywhere}
+.chip.lifting{opacity:.25}
+.chip.ok{border-color:var(--good);background:var(--good-bg);box-shadow:0 3px 0 var(--good)}
+.chip.no{border-color:var(--bad);background:var(--bad-bg);box-shadow:0 3px 0 var(--bad)}
+.ghost-chip{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-50%) rotate(-3deg) scale(1.06);box-shadow:0 12px 24px rgba(0,0,0,.25)}
+
+/* multiple choice */
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:12px;align-items:center;text-align:left;width:100%;border:2px solid var(--line);background:var(--card);border-radius:14px;padding:12px 14px;box-shadow:0 3px 0 var(--line);font-weight:500;overflow-wrap:anywhere}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt .l{flex:none;width:30px;height:30px;border-radius:9px;background:var(--chip);display:grid;place-items:center;font-family:var(--f-display);font-weight:800}
+.opt.ok{border-color:var(--good);background:var(--good-bg);box-shadow:0 3px 0 var(--good)}
+.opt.no{border-color:var(--bad);background:var(--bad-bg);box-shadow:0 3px 0 var(--bad)}
+
+/* feedback */
+.fb{margin-top:16px;border-radius:16px;padding:14px 16px}
+.fb.ok{background:var(--good-bg);color:var(--ink);border:2px solid var(--good)}
+.fb.no{background:var(--bad-bg);color:var(--ink);border:2px solid var(--bad)}
+.fb h3{font-size:1.15rem}
+.fb p{margin:4px 0 0}
+.foot{display:flex;justify-content:flex-end;margin-top:16px;gap:10px}
+
+/* results */
+.stars{font-size:2.6rem;letter-spacing:.15em;color:var(--line);line-height:1}
+.stars .on{color:var(--sun)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:18px 0}
+.stats div{background:var(--chip);border-radius:14px;padding:12px 14px}
+.stats b{display:block;font-family:var(--f-display);font-size:1.6rem;font-variant-numeric:tabular-nums}
+canvas#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="wrap">
+  <div class="top">
+    <div class="logo">Snap<b>Quiz</b></div>
+    <div class="best" id="best"></div>
+  </div>
+
+  <!-- HOME -->
+  <section class="card" id="home">
+    <div class="hero">
+      <h1>Photograph a worksheet. Play it as a quiz.</h1>
+      <p class="muted">Upload a picture of questions or a text. SnapQuiz turns it into sentence-builder and multiple-choice rounds with XP, streaks and lives.</p>
+    </div>
+    <label class="drop" id="drop" for="file">
+      <strong>Drop a photo here or tap to choose one</strong>
+      <div class="muted small">JPG, PNG or WebP. Printed text works best.</div>
+      <input type="file" id="file" accept="image/jpeg,image/png,image/webp,image/gif">
+      <img id="thumb" class="thumb" alt="Selected photo" hidden>
+    </label>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="make" disabled>Make my quiz</button>
+      <button class="btn ghost" id="stop" hidden>Stop</button>
+      <button class="btn sun" id="demo">Play the sample quiz</button>
+    </div>
+    <div class="status" id="status" hidden role="status"></div>
+    <div class="how">
+      <div><b>Build it</b>Drag word pieces into the right order to make a correct sentence.</div>
+      <div><b>Pick it</b>Choose the right answer from four options.</div>
+      <div><b>Keep going</b>Correct answers build a streak that multiplies your XP. Three wrong answers end the round.</div>
+    </div>
+  </section>
+
+  <!-- REVIEW -->
+  <section class="card" id="review" hidden>
+    <h2 id="rvTitle">Your quiz</h2>
+    <p class="muted small" style="margin:6px 0 0">Remove any question that was read wrongly, then start.</p>
+    <ul class="qlist" id="qlist"></ul>
+    <div class="row" style="margin-top:16px">
+      <button class="btn" id="start">Start the quiz</button>
+      <button class="btn ghost" id="back1">Back</button>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section class="card" id="game" hidden>
+    <div class="hud">
+      <div class="hearts" id="hearts" aria-label="Lives"></div>
+      <div class="bar" role="progressbar" aria-label="Progress" id="barwrap"><i id="barfill" style="width:0"></i></div>
+      <div class="score"><span id="xp">0</span> XP<span class="streak" id="streak" hidden></span></div>
+    </div>
+    <div style="margin-top:18px">
+      <div class="kind" id="kind"></div>
+      <div class="prompt" id="prompt"></div>
+      <div id="body"></div>
+      <div id="fb" hidden></div>
+      <div class="foot">
+        <button class="btn" id="check" disabled>Check</button>
+        <button class="btn" id="next" hidden>Continue</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="card" id="result" hidden>
+    <div class="stars" id="rStars" aria-hidden="true"></div>
+    <h2 id="rHead" style="margin-top:10px"></h2>
+    <p class="muted" id="rSub" style="margin:6px 0 0"></p>
+    <div class="stats">
+      <div><b id="rXp">0</b><span class="muted small">XP earned</span></div>
+      <div><b id="rAcc">0%</b><span class="muted small">Accuracy</span></div>
+      <div><b id="rStreak">0</b><span class="muted small">Best streak</span></div>
+    </div>
+    <div class="row">
+      <button class="btn" id="again">Play again</button>
+      <button class="btn sun" id="missed">Practise missed ones</button>
+      <button class="btn ghost" id="newq">New photo</button>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const SAMPLE=[
+  {type:"order",chunks:["She","has","lived","in","Istanbul","for","ten years"],explain:"Present perfect with for + a period of time."},
+  {type:"mcq",q:"If it rains tomorrow, we ___ the picnic.",options:["cancel","will cancel","would cancel","cancelled"],answer:1,explain:"First conditional: if + present simple, will + base verb."},
+  {type:"order",chunks:["Could","you","tell","me","where","the station","is?"],explain:"In an indirect question the verb follows the subject: where the station is."},
+  {type:"mcq",q:"Choose the sentence with the correct article.",options:["He is an university student.","He is a university student.","He is the university student.","He is university student."],answer:1,explain:"University starts with the sound /juː/, so we use a."},
+  {type:"order",chunks:["I","wish","I","had","studied","harder"],explain:"Wish + past perfect talks about a regret about the past."},
+  {type:"mcq",q:"By next year, they ___ the new bridge.",options:["finish","are finishing","will have finished","have finished"],answer:2,explain:"Future perfect: will have + past participle, for an action completed before a future time."}
+];
+
+let sampleFn=null, imgOK=false, photo=null, ctl=null;
+let quiz=[], missedIdx=[], S=null;
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let bestXp=parseInt(store.get("snapquiz.best")||"0",10)||0;
+function showBest(){ $("best").textContent=bestXp?("Best round: "+bestXp+" XP"):""; }
+showBest();
+
+/* ---------- capability setup ---------- */
+(async function(){
+  try{
+    if(window.claude&&window.claude.use){
+      sampleFn=await window.claude.use("sample");
+      if(sampleFn){ const lim=await sampleFn.limits().catch(()=>null); imgOK=!!(lim&&lim.images); }
+    }
+  }catch(e){ sampleFn=null; }
+  if(!sampleFn||!imgOK){
+    say("Photo reading is not available in this view. You can still play the sample quiz.","err");
+    $("drop").style.opacity=".5"; $("file").disabled=true;
+  }
+})();
+
+function say(msg,kind,dots){
+  const s=$("status"); s.hidden=!msg; s.className="status"+(kind==="err"?" err":"");
+  s.textContent=msg||""; if(dots){ const d=document.createElement("span"); d.className="dots"; s.append(d); }
+}
+function screen(id){ ["home","review","game","result"].forEach(x=>$(x).hidden=x!==id); window.scrollTo({top:0}); }
+
+/* ---------- photo → questions ---------- */
+function setPhoto(f){
+  if(!f) return;
+  photo=f; $("make").disabled=false; say("");
+  const t=$("thumb"); try{ if(t.dataset.u) URL.revokeObjectURL(t.dataset.u); const u=URL.createObjectURL(f); t.dataset.u=u; t.src=u; t.hidden=false; }catch(e){}
+}
+$("file").addEventListener("change",e=>setPhoto(e.target.files[0]));
+const drop=$("drop");
+["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over")}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over")}));
+drop.addEventListener("drop",e=>{ if(!$("file").disabled && e.dataTransfer.files[0]) setPhoto(e.dataTransfer.files[0]); });
+
+const PROMPT=`You are building a language-practice quiz from the attached photo. The photo shows questions, exercises or a text.
+Create 8 questions in total: about half "order" questions and half "mcq" questions.
+- If the photo already contains questions, use them (rewrite as needed). Otherwise write questions about the content shown.
+- "order": a sentence split into 3 to 8 pieces (single words or short phrases). "chunks" lists the pieces in the CORRECT order. The sentence must be natural and have one clearly best order.
+- "mcq": a question with exactly 4 options and "answer" = the zero-based index of the correct option.
+- Every question has a one-sentence "explain" that says why the answer is right.
+- Keep the language of the photo.
+Reply with only JSON in this shape:
+{"title":"short quiz title","questions":[{"type":"order","chunks":["I","have","two","cats"],"explain":"..."},{"type":"mcq","q":"...","options":["a","b","c","d"],"answer":0,"explain":"..."}]}`;
+
+function cleanQs(list){
+  const out=[];
+  for(const q of (list||[])){
+    if(!q) continue;
+    if(q.type==="order"&&Array.isArray(q.chunks)){
+      const ch=q.chunks.map(c=>String(c).trim()).filter(Boolean);
+      if(ch.length>=3&&ch.length<=10) out.push({type:"order",chunks:ch,explain:String(q.explain||"")});
+    } else if(q.type==="mcq"&&Array.isArray(q.options)&&q.options.length>=3){
+      const opts=q.options.slice(0,4).map(String), a=Number(q.answer);
+      if(a>=0&&a<opts.length&&q.q) out.push({type:"mcq",q:String(q.q),options:opts,answer:a,explain:String(q.explain||"")});
+    }
+  }
+  return out;
+}
+const ERR={
+  not_granted:"Photo reading was not allowed for this page, so only the sample quiz is available.",
+  rate_limited:"Too many requests or your usage limit was reached. Wait a bit and try again.",
+  image_rejected:"That image could not be used. Try a clearer JPG or PNG under 20 MB.",
+  invalid_json:"The reply could not be read as a quiz. Press Make my quiz to try again.",
+  refused:"That photo could not be turned into questions. Try a different one.",
+  session_expired:"Please sign in again and retry."
+};
+$("make").addEventListener("click",async()=>{
+  if(!sampleFn||!photo) return;
+  ctl=new AbortController(); $("make").disabled=true; $("stop").hidden=false; $("demo").disabled=true;
+  say("Reading your photo and writing questions",null,true);
+  try{
+    const data=await sampleFn.json(PROMPT,{images:photo,signal:ctl.signal,cache:false});
+    const qs=cleanQs(data&&data.questions);
+    if(qs.length<2) throw {code:"invalid_json"};
+    say(""); openReview(qs,(data.title&&String(data.title).slice(0,60))||"Your quiz");
+  }catch(e){
+    if(e&&e.code==="cancelled") say("");
+    else say(ERR[e&&e.code]||"Something went wrong while reading the photo. Try again.","err");
+  }finally{
+    $("make").disabled=!photo; $("stop").hidden=true; $("demo").disabled=false; ctl=null;
+  }
+});
+$("stop").addEventListener("click",()=>{ if(ctl) ctl.abort(); });
+$("demo").addEventListener("click",()=>openReview(SAMPLE.map(q=>({...q})),"Sample quiz: English grammar"));
+
+/* ---------- review ---------- */
+function openReview(qs,title){
+  quiz=qs; $("rvTitle").textContent=title; renderList(); screen("review");
+}
+function renderList(){
+  const ul=$("qlist"); ul.textContent="";
+  quiz.forEach((q,i)=>{
+    const li=document.createElement("li");
+    const tag=document.createElement("span"); tag.className="tag "+q.type; tag.textContent=q.type==="order"?"Build":"Choose";
+    const t=document.createElement("span"); t.className="txt"; t.textContent=q.type==="order"?q.chunks.join(" "):q.q;
+    const x=document.createElement("button"); x.className="x"; x.textContent="×"; x.setAttribute("aria-label","Remove question "+(i+1));
+    x.onclick=()=>{ quiz.splice(i,1); renderList(); };
+    li.append(tag,t,x); ul.append(li);
+  });
+  $("start").disabled=quiz.length===0;
+}
+$("back1").onclick=()=>screen("home");
+$("start").onclick=()=>begin(quiz);
+
+/* ---------- game engine ---------- */
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function begin(qs){
+  S={qs:qs.map(q=>({...q})),i:0,xp:0,streak:0,best:0,lives:3,right:0,miss:[],locked:false,tray:[],bank:[]};
+  screen("game"); loadQ();
+}
+function hud(){
+  $("xp").textContent=S.xp;
+  const h=$("hearts"); h.textContent="";
+  for(let k=0;k<3;k++){ const s=document.createElement("span"); s.textContent="♥"; if(k>=S.lives) s.className="gone"; h.append(s); }
+  h.setAttribute("aria-label",S.lives+" lives left");
+  $("barfill").style.width=(S.i/S.qs.length*100)+"%";
+  $("barwrap").setAttribute("aria-valuenow",Math.round(S.i/S.qs.length*100));
+  const st=$("streak"); st.hidden=S.streak<2; st.textContent=S.streak+" in a row";
+}
+function loadQ(){
+  const q=S.qs[S.i]; S.locked=false; hud();
+  $("fb").hidden=true; $("fb").textContent=""; $("next").hidden=true; $("check").hidden=false; $("check").disabled=true;
+  const body=$("body"); body.textContent="";
+  if(q.type==="order"){
+    $("kind").textContent="Build the sentence"; $("prompt").textContent="Put the pieces in the right order.";
+    let ord;
+    let tries=0;
+    do{ ord=shuffle(q.chunks.map((t,idx)=>({id:idx,t}))); tries++; }while(tries<8&&ord.map(c=>c.t).join(" ")===q.chunks.join(" "));
+    ord.forEach((c,k)=>c.o=k);
+    S.bank=ord; S.tray=[];
+    const tray=document.createElement("div"); tray.className="tray"; tray.id="tray";
+    const bank=document.createElement("div"); bank.className="bank"; bank.id="bank";
+    body.append(tray,bank); renderOrder();
+  } else {
+    $("kind").textContent="Choose the answer"; $("prompt").textContent=q.q;
+    $("check").hidden=true;
+    const box=document.createElement("div"); box.className="opts";
+    q.options.forEach((o,k)=>{
+      const b=document.createElement("button"); b.className="opt"; b.type="button";
+      const l=document.createElement("span"); l.className="l"; l.textContent="ABCD"[k];
+      const t=document.createElement("span"); t.textContent=o;
+      b.append(l,t); b.onclick=()=>answerMcq(k); box.append(b);
+    });
+    body.append(box);
+  }
+}
+function chipEl(c){
+  const b=document.createElement("button"); b.type="button"; b.className="chip"; b.textContent=c.t; b.dataset.id=c.id; return b;
+}
+function renderOrder(){
+  const tray=$("tray"), bank=$("bank"); if(!tray) return;
+  tray.textContent=""; bank.textContent="";
+  S.tray.forEach(c=>tray.append(chipEl(c)));
+  S.bank.slice().sort((a,b)=>a.o-b.o).forEach(c=>bank.append(chipEl(c)));
+  $("check").disabled=S.bank.length>0||S.locked;
+}
+/* pointer-based drag and drop (works with mouse, pen and touch) */
+let drag=null;
+function findChip(id){
+  let i=S.tray.findIndex(c=>String(c.id)===String(id));
+  if(i>=0) return {c:S.tray[i],from:"tray",i};
+  i=S.bank.findIndex(c=>String(c.id)===String(id));
+  return {c:S.bank[i],from:"bank",i};
+}
+function moveTo(id,to,idx){
+  const f=findChip(id); if(!f.c) return;
+  (f.from==="tray"?S.tray:S.bank).splice(f.i,1);
+  if(to==="tray"){ if(idx==null||idx>S.tray.length) idx=S.tray.length; S.tray.splice(idx,0,f.c); } else S.bank.push(f.c);
+  renderOrder();
+}
+$("body").addEventListener("pointerdown",e=>{
+  const chip=e.target.closest(".chip"); if(!chip||S.locked||e.button>0) return;
+  drag={id:chip.dataset.id,el:chip,x:e.clientX,y:e.clientY,on:false,ghost:null,pid:e.pointerId};
+  try{chip.setPointerCapture(e.pointerId)}catch(_){}
+});
+$("body").addEventListener("pointermove",e=>{
+  if(!drag||e.pointerId!==drag.pid) return;
+  if(!drag.on&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6){
+    drag.on=true;
+    const g=drag.el.cloneNode(true); g.classList.add("ghost-chip"); document.body.append(g); drag.ghost=g; drag.el.classList.add("lifting");
+  }
+  if(drag.on){
+    drag.ghost.style.left=e.clientX+"px"; drag.ghost.style.top=e.clientY+"px";
+    const t=zoneAt(e.clientX,e.clientY);
+    $("tray").classList.toggle("over",t==="tray"); $("bank").classList.toggle("over",t==="bank");
+  }
+});
+function zoneAt(x,y){
+  const tr=$("tray").getBoundingClientRect(), bk=$("bank").getBoundingClientRect();
+  const pad=14;
+  if(x>=tr.left-pad&&x<=tr.right+pad&&y>=tr.top-pad&&y<=tr.bottom+pad) return "tray";
+  if(x>=bk.left-pad&&x<=bk.right+pad&&y>=bk.top-pad&&y<=bk.bottom+pad) return "bank";
+  return null;
+}
+function endDrag(e,cancel){
+  if(!drag||e.pointerId!==drag.pid) return;
+  const d=drag; drag=null;
+  if(d.ghost) d.ghost.remove();
+  const tray=$("tray"), bank=$("bank");
+  if(tray) tray.classList.remove("over"); if(bank) bank.classList.remove("over");
+  if(cancel){ renderOrder(); return; }
+  if(!d.on){ // tap: send to the other side
+    const f=findChip(d.id); moveTo(d.id,f.from==="bank"?"tray":"bank"); return;
+  }
+  const z=zoneAt(e.clientX,e.clientY);
+  if(z==="tray"){
+    let idx=0;
+    tray.querySelectorAll(".chip").forEach(el=>{
+      if(el.dataset.id===String(d.id)) return;
+      const r=el.getBoundingClientRect();
+      if(e.clientY>r.bottom||(e.clientY>=r.top&&e.clientX>r.left+r.width/2)) idx++;
+    });
+    const f=findChip(d.id);
+    // index counted without the dragged chip, so it is valid after removal
+    (f.from==="tray"?S.tray:S.bank).splice(f.i,1);
+    S.tray.splice(Math.min(idx,S.tray.length),0,f.c); renderOrder();
+  } else if(z==="bank"){ moveTo(d.id,"bank"); }
+  else renderOrder();
+}
+$("body").addEventListener("pointerup",e=>endDrag(e,false));
+$("body").addEventListener("pointercancel",e=>endDrag(e,true));
+$("body").addEventListener("click",e=>{ // keyboard activation of a piece
+  const chip=e.target.closest(".chip"); if(chip&&e.detail===0&&!S.locked){ const f=findChip(chip.dataset.id); moveTo(chip.dataset.id,f.from==="bank"?"tray":"bank"); }
+});
+
+function award(correct){
+  const q=S.qs[S.i];
+  if(correct){
+    S.streak++; S.best=Math.max(S.best,S.streak); S.right++;
+    const gain=10+Math.min(S.streak-1,5)*3; S.xp+=gain; return gain;
+  }
+  S.streak=0; S.lives--; S.miss.push(S.i); return 0;
+}
+function feedback(correct,gain,extra){
+  const q=S.qs[S.i], fb=$("fb"); fb.hidden=false; fb.textContent="";
+  fb.className="fb "+(correct?"ok":"no");
+  const h=document.createElement("h3"); h.textContent=correct?("Correct! +"+gain+" XP"+(S.streak>=3?" · streak x"+S.streak:"")):"Not quite";
+  fb.append(h);
+  if(extra){ const p=document.createElement("p"); p.textContent=extra; fb.append(p); }
+  if(q.explain){ const p=document.createElement("p"); p.className="small"; p.textContent=q.explain; fb.append(p); }
+  $("check").hidden=true;
+  const nx=$("next"); nx.hidden=false;
+  const last=S.i>=S.qs.length-1||S.lives<=0;
+  nx.textContent=last?"See results":"Continue"; nx.focus({preventScroll:true});
+  hud();
+  if(correct&&S.streak>=3) burst(24);
+}
+$("check").addEventListener("click",()=>{
+  if(S.locked) return; S.locked=true;
+  const q=S.qs[S.i], got=S.tray.map(c=>c.t).join(" "), want=q.chunks.join(" ");
+  const ok=got===want, gain=award(ok);
+  $("tray").querySelectorAll(".chip").forEach(el=>el.classList.add(ok?"ok":"no"));
+  $("check").disabled=true; feedback(ok,gain,ok?"":"Correct sentence: "+want);
+});
+function answerMcq(k){
+  if(S.locked) return; S.locked=true;
+  const q=S.qs[S.i], ok=k===q.answer, gain=award(ok);
+  const btns=$("body").querySelectorAll(".opt");
+  btns.forEach((b,idx)=>{ b.disabled=true; if(idx===q.answer) b.classList.add("ok"); else if(idx===k) b.classList.add("no"); });
+  feedback(ok,gain,ok?"":"Right answer: "+q.options[q.answer]);
+}
+$("next").addEventListener("click",()=>{
+  if(S.i>=S.qs.length-1||S.lives<=0){ S.i=Math.min(S.i+1,S.qs.length); finish(); return; }
+  S.i++; loadQ();
+});
+
+/* ---------- results ---------- */
+function finish(){
+  hud();
+  const done=S.right+S.miss.length, acc=done?Math.round(S.right/done*100):0;
+  const out=S.lives<=0&&done<S.qs.length;
+  const stars=out?(acc>=60?1:0):(acc>=90?3:acc>=60?2:1);
+  const st=$("rStars"); st.textContent="";
+  for(let k=0;k<3;k++){ const s=document.createElement("span"); s.textContent="★"; if(k<stars) s.className="on"; st.append(s); }
+  $("rHead").textContent=out?"Out of lives. Good effort.":(acc===100?"Perfect round!":acc>=60?"Nice work!":"Keep practising!");
+  $("rSub").textContent=out?("You answered "+done+" of "+S.qs.length+" questions before running out."):(S.right+" of "+S.qs.length+" correct.");
+  $("rXp").textContent=S.xp; $("rAcc").textContent=acc+"%"; $("rStreak").textContent=S.best;
+  missedIdx=S.miss.slice();
+  const unanswered=[]; for(let k=done;k<S.qs.length;k++) unanswered.push(k);
+  missedIdx=missedIdx.concat(unanswered);
+  $("missed").hidden=missedIdx.length===0;
+  if(S.xp>bestXp){ bestXp=S.xp; store.set("snapquiz.best",String(bestXp)); showBest(); }
+  screen("result");
+  if(stars>=2||acc===100) burst(90);
+}
+$("again").onclick=()=>begin(S.qs);
+$("missed").onclick=()=>begin(missedIdx.map(i=>S.qs[i]));
+$("newq").onclick=()=>{ screen("home"); };
+
+/* ---------- confetti ---------- */
+const cv=$("fx"), cx=cv.getContext("2d"); let parts=[], raf=0;
+function size(){ cv.width=innerWidth*devicePixelRatio; cv.height=innerHeight*devicePixelRatio; }
+addEventListener("resize",size); size();
+function burst(n){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const cols=["#3a4cf0","#ffb81f","#14a36b","#e2423f","#7d8bff"];
+  for(let i=0;i<n;i++) parts.push({x:innerWidth/2,y:innerHeight*0.35,vx:(Math.random()-.5)*12,vy:-Math.random()*11-3,r:Math.random()*6+3,c:cols[i%cols.length],a:1,rot:Math.random()*6});
+  if(!raf) raf=requestAnimationFrame(tick);
+}
+function tick(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  parts=parts.filter(p=>p.a>0.02);
+  for(const p of parts){
+    p.x+=p.vx; p.y+=p.vy; p.vy+=.35; p.vx*=.99; p.a-=.012; p.rot+=.15;
+    cx.save(); cx.globalAlpha=Math.max(p.a,0); cx.translate(p.x*devicePixelRatio,p.y*devicePixelRatio); cx.rotate(p.rot);
+    cx.fillStyle=p.c; cx.fillRect(-p.r*devicePixelRatio/2,-p.r*devicePixelRatio/2,p.r*devicePixelRatio,p.r*devicePixelRatio*0.6); cx.restore();
+  }
+  raf=parts.length?requestAnimationFrame(tick):0;
+  if(!raf) cx.clearRect(0,0,cv.width,cv.height);
+}
+})();
+</script>
