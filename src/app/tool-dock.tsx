@@ -1,18 +1,16 @@
 'use client';
 
-import { BookOpen, Bell, ClipboardCheck, Gift, Heart, Sparkles, Timer, Users } from 'lucide-react';
-
 export type DockId = 'checkin' | 'picker' | 'timer' | 'lesson' | 'draw' | 'book' | 'badges' | 'parade';
 
 const ITEMS = [
-  { id: 'checkin', label: 'Check-in', icon: ClipboardCheck },
-  { id: 'picker', label: 'Pick a student', icon: Users },
-  { id: 'timer', label: 'Timer', icon: Timer },
-  { id: 'lesson', label: 'Lesson bell', icon: Bell },
-  { id: 'draw', label: 'Reward draw', icon: Gift },
-  { id: 'book', label: 'Book picker', icon: BookOpen },
-  { id: 'badges', label: 'Badges', icon: Heart },
-  { id: 'parade', label: 'Mascot parade', icon: Sparkles },
+  { id: 'checkin', label: 'Today’s stars', emoji: '⭐' },
+  { id: 'picker', label: 'Who’s next?', emoji: '🎯' },
+  { id: 'timer', label: 'Timer', emoji: '⏱️' },
+  { id: 'lesson', label: 'Lesson bell', emoji: '🔔' },
+  { id: 'draw', label: 'Rewards', emoji: '🎁' },
+  { id: 'book', label: 'Our Readers', emoji: '📚' },
+  { id: 'badges', label: 'Badges', emoji: '💛' },
+  { id: 'parade', label: 'Parade', emoji: '🎉' },
 ] as const;
 
 /** Quick tools: one tap from any page. Stays on screen while you scroll, and sits at the bottom on phones. */
@@ -20,7 +18,6 @@ export default function ToolDock({ active, lessonLabel, onPick }: { active: Dock
   return (
     <nav className="tool-dock" aria-label="Quick tools">
       {ITEMS.map((item) => {
-        const Icon = item.icon;
         const live = item.id === 'lesson' && Boolean(lessonLabel);
         return (
           <button
@@ -30,7 +27,7 @@ export default function ToolDock({ active, lessonLabel, onPick }: { active: Dock
             aria-current={active === item.id ? 'page' : undefined}
             onClick={() => onPick(item.id)}
           >
-            <span className="tool-dock-icon"><Icon size={19} /></span>
+            <span className="tool-dock-icon" aria-hidden="true">{item.emoji}</span>
             <span className="tool-dock-label">{live ? lessonLabel : item.label}</span>
           </button>
         );
