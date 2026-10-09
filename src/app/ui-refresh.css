@@ -459,3 +459,46 @@ button.student-avatar:hover{transform:scale(1.06)}
 .class-faces small{color:#8a84a3;font-weight:700}
 .class-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:auto}
 .class-actions .primary-btn{flex:1 1 150px;justify-content:center}
+
+/* ---------- Today: lesson + class goal in one bar, compact Top 6, tools in a side drawer ---------- */
+.today-layout>.lesson-panel{order:3}.today-layout>.champion-section{order:4}.today-layout>.section-heading{order:5}.today-layout>.dojo-grid{order:6}.today-layout>.roster-card{order:7}.today-layout>.stats-grid{order:8}.today-layout>.bottom-grid{order:9}
+.lesson-panel{position:relative;margin:10px 0 12px;border-radius:22px;overflow:hidden;background:#fff;box-shadow:0 5px 0 rgba(60,40,110,.10),0 14px 30px rgba(60,40,110,.10)}
+.lesson-panel .lesson-start-card{margin:0;border:0;border-radius:0;box-shadow:none;background:linear-gradient(110deg,#fff,#fff4df 60%,#ffedf5);padding:26px 18px 12px}
+.lesson-goal-part{position:relative;padding:26px 18px 12px;background:linear-gradient(110deg,#eefaf3,#f4f0ff);border-top:3px dashed #d9d2ee}
+.lesson-panel .lesson-start-card::before,.lesson-goal-part::before{position:absolute;left:18px;top:8px;font:900 10px var(--font);letter-spacing:.14em}
+.lesson-panel .lesson-start-card::before{content:"🔔 LESSON";color:#b0602f}
+.lesson-goal-part::before{content:"🌈 CLASS GOAL";color:#5b4a9a}
+.lesson-panel .lesson-start-card{position:relative}
+.lesson-goal-part .wk-track,.lesson-goal-part .fun-goal-strip{margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent}
+.today-layout>.champion-section{display:flex;align-items:center;gap:14px;margin:0 0 6px;padding:8px 14px;border-radius:20px;box-shadow:0 3px 0 #f1e6c9}
+.champion-section .champion-heading{margin:0;flex:none}
+.champion-section .champion-heading .eyebrow,.champion-section .champion-heading .subhead,.champion-section .champion-hint{display:none}
+.champion-section .champion-heading h2{font-size:16px;white-space:nowrap}
+.champion-section .champion-bubbles{flex:1;min-height:0;gap:8px}
+.champion-section .champion-bubble{width:68px;height:68px;flex:0 1 68px;border-width:2px;gap:0}
+.champion-section .champion-avatar{font-size:20px}
+.champion-section .champion-bubble strong{max-width:56px;font-size:9px}
+.champion-section .champion-bubble small{display:none}
+.champion-section .champion-rank{top:3px;left:6px;width:16px;height:16px;font-size:8px}
+.champion-section .champion-empty{padding:6px}
+@media (max-width:700px){.today-layout>.champion-section{flex-direction:column;align-items:flex-start;gap:6px}.champion-section .champion-bubbles{width:100%;justify-content:space-between}.champion-section .champion-bubble{width:56px;height:56px;flex:0 1 56px}.champion-section .champion-bubble strong{max-width:46px;font-size:8px}}
+
+.nav-tools{margin-top:6px;border:2px dashed rgba(255,255,255,.35)}
+.nav-tools-icon{font-size:17px;line-height:1;width:18px;text-align:center}
+.tool-drawer-scrim{position:fixed;inset:0;z-index:955;border:0;background:rgba(30,18,70,.35);cursor:default}
+.tool-drawer{position:fixed;top:0;bottom:0;left:0;z-index:960;width:min(300px,86vw);display:flex;flex-direction:column;background:#fff;color:#27364b;box-shadow:12px 0 40px rgba(20,10,60,.35);transform:translateX(-105%);visibility:hidden;transition:transform .22s ease,visibility 0s linear .22s}
+.tool-drawer.open{transform:none;visibility:visible;transition:transform .22s ease}
+.tool-drawer-head{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 10px;font-size:17px}
+.tool-drawer-close{width:34px;height:34px;border:0;border-radius:50%;background:#eceaf6;cursor:pointer}
+.tool-drawer-list{display:flex;flex-direction:column;gap:8px;padding:6px 14px 18px;overflow:auto}
+.tool-drawer-btn{display:flex;align-items:center;gap:12px;padding:8px 12px;border:2px solid transparent;border-radius:16px;background:#faf8ff;font:inherit;font-size:15px;font-weight:800;color:inherit;text-align:left;cursor:pointer;box-shadow:0 3px 0 #e6e1f5}
+.tool-drawer-btn:hover{transform:translateX(3px)}
+.tool-drawer-btn.is-active{border-color:var(--purple,#8566d6)}
+.tool-drawer-btn.is-live{border-color:#ee7259}
+.tool-drawer-btn:focus-visible,.tool-drawer-close:focus-visible{outline:3px solid var(--purple,#8566d6);outline-offset:2px}
+.tool-drawer .tool-dock-icon{width:40px;height:40px;border-radius:14px;font-size:22px}
+@media (prefers-reduced-motion:reduce){.tool-drawer{transition:none}}
+.lesson-panel .lesson-start-card{flex-wrap:wrap;row-gap:6px}
+.lesson-panel .lesson-start-copy{flex:1 1 220px;min-width:0}
+.lesson-panel .lesson-start-copy .eyebrow{display:none}
+.lesson-panel .lesson-auto{flex:1 0 100%;margin:0;font-size:12px}
