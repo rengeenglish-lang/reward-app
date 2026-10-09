@@ -1,20 +1,28 @@
 'use client';
 
 import { useEffect, useId, useMemo, useRef } from 'react';
+import TimerLook from './timer-looks';
 
-export type TimerEffect = 'ring' | 'neon' | 'bomb';
+export type TimerEffect = 'ring' | 'neon' | 'bomb' | 'liquid' | 'maze' | 'heart' | 'traffic' | 'popcorn';
 
 /** Add a new look here and give it a case in TimerStage. */
 export const TIMER_EFFECTS: { id: TimerEffect; label: string; emoji: string }[] = [
   { id: 'ring', label: 'Classic ring', emoji: '⭕' },
   { id: 'neon', label: 'Neon countdown', emoji: '🌈' },
   { id: 'bomb', label: 'Bomb fuse', emoji: '💣' },
+  { id: 'liquid', label: 'Liquid', emoji: '💧' },
+  { id: 'maze', label: 'Maze', emoji: '🧩' },
+  { id: 'heart', label: 'Heart', emoji: '❤️' },
+  { id: 'traffic', label: 'Traffic light', emoji: '🚦' },
+  { id: 'popcorn', label: 'Popcorn', emoji: '🍿' },
 ];
 
 type StageProps = { effect: Exclude<TimerEffect, 'ring'>; remaining: number; duration: number; running: boolean; clock: string; size: 'card' | 'full' };
 
 export default function TimerStage(props: StageProps) {
-  return props.effect === 'neon' ? <NeonStage {...props} /> : <BombStage {...props} />;
+  if (props.effect === 'neon') return <NeonStage {...props} />;
+  if (props.effect === 'bomb') return <BombStage {...props} />;
+  return <TimerLook name={props.effect} remaining={props.remaining} duration={props.duration} running={props.running} clock={props.clock} size={props.size} />;
 }
 
 /* ====================================================== Neon countdown ====================================================== */
@@ -128,7 +136,7 @@ function BombStage({ remaining, duration, running, clock, size }: StageProps) {
     if (!g) return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const bomb = new Image();
-    bomb.src = '/mascots/bomb.webp';
+    bomb.src = '/timers/bomb-3d.png';
     let W = 0, H = 0, dpr = 1;
     const fit = () => {
       dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -206,7 +214,7 @@ function BombStage({ remaining, duration, running, clock, size }: StageProps) {
         // the bomb at the end of the fuse
         const end = at(fuse.total);
         const bs = Math.max(70, W * 0.17);
-        if (bomb.complete && bomb.naturalWidth) g.drawImage(bomb, end.x * sx - bs / 2, end.y * sy - bs * 0.2, bs, bs);
+        if (bomb.complete && bomb.naturalWidth) g.drawImage(bomb, end.x * sx - bs / 2, end.y * sy - bs * (560 / 512) * 0.19, bs, bs * (560 / 512));
         // the burning spark
         const glow = g.createRadialGradient(spark.x * sx, spark.y * sy, 0, spark.x * sx, spark.y * sy, W * 0.045);
         glow.addColorStop(0, 'rgba(255,250,200,.95)'); glow.addColorStop(0.35, 'rgba(255,170,60,.55)'); glow.addColorStop(1, 'rgba(255,90,20,0)');

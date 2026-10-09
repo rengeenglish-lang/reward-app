@@ -93,6 +93,27 @@ function chime() {
   [880, 1108.7, 1318.5, 1760].forEach((f, i) => tone(f, 1.3, 0.2, 'triangle', i * 0.13));
 }
 
+function pop() {
+  const c = audio();
+  if (!c || !master) return;
+  const src = c.createBufferSource();
+  const filter = c.createBiquadFilter();
+  const gain = c.createGain();
+  src.buffer = noise(c, 0.06);
+  filter.type = 'bandpass';
+  filter.frequency.value = 900 + Math.random() * 900;
+  filter.Q.value = 0.9;
+  gain.gain.setValueAtTime(0.55, c.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.07);
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(master);
+  src.start();
+  tone(260 + Math.random() * 160, 0.05, 0.12, 'sine', 0, 90);
+}
+
+const phaseOf = (p: number) => (p < 0.55 ? 0 : p < 0.8 ? 1 : 2); // traffic light: green, yellow, red
+
 export const timerSounds = {
   /** Call from a tap or click, so the browser allows sound afterwards. */
   unlock() { audio(); },
@@ -103,13 +124,23 @@ export const timerSounds = {
   },
 
   /** Called once for every second that passes while the timer runs. */
-  second(effect: TimerEffect, remaining: number) {
+  second(effect: TimerEffect, remaining: number, duration = 0) {
     if (remaining <= 10) {
       tone(remaining <= 3 ? 1040 : 780, 0.12, 0.3, 'square');
       if (effect === 'bomb') click(0.4);
       return;
     }
     if (effect === 'bomb') click(0.28); // a ticking bomb
+    else if (effect === 'popcorn') { // more pops the longer it cooks
+      const pops = 1 + Math.round((duration ? 1 - remaining / duration : 0) * 4);
+      for (let i = 0; i < pops; i++) window.setTimeout(pop, i * 180 + Math.random() * 120);
+    } else if (effect === 'heart') { tone(70, 0.13, 0.5, 'sine', 0, 45); tone(64, 0.13, 0.4, 'sine', 0.17, 42); } // lub-dub
+    else if (effect === 'liquid') tone(380 + Math.random() * 300, 0.09, 0.14, 'sine', 0, 900); // a bubble
+    else if (effect === 'maze') click(0.16);
+    else if (effect === 'traffic' && duration) { // two beeps when the light changes
+      const now = phaseOf(1 - remaining / duration), before = phaseOf(1 - (remaining + 1) / duration);
+      if (now !== before) { const f = now === 1 ? 660 : 880; tone(f, 0.16, 0.28, 'sine'); tone(f, 0.16, 0.28, 'sine', 0.24); }
+    }
   },
 
   /** Hissing, crackling fuse while the bomb timer runs. */
@@ -156,7 +187,10 @@ export const timerSounds = {
   /** The timer reached zero. */
   finish(effect: TimerEffect) {
     this.fuse(false);
-    if (effect === 'bomb') boom(); else chime();
+    if (effect === 'bomb') boom();
+    else if (effect === 'popcorn') { for (let i = 0; i < 8; i++) window.setTimeout(pop, i * 70); chime(); }
+    else if (effect === 'traffic') { tone(220, 0.45, 0.3, 'sawtooth'); tone(220, 0.6, 0.3, 'sawtooth', 0.55); }
+    else chime();
   },
 
   stop() { this.fuse(false); },
