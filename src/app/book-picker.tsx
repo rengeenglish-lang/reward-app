@@ -190,6 +190,26 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
           <span className="readers-emoji" aria-hidden="true">📚</span>
           <div><h2>OUR READERS</h2><p>Pick a book for {classroom || 'your class'}, then see who returned it and who finished the project.</p></div>
         </div>
+        {books.length > 0 && (
+          <div className="shelf" role="list" aria-label="All reader books">
+            {books.map((b, i) => {
+              const out = rows.filter((r) => r.book_id === b.id && !r.returned).length;
+              return (
+                <div key={b.id} className="shelf-item" role="listitem">
+                  <button type="button" className="shelf-book" style={{ ['--w' as string]: Math.round(b.aspect * 150), ['--h' as string]: 150, ['--t' as string]: '24px', animationDelay: `${i * -0.45}s` }}
+                    onClick={() => { setPicked(b); setPhase('revealed'); }} aria-label={`Show ${b.title}`}>
+                    <span className="bk-face bk-front">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={b.cover_path} alt="" /></span>
+                    <span className="bk-face bk-back" />
+                    <span className="bk-face bk-spine" />
+                    <span className="bk-face bk-pages" />
+                  </button>
+                  <span className="shelf-title">{b.title}</span>
+                  {readers && <span className={`shelf-count${out ? ' out' : ''}`}>{out ? `${out} with students` : 'on the shelf'}</span>}
+                </div>
+              );
+            })}
+          </div>
+        )}
         <div className="readers-body">
           <div className="readers-left">
             <div className="readers-pick">
