@@ -141,3 +141,60 @@
 .tool-launcher{gap:10px;margin-bottom:14px}
 @media (max-width:1100px) and (min-width:901px){.tool-launcher{grid-template-columns:repeat(5,minmax(0,1fr))}}
 @media (max-width:760px){.tool-tile{min-height:72px;font-size:12px}.tool-tile-icon{width:36px;height:36px;font-size:21px;border-radius:12px}}
+
+/* ===== Roll call ===== */
+.rc-overlay{position:fixed;inset:0;z-index:95;display:grid;place-items:center;padding:16px;background:rgba(15,12,38,.62);backdrop-filter:blur(3px)}
+.rc-card{position:relative;width:min(1000px,100%);max-height:calc(100dvh - 32px);overflow:auto;padding:24px;border-radius:26px;background:#fff;color:#27364b;box-shadow:0 30px 80px #0007}
+.rc-close{position:absolute;top:14px;right:14px;width:40px;height:40px;border:0;border-radius:50%;background:#f1ede2;color:#27364b;display:grid;place-items:center;cursor:pointer}
+.rc-head{display:flex;gap:14px;align-items:center;margin-bottom:16px;padding-right:44px}
+.rc-emoji{flex:none;width:56px;height:56px;border-radius:18px;background:#d8f3e8;display:grid;place-items:center;font-size:30px}
+.rc-head h2{margin:0;font-size:24px}
+.rc-head p{margin:3px 0 0;font-size:13px;color:#5d6a7d}
+.rc-bar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px;padding:12px 14px;border-radius:16px;background:#f7f3e8}
+.rc-count{font-size:15px;font-weight:700}
+.rc-actions{display:flex;gap:8px;flex-wrap:wrap}
+.rc-btn{border:2px solid #e3dac0;background:#fff;border-radius:999px;padding:9px 16px;font:inherit;font-size:14px;font-weight:800;color:#33445c;cursor:pointer}
+.rc-btn.good{border-color:#2e9e6d;background:#e3f6ec;color:#17744d}
+.rc-btn.primary{border-color:transparent;background:#7057c9;color:#fff;padding:11px 28px}
+.rc-btn.quiet{border-color:transparent;background:transparent;color:#7a8696;text-decoration:underline}
+.rc-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:10px}
+.rc-student{width:100%;display:grid;grid-template-columns:44px 1fr;grid-template-areas:'a n' 'a s';align-items:center;column-gap:10px;padding:10px 12px;border:3px solid #cfeadb;border-radius:18px;background:#f4fbf7;font:inherit;text-align:left;cursor:pointer;transition:transform .1s}
+.rc-student:active{transform:scale(.98)}
+.rc-student.away{border-color:#e9dede;background:#f4f1f1;opacity:.75}
+.rc-avatar{grid-area:a;width:44px;height:44px;border-radius:15px;background:#fff;display:grid;place-items:center;font-size:25px}
+.rc-name{grid-area:n;font-size:15px;font-weight:800;color:#27364b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rc-state{grid-area:s;font-size:12.5px;font-weight:800;color:#17744d}
+.rc-student.away .rc-state{color:#8a6b6b}
+.rc-empty{padding:24px;text-align:center;color:#5d6a7d}
+.rc-foot{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:16px;font-size:13px;color:#5d6a7d}
+.roll-call-button{border-color:#2e9e6d;color:#17744d;font-weight:800}
+.present-chip,.present-toggle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0;padding:9px 12px;border-radius:14px;background:#e9f7ef;font-size:13px;font-weight:700;color:#17744d}
+.present-toggle input{width:18px;height:18px;accent-color:#2e9e6d}
+.present-chip .text-link,.present-toggle .text-link{margin-left:auto}
+.roll-hint{display:block;width:100%;margin:10px 0;padding:10px 12px;border:2px dashed #cfd8c8;border-radius:14px;background:#fbfdf9;font:inherit;font-size:13px;font-weight:800;color:#3d6b52;text-align:left;cursor:pointer}
+.student-row.is-absent{opacity:.45}
+.student-row.is-absent .student-name strong::after{content:' · away';font-weight:700;font-size:11px;color:#8a6b6b}
+.fun-presence{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px;padding:10px 14px;border-radius:16px;background:#fff;border:2px solid var(--theme-line,#ebe8df);font-size:14px;font-weight:700;color:#33445c}
+.fun-presence-btn{border:2px solid #2e9e6d;background:#e3f6ec;color:#17744d;border-radius:999px;padding:8px 16px;font:inherit;font-weight:800;cursor:pointer}
+
+/* ===== Use the space: tools fill the page instead of floating in a narrow column ===== */
+.classroom-fun-page .fun-feature-grid{max-width:none}
+.classroom-fun-page .tool-pane.is-active{max-width:1120px;margin-inline:auto}
+.classroom-fun-page .fun-goal-card.tool-pane.is-active,.classroom-fun-page .timer-panel.tool-pane.is-active{max-width:1120px}
+.readers-body{display:grid;gap:18px;align-items:start}
+.readers-give-box{display:grid;gap:10px;padding:14px;border:2px solid #eadfc8;border-radius:18px;background:#fffdf7}
+.readers-give-box h3{margin:0;font-size:17px}
+.readers-give-box label{display:grid;gap:5px;font-size:13px;font-weight:800;color:#47566b}
+.readers-give-box select{padding:11px;border:2px solid #eadfc8;border-radius:12px;background:#fff;font:inherit;font-weight:600}
+.readers-give-box .fun-action{justify-content:center;min-height:46px}
+.readers-give-box .present-toggle,.readers-give-box .roll-hint{margin:0}
+@media (min-width:1000px){
+  .readers-body{grid-template-columns:minmax(300px,380px) minmax(0,1fr)}
+  .readers-list{max-height:min(60vh,560px)}
+}
+@media (max-width:760px){.rc-card{padding:18px;border-radius:22px}.rc-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
+
+.readers-give-box .present-toggle{display:flex}
+.readers-give-box .present-toggle span{flex:1 1 140px}
+
+@media (max-width:760px){.rc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.rc-student{grid-template-columns:38px 1fr;padding:9px 10px}.rc-avatar{width:38px;height:38px;font-size:22px}.rc-name{font-size:14px}}

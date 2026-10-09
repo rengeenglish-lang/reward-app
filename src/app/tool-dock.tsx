@@ -1,8 +1,9 @@
 'use client';
 
-export type DockId = 'checkin' | 'picker' | 'timer' | 'lesson' | 'draw' | 'book' | 'badges' | 'parade';
+export type DockId = 'rollcall' | 'checkin' | 'picker' | 'timer' | 'lesson' | 'draw' | 'book' | 'badges' | 'parade';
 
 const ITEMS = [
+  { id: 'rollcall', label: 'Roll call', emoji: '📋' },
   { id: 'checkin', label: 'Today’s stars', emoji: '⭐' },
   { id: 'picker', label: 'Who’s next?', emoji: '🎯' },
   { id: 'timer', label: 'Timer', emoji: '⏱️' },
@@ -14,7 +15,7 @@ const ITEMS = [
 ] as const;
 
 /** Quick tools: one tap from any page. Stays on screen while you scroll, and sits at the bottom on phones. */
-export default function ToolDock({ active, lessonLabel, onPick }: { active: DockId | null; lessonLabel?: string; onPick: (id: DockId) => void }) {
+export default function ToolDock({ active, lessonLabel, rollLabel, onPick }: { active: DockId | null; lessonLabel?: string; rollLabel?: string; onPick: (id: DockId) => void }) {
   return (
     <nav className="tool-dock" aria-label="Quick tools">
       {ITEMS.map((item) => {
@@ -28,7 +29,7 @@ export default function ToolDock({ active, lessonLabel, onPick }: { active: Dock
             onClick={() => onPick(item.id)}
           >
             <span className="tool-dock-icon" aria-hidden="true">{item.emoji}</span>
-            <span className="tool-dock-label">{live ? lessonLabel : item.label}</span>
+            <span className="tool-dock-label">{live ? lessonLabel : item.id === 'rollcall' && rollLabel ? rollLabel : item.label}</span>
           </button>
         );
       })}
