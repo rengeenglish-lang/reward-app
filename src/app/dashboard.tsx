@@ -9,6 +9,7 @@ import ClassroomSites from './classroom-sites';
 import MascotParade from './mascot-parade';
 import ToolDock, { type DockId } from './tool-dock';
 import { RollCallModal, useRollCall } from './roll-call';
+import { useGoalSounds } from './goal-sounds';
 import { archiveClassroom, archiveStudent, createClassroom, createStudents, createStudent, createPrize, drawReward, getPeriodReport, saveBehaviorRecord, setBookReturned, setPrizeActive, signOut, updateStudent, updateStudentAvatar, updateTutorSettings, changeTutorPassword } from './actions';
 import { Activity, Archive, ArrowDownRight, ArrowRight, Award, BarChart3, Bell, BookOpen, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardCheck, Clock3, Coffee, Gamepad2, Gift, Globe2, GraduationCap, Heart, Home, Leaf, LogOut, Menu, MoreHorizontal, Pencil, Plus, Search, Settings, ShieldCheck, Smile, Sparkles, Star, Trophy, Users, X } from 'lucide-react';
 import { createWorker } from 'tesseract.js';
@@ -91,6 +92,7 @@ export default function HomePage({initialData}:{initialData:InitialData}) {
   const bellAudioRef=useRef<AudioContext|null>(null);
   const total = (s:Student)=>s.checks.filter(Boolean).length;
   const earned=students.reduce((n,s)=>n+total(s),0), possible=students.length*criteria.length;
+  useGoalSounds(classroomId,earned,initialData.today);
 
   useEffect(()=>{setClassroom(classMap.get(classroomId)||'Choose a classroom');const dbStudents=(initialData.students as Array<{id:string;display_name:string;avatar_key:string;group_id:string;classroom_id:string;criteria:Record<string,boolean>|null}>).filter(s=>s.classroom_id===classroomId);setStudents(dbStudents.map(mapStudent));setDrawStudentId('');setReportData(null);setPoppedStudents(new Set());},[classroomId]);
   useEffect(()=>{setMobileMenuOpen(false);},[tab]);
