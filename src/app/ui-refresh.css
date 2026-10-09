@@ -198,3 +198,44 @@
 .readers-give-box .present-toggle span{flex:1 1 140px}
 
 @media (max-width:760px){.rc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.rc-student{grid-template-columns:38px 1fr;padding:9px 10px}.rc-avatar{width:38px;height:38px;font-size:22px}.rc-name{font-size:14px}}
+
+/* ===== Timer effects ===== */
+.timer-effects{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:12px 0}
+.timer-effect-chips{display:flex;gap:8px;flex-wrap:wrap}
+.timer-effect-chip,.timer-sound-btn{border:2px solid #e4dcc6;background:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:13px;font-weight:800;color:#33445c;cursor:pointer}
+.timer-effect-chip.on{border-color:#7057c9;background:#efe9ff;color:#4b36a6}
+.timer-sound-btn{color:#5d6a7d}
+.timer-sound-btn.on{border-color:#2e9e6d;background:#e3f6ec;color:#17744d}
+.fun-timer-clock.has-effect .fun-clock-ring,.timer-full-ring.has-effect{display:none}
+.timer-full-effects{display:flex;justify-content:center;margin:10px 0}
+.timer-full-effects .timer-effects{justify-content:center;margin:0}
+.timer-full-effects .timer-effect-chip,.timer-full-effects .timer-sound-btn{background:#ffffff1c;border-color:#ffffff44;color:#fff}
+.timer-full-effects .timer-effect-chip.on{background:#fff;border-color:#fff;color:#2c1f73}
+.timer-full-effects .timer-sound-btn.on{background:#2e9e6d;border-color:#2e9e6d;color:#fff}
+.timer-stage{position:relative;overflow:hidden;width:100%;aspect-ratio:16/9;border-radius:22px;background:#07031a}
+.timer-stage.full{width:min(94vw,calc((100dvh - 380px) * 16 / 9));min-width:min(94vw,300px);margin-inline:auto;border-radius:26px}
+.timer-stage canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+
+/* Neon countdown */
+.neon-stage{display:grid;place-items:center}
+.neon-bg{position:absolute;inset:-35%;border-radius:50%;pointer-events:none}
+.neon-bg.a{background:repeating-conic-gradient(from 0deg,hsl(var(--h) 100% 58% / .8) 0 5deg,transparent 5deg 16deg);-webkit-mask-image:radial-gradient(circle,transparent 10%,#000 30%,#000 58%,transparent 72%);mask-image:radial-gradient(circle,transparent 10%,#000 30%,#000 58%,transparent 72%);animation:neonSpin 24s linear infinite}
+.neon-bg.b{background:repeating-conic-gradient(from 8deg,hsl(calc(var(--h) + 70) 100% 62% / .65) 0 3deg,transparent 3deg 12deg);-webkit-mask-image:radial-gradient(circle,transparent 18%,#000 38%,#000 54%,transparent 68%);mask-image:radial-gradient(circle,transparent 18%,#000 38%,#000 54%,transparent 68%);animation:neonSpin 34s linear infinite reverse;mix-blend-mode:screen}
+.neon-glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,hsl(var(--h) 100% 55% / .38),transparent 62%);transition:background .8s}
+.neon-stage.paused .neon-bg{animation-play-state:paused}
+@keyframes neonSpin{to{transform:rotate(360deg)}}
+.neon-digits{position:relative;display:flex;align-items:center;justify-content:center;gap:2.4%;height:62%;max-width:94%;perspective:900px;filter:drop-shadow(0 0 16px hsl(var(--h) 100% 70% / .85)) drop-shadow(0 10px 18px #0009)}
+.neon-tumble{display:flex;align-items:center;justify-content:center;gap:2.4%;height:100%;animation:neonTumble .75s cubic-bezier(.2,.8,.25,1)}
+.neon-digit{height:100%;width:auto;aspect-ratio:3/5}
+.neon-colon{align-self:stretch;display:flex;flex-direction:column;justify-content:space-around;padding:14% 0;width:3.5%;min-width:6px}
+.neon-colon::before,.neon-colon::after{content:'';display:block;width:100%;aspect-ratio:1;border-radius:3px;background:#e5e1ff}
+@keyframes neonTumble{0%{transform:rotateX(-100deg) rotateY(60deg) scale(.55);opacity:0}45%{transform:rotateX(18deg) rotateY(-14deg) scale(1.08);opacity:1}70%{transform:rotateX(-6deg) rotateY(5deg) scale(.98)}100%{transform:none}}
+.neon-stage.done .neon-digits{animation:neonBlink .6s steps(2,end) infinite}
+@keyframes neonBlink{50%{opacity:.25}}
+
+/* Bomb fuse */
+.bomb-stage{background:#0b1030}
+.bomb-clock{position:absolute;left:50%;bottom:4%;transform:translateX(-50%);padding:.15em .7em;border-radius:999px;background:#05081fb8;border:2px solid #ffffff33;color:#fff;font-family:var(--font-playful),sans-serif;font-weight:700;font-size:clamp(18px,4.4vw,34px);letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.bomb-stage.full .bomb-clock{font-size:clamp(28px,5vw,64px)}
+.bomb-stage.done .bomb-clock{background:#c0392b;animation:neonBlink .5s steps(2,end) infinite}
+@media (prefers-reduced-motion:reduce){.neon-bg,.neon-tumble,.neon-stage.done .neon-digits,.bomb-stage.done .bomb-clock{animation:none}}
