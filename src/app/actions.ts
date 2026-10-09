@@ -83,6 +83,51 @@ export async function getBooks() {
   return sqlClient()`SELECT id,title,series,level,cover_path,aspect::float AS aspect,position FROM books WHERE active ORDER BY position`;
 }
 
+const readerField = z.enum(['returned', 'project_done']);
+
+/** Everything the "Our Readers" list needs for one class: each student's books, plus students who have none yet. */
+export async function getReaders(classroomId: string) {
+  await requireTutor(); const classroom=uuid.parse(classroomId),sql=sqlClient();
+  const rows=await sql`SELECT sb.id,s.id AS student_id,s.display_name AS student,s.avatar_key,b.id AS book_id,b.title,sb.returned,sb.project_done
+    FROM student_books sb JOIN students s ON s.id=sb.student_id JOIN groups g ON g.id=s.group_id JOIN books b ON b.id=sb.book_id
+    WHERE g.classroom_id=${classroom}::uuid AND s.archived_at IS NULL AND g.archived_at IS NULL
+    ORDER BY sb.returned ASC,s.display_name,sb.assigned_at DESC`;
+  const without=await sql`SELECT s.id AS student_id,s.display_name AS student,s.avatar_key FROM students s JOIN groups g ON g.id=s.group_id
+    WHERE g.classroom_id=${classroom}::uuid AND s.archived_at IS NULL AND g.archived_at IS NULL AND NOT EXISTS (SELECT 1 FROM student_books x WHERE x.student_id=s.id)
+    ORDER BY s.display_name`;
+  return {rows,without};
+}
+
+/** Gives one book to every active student in the class. Students who already have it are skipped. Returns how many got it. */
+export async function assignBookToClass(classroomId: string, bookId: string) {
+  await requireTutor(); const classroom=uuid.parse(classroomId),book=uuid.parse(bookId);
+  const rows=await sqlClient()`INSERT INTO student_books(student_id,book_id)
+    SELECT s.id,${book}::uuid FROM students s JOIN groups g ON g.id=s.group_id
+    WHERE g.classroom_id=${classroom}::uuid AND s.archived_at IS NULL AND g.archived_at IS NULL
+    ON CONFLICT (student_id,book_id) DO NOTHING RETURNING id`;
+  return rows.length;
+}
+
+export async function assignBook(studentId: string, bookId: string) {
+  await requireTutor(); const student=uuid.parse(studentId),book=uuid.parse(bookId);
+  await sqlClient()`INSERT INTO student_books(student_id,book_id) VALUES(${student}::uuid,${book}::uuid) ON CONFLICT (student_id,book_id) DO NOTHING`;
+  return true;
+}
+
+export async function setReaderFlag(id: string, field: 'returned' | 'project_done', value: boolean) {
+  await requireTutor(); const key=uuid.parse(id),which=readerField.parse(field),flag=z.boolean().parse(value),sql=sqlClient();
+  const rows=which==='returned'
+    ? await sql`UPDATE student_books SET returned=${flag},returned_at=CASE WHEN ${flag}::boolean THEN now() ELSE NULL END WHERE id=${key}::uuid RETURNING id`
+    : await sql`UPDATE student_books SET project_done=${flag},project_done_at=CASE WHEN ${flag}::boolean THEN now() ELSE NULL END WHERE id=${key}::uuid RETURNING id`;
+  if(!rows.length) throw new Error('Reader record not found'); return true;
+}
+
+export async function removeReader(id: string) {
+  await requireTutor(); const key=uuid.parse(id);
+  await sqlClient()`DELETE FROM student_books WHERE id=${key}::uuid`;
+  return true;
+}
+
 /** Picks a random book for the class. The newest earlier pick for that class is excluded, so a class never gets the same book twice in a row. */
 export async function pickBook(classroomId: string) {
   await requireTutor(); const classroom=uuid.parse(classroomId),sql=sqlClient();

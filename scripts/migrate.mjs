@@ -10,7 +10,7 @@ try {
     await client.query('CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
     const tutorTable=await client.query("SELECT to_regclass('public.tutor') AS name");
     if(tutorTable.rows[0].name) await client.query("INSERT INTO schema_migrations(name) VALUES('0001_initial.sql') ON CONFLICT DO NOTHING");
-    for(const name of ['0001_initial.sql','0002_tutor_password_resets.sql','0003_student_avatar_choices.sql','0004_shared_classroom_material.sql','0005_multiple_tutors.sql','0006_books.sql']) {
+    for(const name of ['0001_initial.sql','0002_tutor_password_resets.sql','0003_student_avatar_choices.sql','0004_shared_classroom_material.sql','0005_multiple_tutors.sql','0006_books.sql','0007_student_books.sql']) {
       const applied=await client.query('SELECT 1 FROM schema_migrations WHERE name=$1',[name]);
       if(applied.rowCount) continue;
       const migration=await readFile(new URL(`../db/migrations/${name}`,import.meta.url),'utf8');
