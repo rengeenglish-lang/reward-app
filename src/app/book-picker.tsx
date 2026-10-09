@@ -12,7 +12,7 @@ export type BookApi = {
   getBooks: () => Promise<Book[]>;
   pickBook: (classroomId: string) => Promise<Book>;
   getReaders: (classroomId: string) => Promise<ReadersData>;
-  assignBookToClass: (classroomId: string, bookId: string) => Promise<number>;
+  assignBookToClass: (classroomId: string, bookId: string, studentIds?: string[]) => Promise<number>;
   assignBook: (studentId: string, bookId: string) => Promise<unknown>;
   setReaderFlag: (id: string, field: 'returned' | 'project_done', value: boolean) => Promise<unknown>;
   removeReader: (id: string) => Promise<unknown>;
@@ -38,13 +38,13 @@ const serverApi: BookApi = {
   getBooks: () => getBooks() as Promise<Book[]>,
   pickBook: (id) => pickBook(id) as Promise<Book>,
   getReaders: (id) => getReaders(id) as unknown as Promise<ReadersData>,
-  assignBookToClass: (classroomId, bookId) => assignBookToClass(classroomId, bookId),
+  assignBookToClass: (classroomId, bookId, studentIds) => assignBookToClass(classroomId, bookId, studentIds),
   assignBook: (studentId, bookId) => assignBook(studentId, bookId),
   setReaderFlag: (id, field, value) => setReaderFlag(id, field, value),
   removeReader: (id) => removeReader(id),
 };
 
-export default function BookPickerCard({ classroomId, classroom, api = serverApi, active }: { classroomId: string; classroom: string; api?: BookApi; active?: boolean }) {
+export default function BookPickerCard({ classroomId, classroom, api = serverApi, active, presentIds, studentCount, onRollCall }: { classroomId: string; classroom: string; api?: BookApi; active?: boolean; presentIds?: string[]; studentCount?: number; onRollCall?: () => void }) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [books, setBooks] = useState<Book[]>([]);
   const [picked, setPicked] = useState<Book | null>(null);
@@ -57,6 +57,7 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
   const [note, setNote] = useState('');
   const [giveStudent, setGiveStudent] = useState('');
   const [giveBook, setGiveBook] = useState('');
+  const [presentOnly, setPresentOnly] = useState(true);
   const els = useRef<(HTMLDivElement | null)[]>([]);
   const skip = useRef(false);
 
@@ -95,12 +96,18 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
   };
   const giveToClass = async () => {
     if (!picked) return;
-    try { const n = await api.assignBookToClass(classroomId, picked.id); setNote(n ? `Gave “${picked.title}” to ${n} student${n === 1 ? '' : 's'}.` : `Everyone already has “${picked.title}”.`); await loadReaders(); }
+    try { const n = await api.assignBookToClass(classroomId, picked.id, presentOnly && presentIds ? presentIds : undefined); setNote(n ? `Gave “${picked.title}” to ${n} student${n === 1 ? '' : 's'}.` : `Everyone already has “${picked.title}”.`); await loadReaders(); }
     catch { setNote('Could not give the book to the class. Please try again.'); }
   };
   const giveOne = async () => {
     if (!giveStudent || !giveBook) return;
-    try { await api.assignBook(giveStudent, giveBook); setGiveStudent(''); setNote('Book given.'); await loadReaders(); }
+    try {
+      if (giveStudent === '*') {
+        const n = await api.assignBookToClass(classroomId, giveBook, presentOnly && presentIds ? presentIds : undefined);
+        setNote(n ? `Gave the book to ${n} student${n === 1 ? '' : 's'}.` : 'Everyone you chose already has that book.');
+      } else { await api.assignBook(giveStudent, giveBook); setNote('Book given.'); }
+      setGiveStudent(''); await loadReaders();
+    }
     catch { setNote('Could not give that book. Please try again.'); }
   };
   const dropRow = async (r: Reader) => {
@@ -111,6 +118,8 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
   const rows = readers?.rows ?? [];
   const backCount = rows.filter((r) => r.returned).length;
   const doneCount = rows.filter((r) => r.project_done).length;
+  const whoLabel = presentOnly && presentIds ? `Give to students who are here (${presentIds.length})` : 'Give to the whole class';
+  const studentOptions = [...(readers?.without ?? []).map((s) => ({ id: s.student_id, name: s.student })), ...Array.from(new Map(rows.map((r) => [r.student_id, { id: r.student_id, name: r.student }])).values())];
   const shown = rows.filter((r) => (filter === 'out' ? !r.returned : filter === 'project' ? !r.project_done : true));
 
   // The 3D shuffle: books ring around the stage, swap places a few times, then the ring spins down onto the chosen book.
@@ -181,59 +190,69 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
           <span className="readers-emoji" aria-hidden="true">📚</span>
           <div><h2>OUR READERS</h2><p>Pick a book for {classroom || 'your class'}, then see who returned it and who finished the project.</p></div>
         </div>
-        <div className="readers-pick">
-          <button className="fun-action primary readers-shuffle" onClick={start} disabled={phase === 'loading' || phase === 'shuffling'}>
-            <Shuffle size={18} /> Shuffle &amp; pick a book
-          </button>
-          <p className="readers-rule">A class never gets the same book twice in a row.</p>
-          {lastTitle && <div className="readers-last">🎉 Picked: <strong>{lastTitle}</strong>{picked && <button type="button" className="readers-give" onClick={giveToClass}>Give to the whole class</button>}</div>}
-        </div>
-        {error && <p className="book-error" role="alert">{error}</p>}
-        {note && <p className="readers-note" role="status">{note}</p>}
-        {readersError && <p className="book-error" role="alert">{readersError}</p>}
-        {readers && (
-          <>
-            <div className="readers-stats">
-              <span className="chip-stat">📕 Returned <b>{backCount}</b>/{rows.length}</span>
-              <span className="chip-stat">⭐ Projects done <b>{doneCount}</b>/{rows.length}</span>
-              <div className="seg" role="group" aria-label="Show">
-                {([['all', 'Everyone'], ['out', 'Not returned'], ['project', 'Project to do']] as const).map(([id, label]) => (
-                  <button key={id} type="button" className={filter === id ? 'on' : ''} aria-pressed={filter === id} onClick={() => setFilter(id)}>{label}</button>
-                ))}
-              </div>
+        <div className="readers-body">
+          <div className="readers-left">
+            <div className="readers-pick">
+              <button className="fun-action primary readers-shuffle" onClick={start} disabled={phase === 'loading' || phase === 'shuffling'}>
+                <Shuffle size={18} /> Shuffle &amp; pick a book
+              </button>
+              <p className="readers-rule">A class never gets the same book twice in a row.</p>
+              {lastTitle && <div className="readers-last">🎉 Picked: <strong>{lastTitle}</strong>{picked && <button type="button" className="readers-give" onClick={giveToClass}>{whoLabel}</button>}</div>}
             </div>
-            {rows.length === 0 ? <p className="readers-empty">No books given out yet. Pick a book and press “Give to the whole class”.</p> : (
-              <ul className="readers-list">
-                {shown.map((r) => (
-                  <li key={r.id} className={`reader-row${r.returned ? ' is-back' : ''}`}>
-                    <span className="reader-avatar" aria-hidden="true">{avatarEmoji[r.avatar_key] || '🙂'}</span>
-                    <span className="reader-who"><strong>{shortName(r.student)}</strong><small>📖 {r.title}</small></span>
-                    <button type="button" className={`reader-toggle${r.returned ? ' on' : ''}`} aria-pressed={r.returned} onClick={() => flag(r, 'returned')}>{r.returned ? '✅ Returned' : '📕 Not returned'}</button>
-                    <button type="button" className={`reader-toggle project${r.project_done ? ' on' : ''}`} aria-pressed={r.project_done} onClick={() => flag(r, 'project_done')}>{r.project_done ? '⭐ Project done' : '✏️ Project to do'}</button>
-                    <button type="button" className="reader-x" aria-label={`Remove ${r.title} from ${shortName(r.student)}`} onClick={() => dropRow(r)}>×</button>
-                  </li>
-                ))}
-                {shown.length === 0 && <li className="readers-empty">Nobody here. 🎉</li>}
-              </ul>
-            )}
-            <details className="readers-give-one">
-              <summary>Give a book to one student{readers.without.length ? ` (${readers.without.length} without a book)` : ''}</summary>
-              <div className="readers-give-form">
-                <select aria-label="Student" value={giveStudent} onChange={(e) => setGiveStudent(e.target.value)}>
-                  <option value="">Choose a student</option>
-                  {[...readers.without.map((s) => ({ id: s.student_id, name: s.student })), ...Array.from(new Map(rows.map((r) => [r.student_id, { id: r.student_id, name: r.student }])).values())].map((s) => (
-                    <option key={s.id} value={s.id}>{shortName(s.name)}</option>
-                  ))}
+            {error && <p className="book-error" role="alert">{error}</p>}
+            {note && <p className="readers-note" role="status">{note}</p>}
+            {readersError && <p className="book-error" role="alert">{readersError}</p>}
+            <div className="readers-give-box">
+              <h3>Give a book</h3>
+              <label>Who gets it?
+                <select aria-label="Who gets the book" value={giveStudent} onChange={(e) => setGiveStudent(e.target.value)}>
+                  <option value="">Choose…</option>
+                  <option value="*">👨‍👩‍👧‍👦 Whole classroom</option>
+                  {studentOptions.map((s) => <option key={s.id} value={s.id}>{shortName(s.name)}</option>)}
                 </select>
-                <select aria-label="Book" value={giveBook} onChange={(e) => setGiveBook(e.target.value)}>
-                  <option value="">Choose a book</option>
+              </label>
+              {giveStudent === '*' && (presentIds
+                ? <label className="present-toggle"><input type="checkbox" checked={presentOnly} onChange={(e) => setPresentOnly(e.target.checked)} /> <span>Only students who are here ({presentIds.length}{studentCount ? ` of ${studentCount}` : ''})</span> {onRollCall && <button type="button" className="text-link" onClick={onRollCall}>Change</button>}</label>
+                : onRollCall && <button type="button" className="roll-hint" onClick={onRollCall}>📋 Take roll call to give it only to students who are here</button>)}
+              <label>Which book?
+                <select aria-label="Which book" value={giveBook} onChange={(e) => setGiveBook(e.target.value)}>
+                  <option value="">Choose…</option>
                   {books.map((b) => <option key={b.id} value={b.id}>{b.title}</option>)}
                 </select>
-                <button type="button" className="fun-action secondary" disabled={!giveStudent || !giveBook} onClick={giveOne}>Give book</button>
-              </div>
-            </details>
-          </>
-        )}
+              </label>
+              <button type="button" className="fun-action primary" disabled={!giveStudent || !giveBook} onClick={giveOne}>{giveStudent === '*' ? (presentOnly && presentIds ? 'Give to students who are here' : 'Give to the whole classroom') : 'Give book'}</button>
+            </div>
+          </div>
+          <div className="readers-right">
+            {readers && (
+              <>
+                <div className="readers-stats">
+                  <span className="chip-stat">📕 Returned <b>{backCount}</b>/{rows.length}</span>
+                  <span className="chip-stat">⭐ Projects done <b>{doneCount}</b>/{rows.length}</span>
+                  <div className="seg" role="group" aria-label="Show">
+                    {([['all', 'Everyone'], ['out', 'Not returned'], ['project', 'Project to do']] as const).map(([id, label]) => (
+                      <button key={id} type="button" className={filter === id ? 'on' : ''} aria-pressed={filter === id} onClick={() => setFilter(id)}>{label}</button>
+                    ))}
+                  </div>
+                </div>
+                {rows.length === 0 ? <p className="readers-empty">No books given out yet. Pick a book, or use “Give a book”, and it will show up here.</p> : (
+                  <ul className="readers-list">
+                    {shown.map((r) => (
+                      <li key={r.id} className={`reader-row${r.returned ? ' is-back' : ''}`}>
+                        <span className="reader-avatar" aria-hidden="true">{avatarEmoji[r.avatar_key] || '🙂'}</span>
+                        <span className="reader-who"><strong>{shortName(r.student)}</strong><small>📖 {r.title}</small></span>
+                        <button type="button" className={`reader-toggle${r.returned ? ' on' : ''}`} aria-pressed={r.returned} onClick={() => flag(r, 'returned')}>{r.returned ? '✅ Returned' : '📕 Not returned'}</button>
+                        <button type="button" className={`reader-toggle project${r.project_done ? ' on' : ''}`} aria-pressed={r.project_done} onClick={() => flag(r, 'project_done')}>{r.project_done ? '⭐ Project done' : '✏️ Project to do'}</button>
+                        <button type="button" className="reader-x" aria-label={`Remove ${r.title} from ${shortName(r.student)}`} onClick={() => dropRow(r)}>×</button>
+                      </li>
+                    ))}
+                    {shown.length === 0 && <li className="readers-empty">Nobody here. 🎉</li>}
+                  </ul>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       </section>
 
       {phase !== 'idle' && (
@@ -269,7 +288,7 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
               <div className="bk-caption">
                 <div><strong>{picked.title}</strong><span>{picked.series}{picked.level ? ` · Level ${picked.level}` : ''}</span></div>
                 <div className="bk-actions">
-                  <button className="bk-btn" onClick={async () => { await giveToClass(); setPhase('idle'); }}>Give to the whole class</button>
+                  <button className="bk-btn" onClick={async () => { await giveToClass(); setPhase('idle'); }}>{whoLabel}</button>
                   <button className="bk-btn ghost" onClick={start}><Shuffle size={16} /> Pick another</button>
                   <button className="bk-btn" onClick={() => setPhase('idle')}>Done</button>
                 </div>

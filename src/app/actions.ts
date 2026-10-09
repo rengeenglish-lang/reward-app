@@ -65,7 +65,7 @@ export async function getInitialData() {
   const returned = new Map<string, boolean>();
   try {
     if (recentDraws.length) {
-      const flags = await sql`SELECT id,book_returned FROM reward_draws WHERE id = ANY(${recentDraws.map(d=>String(d.id))}::uuid[])`;
+      const flags = await sql`SELECT id,book_returned FROM reward_draws WHERE id = ANY(string_to_array(${recentDraws.map(d=>String(d.id)).join(',')},',')::uuid[])`;
       for (const f of flags) returned.set(String(f.id), Boolean(f.book_returned));
     }
   } catch { /* column not there yet */ }
@@ -99,11 +99,14 @@ export async function getReaders(classroomId: string) {
 }
 
 /** Gives one book to every active student in the class. Students who already have it are skipped. Returns how many got it. */
-export async function assignBookToClass(classroomId: string, bookId: string) {
+export async function assignBookToClass(classroomId: string, bookId: string, studentIds?: string[]) {
   await requireTutor(); const classroom=uuid.parse(classroomId),book=uuid.parse(bookId);
+  // Roll call: when the tutor sends the ids of students who are here, only they get the book.
+  const here=studentIds?z.array(uuid).max(500).parse(studentIds):null; if(here&&!here.length) return 0; const hereCsv=here?here.join(','):null;
   const rows=await sqlClient()`INSERT INTO student_books(student_id,book_id)
     SELECT s.id,${book}::uuid FROM students s JOIN groups g ON g.id=s.group_id
     WHERE g.classroom_id=${classroom}::uuid AND s.archived_at IS NULL AND g.archived_at IS NULL
+    AND (${hereCsv}::text IS NULL OR s.id = ANY(string_to_array(${hereCsv},',')::uuid[]))
     ON CONFLICT (student_id,book_id) DO NOTHING RETURNING id`;
   return rows.length;
 }
@@ -209,13 +212,15 @@ export async function setPrizeActive(id: string,active: boolean) {
   await requireTutor(); const key=uuid.parse(id),state=z.boolean().parse(active); return (await sqlClient()`UPDATE prizes SET active=${state},updated_at=now() WHERE id=${key} RETURNING id,name,description,active`)[0];
 }
 
-export async function drawReward(input: {idempotencyKey:string;classroomId:string;studentId?:string}) {
+export async function drawReward(input: {idempotencyKey:string;classroomId:string;studentId?:string;presentIds?:string[]}) {
   await requireTutor(); const key=uuid.parse(input.idempotencyKey),classroom=uuid.parse(input.classroomId),selected=input.studentId?uuid.parse(input.studentId):null,sql=sqlClient();
+  // Roll call: when the tutor sends the ids of students who are here, only they can be drawn.
+  const here=input.presentIds?z.array(uuid).max(500).parse(input.presentIds):null; if(here&&!here.length) throw new Error('Nobody is marked present'); const hereCsv=here?here.join(','):null;
   const existing=await sql`SELECT d.id,d.drawn_at,d.selection_mode,d.prize_name_snapshot AS prize,s.id AS student_id,s.display_name AS student,s.avatar_key FROM reward_draws d JOIN students s ON s.id=d.student_id WHERE d.idempotency_key=${key} LIMIT 1`;
   if(existing.length) return existing[0];
   const inserted=await sql`WITH chosen_student AS (
     SELECT s.id,s.display_name,s.avatar_key,s.group_id FROM students s JOIN groups g ON g.id=s.group_id
-    WHERE g.classroom_id=${classroom} AND s.archived_at IS NULL AND g.archived_at IS NULL AND (${selected}::uuid IS NULL OR s.id=${selected})
+    WHERE g.classroom_id=${classroom} AND s.archived_at IS NULL AND g.archived_at IS NULL AND (${selected}::uuid IS NULL OR s.id=${selected}) AND (${hereCsv}::text IS NULL OR s.id = ANY(string_to_array(${hereCsv},',')::uuid[]))
     ORDER BY gen_random_bytes(32) LIMIT 1
   ), chosen_prize AS (
     SELECT id,name FROM prizes WHERE active=true ORDER BY gen_random_bytes(32) LIMIT 1
@@ -229,7 +234,7 @@ export async function drawReward(input: {idempotencyKey:string;classroomId:strin
   if(inserted.length) return inserted[0];
   const retry=await sql`SELECT d.id,d.drawn_at,d.selection_mode,d.prize_name_snapshot AS prize,s.id AS student_id,s.display_name AS student,s.avatar_key FROM reward_draws d JOIN students s ON s.id=d.student_id WHERE d.idempotency_key=${key} LIMIT 1`;
   if(retry.length) return retry[0];
-  const people=await sql`SELECT s.id FROM students s JOIN groups g ON g.id=s.group_id WHERE g.classroom_id=${classroom} AND s.archived_at IS NULL AND g.archived_at IS NULL AND (${selected}::uuid IS NULL OR s.id=${selected}) LIMIT 1`;
+  const people=await sql`SELECT s.id FROM students s JOIN groups g ON g.id=s.group_id WHERE g.classroom_id=${classroom} AND s.archived_at IS NULL AND g.archived_at IS NULL AND (${selected}::uuid IS NULL OR s.id=${selected}) AND (${hereCsv}::text IS NULL OR s.id = ANY(string_to_array(${hereCsv},',')::uuid[])) LIMIT 1`;
   if(!people.length) throw new Error('Choose an active student or a classroom with active students');
   throw new Error('Add or activate a prize before drawing');
 }
