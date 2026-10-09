@@ -305,3 +305,38 @@ button.student-avatar:hover{transform:scale(1.06)}
 .shelf-count{font-size:11px;font-weight:700;color:#17744d}
 .shelf-count.out{color:#8a4a3f}
 @media (prefers-reduced-motion:reduce){.shelf-book{animation:none}}
+
+/* ===== Weekly goals ===== */
+.wk-track{margin:0 0 18px;padding:16px 18px 14px;border:2px solid #f0e2b8;border-radius:22px;background:linear-gradient(120deg,#fff8dc,#fff 55%,#f1ecff);box-shadow:0 4px 0 #f1e6c9}
+.wk-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:34px}
+.wk-head strong{font-family:var(--font-playful),sans-serif;font-size:18px}
+.wk-head span{font-size:13px;font-weight:700;color:#5d6a7d}
+.wk-rail{position:relative;height:16px;border-radius:999px;background:#eee7d3;margin:0 18px}
+.wk-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#ffb347,#ff5d8f 60%,#9b6bff);transition:width 1.4s cubic-bezier(.25,.9,.3,1)}
+.wk-knob{position:absolute;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;display:grid;place-items:center;border-radius:50%;background:#fff;box-shadow:0 3px 10px #0003;font-size:20px;transition:left 1.4s cubic-bezier(.25,.9,.3,1)}
+.wk-flag{position:absolute;top:-30px;width:30px;height:30px;margin-left:-15px;display:grid;place-items:center;border-radius:50%;background:#fff;border:2px solid #e4dcc6;font-size:16px;transition:transform .4s,background .4s}
+.wk-flag.reached{background:#e3f6ec;border-color:#2e9e6d;transform:scale(1.15)}
+.wk-list{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0;padding:0}
+.wk-list li{padding:5px 12px;border-radius:999px;background:#f5f1e6;font-size:12.5px;font-weight:700;color:#47566b}
+.wk-list li.reached{background:#e3f6ec;color:#17744d}
+.weekly-card{display:grid;gap:6px;margin-bottom:16px}
+.wk-editor h3{margin:0 0 4px;font-size:18px}
+.wk-editor p{margin:0 0 12px;font-size:13px;color:#5d6a7d}
+.wk-edit-list{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px}
+.wk-edit-list li{display:grid;grid-template-columns:28px minmax(0,1fr) 96px 32px;gap:8px;align-items:center}
+.wk-editor input{padding:10px 12px;border:2px solid #eadfc8;border-radius:12px;background:#fff;font:inherit;min-width:0}
+.wk-edit-list button{border:0;background:none;font-size:22px;color:#9aa4b2;cursor:pointer}
+.wk-add{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:8px;align-items:center}
+.wk-ideas{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px;font-size:12.5px;font-weight:700;color:#5d6a7d}
+.wk-ideas button{border:2px solid #e4dcc6;background:#fff;border-radius:999px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer}
+.wk-celebrate{position:fixed;inset:0;z-index:98;display:grid;place-items:center;padding:16px;background:rgba(20,12,50,.72);overflow:hidden}
+.wk-celebrate-card{position:relative;z-index:1;width:min(460px,100%);padding:30px 24px;text-align:center;border-radius:28px;background:#fff;color:#27364b;box-shadow:0 30px 80px #0008;animation:wkPop .6s cubic-bezier(.2,.9,.25,1.2)}
+.wk-big{display:block;font-size:72px;line-height:1;margin-bottom:6px}
+.wk-celebrate-card small{font-size:12px;font-weight:800;letter-spacing:.16em;color:#9a6c00}
+.wk-celebrate-card h2{margin:6px 0 8px;font-size:30px}
+.wk-celebrate-card p{margin:0 0 18px;color:#5d6a7d}
+.wk-confetti i{position:absolute;top:-20px;width:12px;height:18px;background:var(--c);border-radius:3px;animation:wkFall 3.2s linear infinite}
+@keyframes wkFall{to{transform:translateY(110vh) rotate(720deg)}}
+@keyframes wkPop{from{opacity:0;transform:scale(.6) rotate(-4deg)}to{opacity:1;transform:none}}
+@media (max-width:640px){.wk-add{grid-template-columns:1fr 90px}.wk-add .fun-action{grid-column:1 / -1}.wk-edit-list li{grid-template-columns:24px minmax(0,1fr) 80px 28px}}
+@media (prefers-reduced-motion:reduce){.wk-fill,.wk-knob{transition:none}.wk-confetti i,.wk-celebrate-card{animation:none}}
