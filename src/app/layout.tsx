@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Fredoka, Nunito } from 'next/font/google';
 import './globals.css';
 import './ui-refresh.css';
+import FloatingTimer from './floating-timer';
 
 const rounded = Nunito({ subsets: ['latin'], weight: 'variable', variable: '--font-rounded', display: 'swap' });
 const playful = Fredoka({ subsets: ['latin'], weight: 'variable', variable: '--font-playful', display: 'swap' });
@@ -18,5 +19,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en" className={`${rounded.variable} ${playful.variable}`}><body>{children}</body></html>;
+  return <html lang="en" className={`${rounded.variable} ${playful.variable}`}><body>{children}<FloatingTimer /></body></html>;
 }

@@ -366,3 +366,29 @@ button.student-avatar:hover{transform:scale(1.06)}
 .ballot-results ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .ballot-results li{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border-radius:12px;background:#f7f3e8;font-size:14px}
 .ballot-results .fun-action{justify-self:start}
+
+/* ---------- Floating timer + lesson (on every page, draggable) ---------- */
+.ft-card{position:fixed;z-index:900;width:min(320px,calc(100vw - 24px));background:var(--white,#fff);color:var(--ink,#2b2350);border:2px solid var(--purple,#8566d6);border-radius:20px;box-shadow:0 14px 40px rgba(40,20,90,.28);overflow:hidden;font-family:var(--font,inherit)}
+.ft-card.mini{width:auto;border-radius:999px}
+.ft-card.ft-pip{position:static;width:auto;border:0;border-radius:0;box-shadow:none;min-height:100vh}
+.ft-handle{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--purple,#8566d6);color:#fff;cursor:grab;touch-action:none;user-select:none}
+.ft-handle:active{cursor:grabbing}
+.ft-handle b{font-size:14px;letter-spacing:.02em}
+.ft-spacer{flex:1}
+.ft-handle button{border:0;background:rgba(255,255,255,.22);color:#fff;border-radius:8px;min-width:28px;height:28px;font-size:15px;line-height:1;cursor:pointer}
+.ft-handle button:hover{background:rgba(255,255,255,.38)}
+.ft-timer,.ft-lesson{padding:10px 12px;border-top:1px solid rgba(133,102,214,.18)}
+.ft-timer:first-of-type,.ft-handle+.ft-timer,.ft-handle+.ft-lesson{border-top:0}
+.ft-row{display:flex;align-items:baseline;gap:10px}
+.ft-clock{font-family:var(--display,inherit);font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.ft-label{font-size:13px;font-weight:700;opacity:.8;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ft-bar{height:8px;border-radius:99px;background:rgba(133,102,214,.18);margin:8px 0}
+.ft-bar i{display:block;height:100%;border-radius:inherit;background:var(--purple,#8566d6);transition:width .4s linear}
+.ft-stage{margin:6px 0}
+.ft-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ft-actions button{border:0;border-radius:10px;padding:6px 10px;font:inherit;font-size:13px;font-weight:800;background:rgba(133,102,214,.14);color:inherit;cursor:pointer}
+.ft-actions button:first-child{background:var(--purple,#8566d6);color:#fff}
+.ft-timer.done .ft-clock{color:#d6452f;animation:neonBlink .8s steps(2,end) infinite}
+.ft-lesson.ended{background:#fff6d6}
+.lesson-auto{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;font-weight:700}
+@media (prefers-reduced-motion:reduce){.ft-timer.done .ft-clock{animation:none}}
