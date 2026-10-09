@@ -392,3 +392,48 @@ button.student-avatar:hover{transform:scale(1.06)}
 .ft-lesson.ended{background:#fff6d6}
 .lesson-auto{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;font-weight:700}
 @media (prefers-reduced-motion:reduce){.ft-timer.done .ft-clock{animation:none}}
+
+/* ---------- ClassDojo-style Today page: big student tiles, one tap to give points ---------- */
+.today-layout>.dojo-grid{order:5}
+.today-layout .hero-art,.today-layout .welcome-row .subhead{display:none}
+.today-layout .section-heading{margin:14px 0 4px}
+.dojo-view{margin-left:auto}
+.roster-card.roster-hidden{display:none}
+.dojo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:16px;padding:6px 0 12px}
+.dojo-tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 10px 16px;background:#fff;border:0;border-radius:24px;box-shadow:0 4px 0 rgba(60,40,110,.10),0 10px 24px rgba(60,40,110,.08);cursor:pointer;font:inherit;color:#27364b;transition:transform .15s ease,box-shadow .15s ease}
+.dojo-tile:hover{transform:translateY(-4px);box-shadow:0 8px 0 rgba(60,40,110,.10),0 16px 30px rgba(60,40,110,.14)}
+.dojo-tile:active{transform:scale(.97)}
+.dojo-tile:focus-visible,.dojo-criterion:focus-visible{outline:3px solid var(--purple,#8566d6);outline-offset:2px}
+.dojo-avatar.student-avatar{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;font-size:40px;line-height:1}
+.dojo-tile strong{font-size:15px;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dojo-pts{position:absolute;top:10px;right:10px;min-width:30px;height:30px;padding:0 8px;border-radius:99px;background:#eceaf6;color:#5a4a8a;display:grid;place-items:center;font-weight:900;font-size:15px}
+.dojo-tile.is-full .dojo-pts{background:#ffce4d;color:#5a3d00}
+.dojo-tile.is-absent{opacity:.45;filter:grayscale(.7)}
+.dojo-pop-backdrop{position:fixed;inset:0;z-index:950;display:grid;place-items:center;padding:16px;background:rgba(30,18,70,.5)}
+.dojo-pop{position:relative;width:min(560px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:#fff;color:#27364b;border-radius:28px;padding:26px 22px 20px;text-align:center;box-shadow:0 24px 70px rgba(20,10,60,.4)}
+.dojo-pop-close{position:absolute;top:12px;right:12px;width:36px;height:36px;border:0;border-radius:50%;background:#eceaf6;cursor:pointer;display:grid;place-items:center}
+.dojo-pop-avatar.student-avatar{width:88px;height:88px;border-radius:50%;display:inline-grid;place-items:center;font-size:48px}
+.dojo-pop h2{margin:8px 0 0;font-family:var(--display,inherit);font-size:26px}
+.dojo-pop p{margin:2px 0 14px;color:#6b6585;font-weight:700}
+.dojo-criteria{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.dojo-criterion{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border:2px solid #e6e1f5;border-radius:20px;background:#faf8ff;font:inherit;color:inherit;cursor:pointer;transition:transform .12s,background .12s,border-color .12s}
+.dojo-criterion:hover{transform:translateY(-2px)}
+.dojo-criterion.on{background:#e4f8ec;border-color:#4caf7d}
+.dojo-criterion .dojo-crit-icon{font-size:34px;line-height:1}
+.dojo-criterion b{font-size:13px;line-height:1.2}
+.dojo-criterion svg{position:absolute;top:8px;right:8px;color:#fff;background:#4caf7d;border-radius:50%;padding:3px;width:22px;height:22px}
+.dojo-pop-actions{display:flex;justify-content:center;gap:10px;margin-top:18px}
+@media (max-width:560px){.dojo-grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px}.dojo-avatar.student-avatar{width:60px;height:60px;font-size:32px}.dojo-criteria{grid-template-columns:1fr 1fr}}
+
+/* Calmer spacing and clearer headings (ClassDojo-style airy cards) */
+.today-layout .section-heading h2,.today-layout .section-heading p{color:#fff;text-shadow:0 2px 14px rgba(20,10,60,.35)}
+.today-layout .section-heading .live-badge{text-shadow:none}
+.today-layout{gap:6px}
+.tool-launcher{gap:14px}
+.tool-tile{border-radius:22px;padding-block:16px}
+.tool-tile-icon{font-size:30px}
+.tool-tile-label{font-size:14px;font-weight:800}
+.fun-feature-grid{gap:20px}
+.fun-card{padding:22px}
+.lesson-start-card{padding:14px 18px}
+.lesson-start-copy p{display:none}
