@@ -459,8 +459,3 @@ button.student-avatar:hover{transform:scale(1.06)}
 .class-faces small{color:#8a84a3;font-weight:700}
 .class-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:auto}
 .class-actions .primary-btn{flex:1 1 150px;justify-content:center}
-.class-new{align-items:center;justify-content:center;text-align:center;gap:8px;min-height:190px;background:rgba(255,255,255,.14);border:3px dashed rgba(255,255,255,.6);box-shadow:none;color:#fff;cursor:pointer}
-.class-new span{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#8566d6}
-.class-new strong{font-family:var(--display);font-size:20px}
-.class-new small{opacity:.9;font-weight:700}
-.class-new:hover{background:rgba(255,255,255,.24)}
