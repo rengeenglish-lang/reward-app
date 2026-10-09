@@ -437,3 +437,30 @@ button.student-avatar:hover{transform:scale(1.06)}
 .fun-card{padding:22px}
 .lesson-start-card{padding:14px 18px}
 .lesson-start-copy p{display:none}
+
+/* ---------- Classrooms page: simple class cards ---------- */
+.classrooms-page{display:flex;flex-direction:column;gap:20px;padding-top:22px}
+.classes-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.classes-head h1{margin:0;font-family:var(--display);font-size:clamp(26px,3.4vw,34px);color:#fff;text-shadow:0 2px 16px rgba(20,10,60,.35)}
+.classes-head p{margin:4px 0 0;color:#fff;opacity:.9;font-weight:700;text-shadow:0 2px 12px rgba(20,10,60,.35)}
+.classes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.class-card{display:flex;flex-direction:column;gap:16px;padding:20px;background:#fff;color:#27364b;border:0;border-radius:26px;box-shadow:0 5px 0 rgba(60,40,110,.10),0 14px 30px rgba(60,40,110,.10);text-align:left;font:inherit}
+.class-card-top{display:flex;align-items:center;gap:14px}
+.class-emoji{flex:none;width:64px;height:64px;border-radius:20px;display:grid;place-items:center;font-size:34px;background:#fff0bf}
+.class-card:nth-child(3n+2) .class-emoji{background:#dff2ff}
+.class-card:nth-child(3n+3) .class-emoji{background:#dcf7e6}
+.class-title{min-width:0;flex:1}
+.class-title h3{margin:0;font-family:var(--display);font-size:24px;line-height:1.1}
+.class-title p{margin:3px 0 0;color:#6b6585;font-weight:700;font-size:14px}
+.class-archive{flex:none}
+.class-faces{display:flex;align-items:center;min-height:38px}
+.class-faces span{width:38px;height:38px;margin-right:-8px;border-radius:50%;display:grid;place-items:center;font-size:21px;background:#f3f0fb;border:2px solid #fff}
+.class-faces b{margin-left:16px;font-size:14px;color:#6b6585}
+.class-faces small{color:#8a84a3;font-weight:700}
+.class-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:auto}
+.class-actions .primary-btn{flex:1 1 150px;justify-content:center}
+.class-new{align-items:center;justify-content:center;text-align:center;gap:8px;min-height:190px;background:rgba(255,255,255,.14);border:3px dashed rgba(255,255,255,.6);box-shadow:none;color:#fff;cursor:pointer}
+.class-new span{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#8566d6}
+.class-new strong{font-family:var(--display);font-size:20px}
+.class-new small{opacity:.9;font-weight:700}
+.class-new:hover{background:rgba(255,255,255,.24)}
