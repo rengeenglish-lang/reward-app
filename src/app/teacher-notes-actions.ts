@@ -3,12 +3,12 @@
 import { z } from 'zod';
 import { sqlClient } from '@/lib/db';
 import { requireTutor } from '@/lib/session';
-import { PYP_THEMES, type TeacherNote } from '@/lib/teacher-issues';
+import { type TeacherNote } from '@/lib/teacher-issues';
 
 const noteInput = z.object({
   kind: z.enum(['department', 'class', 'pyp', 'project']),
   grade: z.number().int().min(1).max(4).nullable(),
-  theme: z.enum(PYP_THEMES).nullable(),
+  theme: z.string().trim().min(1).max(60).nullable(),
   title: z.string().trim().min(1).max(160),
   body: z.string().trim().min(1).max(20000),
   noteDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),

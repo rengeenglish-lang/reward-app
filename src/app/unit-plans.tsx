@@ -4,7 +4,8 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState, useTransition } f
 import { BookOpenCheck, Camera, Plus, Trash2 } from 'lucide-react';
 import { addUnitPlan, deleteUnitPlan, listUnitPlans } from './unit-plans-actions';
 import { readImageText } from './read-image-text';
-import { GRADES, PYP_THEMES, type UnitPlan } from '@/lib/teacher-issues';
+import { GRADES, type UnitPlan } from '@/lib/teacher-issues';
+import { useThemeNames } from './pyp-themes';
 
 type Draft = { title: string; grade: number | null; theme: string | null; start: string; end: string; body: string; source: 'typed' | 'photo' };
 const empty = (): Draft => ({ title: '', grade: null, theme: null, start: '', end: '', body: '', source: 'typed' });
@@ -23,6 +24,7 @@ export default function UnitPlans() {
   const [fGrade, setFGrade] = useState(0);
   const [fTheme, setFTheme] = useState('');
   const [pending, start] = useTransition();
+  const themeNames = useThemeNames();
 
   useEffect(() => { listUnitPlans().then((r) => { setPlans(r.plans); setToday(r.today); setLoaded(true); }).catch(() => { setError('Could not load unit plans.'); setLoaded(true); }); }, []);
   const patch = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
@@ -59,7 +61,7 @@ export default function UnitPlans() {
       <form className="ti-form" onSubmit={save}>
         <label className="ti-wide"><span className="field-label">Unit title</span><input className="field-select" value={draft.title} onChange={(e) => patch({ title: e.target.value })} placeholder="e.g. Unit 2 · How the world works" maxLength={160} required /></label>
         <label><span className="field-label">Grade <small>optional</small></span><select className="field-select" value={draft.grade ?? ''} onChange={(e) => patch({ grade: e.target.value ? Number(e.target.value) : null })}><option value="">Any</option>{GRADES.map((g) => <option key={g} value={g}>Grade {g}</option>)}</select></label>
-        <label><span className="field-label">PYP theme <small>optional</small></span><select className="field-select" value={draft.theme ?? ''} onChange={(e) => patch({ theme: e.target.value || null })}><option value="">None</option>{PYP_THEMES.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
+        <label><span className="field-label">PYP theme <small>optional</small></span><select className="field-select" value={draft.theme ?? ''} onChange={(e) => patch({ theme: e.target.value || null })}><option value="">None</option>{themeNames.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
         <label><span className="field-label">Starts <small>optional</small></span><input className="field-select" type="date" value={draft.start} onChange={(e) => patch({ start: e.target.value })} /></label>
         <label><span className="field-label">Ends <small>optional</small></span><input className="field-select" type="date" value={draft.end} onChange={(e) => patch({ end: e.target.value })} /></label>
         <label className="outline-btn ti-photo"><Camera size={16} /> {reading || 'Add plan from pictures'}<input type="file" accept="image/*" multiple capture="environment" onChange={readPictures} disabled={!!reading} /></label>
@@ -73,7 +75,7 @@ export default function UnitPlans() {
       <div className="panel-title"><div><h2 id="ti-unit-list">Unit plans ({shown.length})</h2></div></div>
       <div className="ti-filters">
         <select className="field-select" aria-label="Filter by grade" value={fGrade} onChange={(e) => setFGrade(Number(e.target.value))}><option value={0}>All grades</option>{GRADES.map((g) => <option key={g} value={g}>Grade {g}</option>)}</select>
-        <select className="field-select" aria-label="Filter by PYP theme" value={fTheme} onChange={(e) => setFTheme(e.target.value)}><option value="">All themes</option>{PYP_THEMES.map((t) => <option key={t} value={t}>{t}</option>)}</select>
+        <select className="field-select" aria-label="Filter by PYP theme" value={fTheme} onChange={(e) => setFTheme(e.target.value)}><option value="">All themes</option>{themeNames.map((t) => <option key={t} value={t}>{t}</option>)}</select>
       </div>
       {!loaded ? <p className="ti-empty">Loading…</p> : shown.length === 0 ? <p className="ti-empty">No unit plans yet.</p> : <div className="ti-notes">{shown.map((p) => <article className={`ti-note up-plan${isCurrent(p, today) ? ' current' : ''}`} key={p.id}>
         <header><div><strong>{p.title} {isCurrent(p, today) && <em className="up-badge">Current unit</em>}</strong><small>{[p.grade ? `Grade ${p.grade}` : '', p.theme || '', range(p), p.source === 'photo' ? 'from pictures' : ''].filter(Boolean).join(' · ') || 'No grade or dates'}</small></div><div className="up-tools"><button type="button" className="outline-btn" onClick={() => setOpen(open === p.id ? null : p.id)} aria-expanded={open === p.id}>{open === p.id ? 'Hide' : 'Read'}</button><button type="button" className="icon-btn" aria-label={`Delete ${p.title}`} onClick={() => remove(p.id)} disabled={pending}><Trash2 size={15} /></button></div></header>

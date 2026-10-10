@@ -3,13 +3,13 @@
 import { z } from 'zod';
 import { sqlClient } from '@/lib/db';
 import { requireTutor } from '@/lib/session';
-import { PYP_THEMES, type UnitPlan } from '@/lib/teacher-issues';
+import { type UnitPlan } from '@/lib/teacher-issues';
 
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable();
 const planInput = z.object({
   title: z.string().trim().min(1).max(160),
   grade: z.number().int().min(1).max(4).nullable(),
-  theme: z.enum(PYP_THEMES).nullable(),
+  theme: z.string().trim().min(1).max(60).nullable(),
   startDate: date,
   endDate: date,
   body: z.string().trim().min(1).max(60000),
