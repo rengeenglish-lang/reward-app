@@ -4,6 +4,7 @@ import { ChangeEvent, useEffect, useState, useTransition } from 'react';
 import { Brain, Camera, Plus, Trash2, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { addStudentEntry, deleteStudentEntry, getStudentAnalysis, listAnalysisStudents, updateStudentEntry, type AnalysisStudent } from './student-analysis-actions';
 import { readImageText } from './read-image-text';
+import StudentPetition from './student-petition';
 import type { BehaviourSummary, StudentEntry } from '@/lib/student-analysis';
 
 type Area = 'academic' | 'behaviour';
@@ -105,6 +106,7 @@ export default function StudentAnalysis() {
             {editId === e.id ? <div className="sa-form"><label><span className="field-label">Date</span><input className="field-select" type="date" value={editDate} onChange={(ev) => setEditDate(ev.target.value)} /></label><textarea className="field-select" rows={5} aria-label="Edit entry" value={editBody} onChange={(ev) => setEditBody(ev.target.value)} /><div className="sa-form-actions"><button className="primary-btn" type="button" onClick={saveEdit} disabled={!editBody.trim() || !editDate}>Save changes</button><button className="outline-btn" type="button" onClick={() => setEditId(null)}>Cancel</button></div></div> : <><header><small>{e.entry_date}{e.source === 'photo' ? ' · from picture' : ''}</small><div className="up-tools"><button type="button" className="outline-btn" onClick={() => beginEdit(e)}>Edit</button><button type="button" className="icon-btn" aria-label="Delete entry" onClick={() => remove(e.id)}><Trash2 size={15} /></button></div></header>
             <p>{e.body}</p></>}</article>)}</div>
         </div>)}</div>
+        <StudentPetition studentName={student?.name ?? ''} classroom={student?.classroom ?? ''} summary={summary} entries={entries} />
       </>}
     </>}
   </section>;

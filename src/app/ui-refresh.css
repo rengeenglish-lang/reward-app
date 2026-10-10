@@ -548,3 +548,14 @@ button.student-avatar:hover{transform:scale(1.06)}
 .pyp-edit-save:disabled{opacity:.5}
 .pyp-bad{flex:1 0 100%;color:#d6452f;font-weight:700}
 .pyp-tool-list li.pyp-editing{background:#efe9ff;border-radius:16px}
+
+/* ---------- Student analysis: dilekçe ---------- */
+.sa-petition{margin-top:18px;padding-top:14px;border-top:2px dashed #e6e1f5}
+.sa-petition-box{margin-top:12px;display:flex;flex-direction:column;gap:12px}
+.sa-petition-text{width:100%;font-family:Georgia,'Times New Roman',serif;line-height:1.5;white-space:pre-wrap}
+.petition-sheet{display:none}
+@media print{
+  body.printing-petition *{visibility:hidden!important}
+  body.printing-petition .petition-sheet,body.printing-petition .petition-sheet *{visibility:visible!important}
+  body.printing-petition .petition-sheet{display:block;position:absolute;left:0;top:0;width:100%;padding:24mm 20mm;box-sizing:border-box;font:12pt/1.55 'Times New Roman',Georgia,serif;color:#000;background:#fff;white-space:pre-wrap}
+}
