@@ -536,3 +536,15 @@ button.student-avatar:hover{transform:scale(1.06)}
 .pyp-tool-list li{display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-radius:99px;background:#efe9ff;color:#41336f;font-weight:800;font-size:13px}
 .pyp-tool-list li button{border:0;width:22px;height:22px;border-radius:50%;background:#fff;color:#6b6585;cursor:pointer;line-height:1}
 .pyp-tool-list .pyp-none{background:transparent;color:#8a84a3}
+.pyp-custom{padding:0;gap:0;align-items:stretch}
+.pyp-custom .pyp-custom-pick{flex:1;display:flex;align-items:center;gap:10px;padding:10px 6px 10px 12px;border:0;background:transparent;font:inherit;color:inherit;text-align:left;cursor:pointer;min-width:0}
+.pyp-custom .pyp-custom-pick span{font-size:22px;line-height:1}
+.pyp-custom-edit,.pyp-custom-remove{flex:none;align-self:center;width:28px;height:28px;margin-right:4px;border:0;border-radius:50%;background:#efe9ff;color:#41336f;cursor:pointer;line-height:1}
+.pyp-tool-list li .pyp-custom-edit,.pyp-tool-list li .pyp-custom-remove{margin:0;background:#fff;color:#6b6585;width:22px;height:22px}
+.pyp-editing{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px}
+.pyp-edit-input{flex:1 1 120px;min-width:0;padding:7px 10px;border:2px solid var(--purple,#8566d6);border-radius:10px;font:inherit}
+.pyp-edit-input[aria-invalid="true"]{border-color:#d6452f}
+.pyp-edit-save{border:0;border-radius:10px;padding:7px 12px;background:var(--purple,#8566d6);color:#fff;font:inherit;font-weight:800;cursor:pointer}
+.pyp-edit-save:disabled{opacity:.5}
+.pyp-bad{flex:1 0 100%;color:#d6452f;font-weight:700}
+.pyp-tool-list li.pyp-editing{background:#efe9ff;border-radius:16px}
