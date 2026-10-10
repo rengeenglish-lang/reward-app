@@ -11,7 +11,8 @@ import { LESSONS, getProgram, resetProgram, saveProgram, type Slot } from './les
 import { addTeacherNote, deleteTeacherNote, listTeacherNotes } from './teacher-notes-actions';
 import { GRADES, NOTE_KINDS, PYP_THEMES, kindLabel, type NoteKind, type TeacherNote } from '@/lib/teacher-issues';
 
-import { PypThemeList, PypToolList } from './pyp-theme';
+import { PypThemePanel } from './pyp-theme';
+import { useThemeNames } from './pyp-themes';
 
 type Section = 'program' | 'notes' | 'students' | 'units' | 'timeline' | 'ideas' | 'pyp';
 const DAYS = [{ n: 1, label: 'Monday' }, { n: 2, label: 'Tuesday' }, { n: 3, label: 'Wednesday' }, { n: 4, label: 'Thursday' }, { n: 5, label: 'Friday' }];
@@ -62,6 +63,7 @@ type Draft = { kind: NoteKind; grade: number | null; theme: string | null; title
 const emptyDraft = (): Draft => ({ kind: 'department', grade: null, theme: null, title: '', body: '', date: today(), source: 'typed' });
 
 function MeetingNotes({ draft, setDraft }: { draft: Draft; setDraft: (d: Draft) => void }) {
+  const themeNames = useThemeNames();
   const [notes, setNotes] = useState<TeacherNote[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
@@ -110,7 +112,7 @@ function MeetingNotes({ draft, setDraft }: { draft: Draft; setDraft: (d: Draft) 
       <form className="ti-form" onSubmit={save}>
         <label><span className="field-label">Type</span><select className="field-select" value={draft.kind} onChange={(e) => setKind(e.target.value as NoteKind)}>{NOTE_KINDS.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}</select></label>
         {needsGrade && <label><span className="field-label">Grade</span><select className="field-select" value={draft.grade ?? 1} onChange={(e) => patch({ grade: Number(e.target.value) })}>{GRADES.map((g) => <option key={g} value={g}>Grade {g}</option>)}</select></label>}
-        {draft.kind === 'project' && <label><span className="field-label">PYP theme</span><select className="field-select" value={draft.theme ?? PYP_THEMES[0]} onChange={(e) => patch({ theme: e.target.value })}>{PYP_THEMES.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>}
+        {draft.kind === 'project' && <label><span className="field-label">PYP theme</span><select className="field-select" value={draft.theme ?? PYP_THEMES[0]} onChange={(e) => patch({ theme: e.target.value })}>{themeNames.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>}
         <label><span className="field-label">Date</span><input className="field-select" type="date" value={draft.date} onChange={(e) => patch({ date: e.target.value })} required /></label>
         <label className="ti-wide"><span className="field-label">Title</span><input className="field-select" value={draft.title} onChange={(e) => patch({ title: e.target.value })} placeholder="e.g. Unit 2 planning" maxLength={160} required /></label>
         <label className="outline-btn ti-photo"><Camera size={16} /> {reading ? 'Reading the picture…' : 'Add notes from a picture'}<input type="file" accept="image/*" capture="environment" onChange={readPhoto} disabled={reading} /></label>
@@ -125,7 +127,7 @@ function MeetingNotes({ draft, setDraft }: { draft: Draft; setDraft: (d: Draft) 
       <div className="ti-filters">
         <select className="field-select" aria-label="Filter by type" value={fKind} onChange={(e) => setFKind(e.target.value as 'all' | NoteKind)}><option value="all">All types</option>{NOTE_KINDS.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}</select>
         <select className="field-select" aria-label="Filter by grade" value={fGrade} onChange={(e) => setFGrade(Number(e.target.value))}><option value={0}>All grades</option>{GRADES.map((g) => <option key={g} value={g}>Grade {g}</option>)}</select>
-        <select className="field-select" aria-label="Filter by PYP theme" value={fTheme} onChange={(e) => setFTheme(e.target.value)}><option value="">All themes</option>{PYP_THEMES.map((t) => <option key={t} value={t}>{t}</option>)}</select>
+        <select className="field-select" aria-label="Filter by PYP theme" value={fTheme} onChange={(e) => setFTheme(e.target.value)}><option value="">All themes</option>{themeNames.map((t) => <option key={t} value={t}>{t}</option>)}</select>
       </div>
       {!loaded ? <p className="ti-empty">Loading…</p> : shown.length === 0 ? <p className="ti-empty">No notes yet.</p> : <div className="ti-notes">{shown.map((n) => <article className="ti-note" key={n.id}>
         <header><div><strong>{n.title}</strong><small>{noteTag(n)} · {n.note_date}{n.source === 'photo' ? ' · from picture' : ''}</small></div><button type="button" className="icon-btn" aria-label={`Delete ${n.title}`} onClick={() => remove(n.id)} disabled={pending}><Trash2 size={15} /></button></header>
@@ -149,10 +151,10 @@ function TodayStrip() {
   </section>;
 }
 
-export default function TeacherIssues({ classrooms = [] }: { classrooms?: Array<{ id: string; name: string }> }) {
+export default function TeacherIssues() {
   const [section, setSection] = useState<Section>('program');
   const [draft, setDraft] = useState<Draft>(emptyDraft);
-  const tabs: Array<[Section, string, string, string]> = [['program', '🗓️', 'Lesson program', 'Your weekly timetable'], ['units', '📘', 'Unit plans', 'Type or scan pictures'], ['notes', '📝', 'Meeting & project notes', 'Type or scan a photo'], ['students', '🧠', 'Student analysis', 'Academic & behaviour'], ['timeline', '🧭', 'Department timeline', 'What comes next'], ['ideas', '💡', 'PYP projects', 'Suggest a project by theme'], ['pyp', '🌟', 'PYP theme & tools', 'Each class’s theme + your list']];
+  const tabs: Array<[Section, string, string, string]> = [['program', '🗓️', 'Lesson program', 'Your weekly timetable'], ['units', '📘', 'Unit plans', 'Type or scan pictures'], ['notes', '📝', 'Meeting & project notes', 'Type or scan a photo'], ['students', '🧠', 'Student analysis', 'Academic & behaviour'], ['timeline', '🧭', 'Department timeline', 'What comes next'], ['ideas', '💡', 'PYP projects', 'Suggest a project by theme'], ['pyp', '🌟', 'PYP theme', 'Grade 4 theme & your own names']];
   return <div className="page-wrap alternate ti-page">
     <p className="eyebrow">FOR YOU, THE TEACHER</p>
     <h1>Teacher <em>Issues</em></h1>
@@ -164,7 +166,7 @@ export default function TeacherIssues({ classrooms = [] }: { classrooms?: Array<
     {section === 'notes' && <MeetingNotes draft={draft} setDraft={setDraft} />}
     {section === 'students' && <StudentAnalysis />}
     {section === 'timeline' && <DepartmentTimeline />}
-    {section === 'pyp' && <><PypThemeList classrooms={classrooms} /><PypToolList /></>}
+    {section === 'pyp' && <PypThemePanel />}
     {section === 'ideas' &&<PypProjects onSave={(d) => { setDraft(d); setSection('notes'); }} />}
   </div>;
 }
