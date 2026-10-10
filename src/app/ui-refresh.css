@@ -569,3 +569,7 @@ button.student-avatar:hover{transform:scale(1.06)}
 .pyp-mine ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
 .pyp-mine li{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:2px solid #efeaf9}
 .pyp-mine li p{margin:4px 0 0;font-size:13px;color:#4b4666;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.pyp-card h3 .pyp-custom-edit{width:24px;height:24px;margin:0 0 0 4px;vertical-align:middle;font-size:13px}
+.pyp-title-edit{margin-bottom:8px}
+.pyp-restore{margin:6px 0 0;font-size:13px}
+.pyp-none{color:#8a84a3;font-weight:700}

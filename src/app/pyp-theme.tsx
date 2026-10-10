@@ -1,52 +1,55 @@
 'use client';
 
 import { useState } from 'react';
-import { PYP_SIX, useCustomThemes, usePypCurrent } from './pyp-themes';
+import { themeEmoji, useThemes, usePypCurrent, type PypThemeItem } from './pyp-themes';
 
-/** A theme name you added, with buttons to edit (rename) and remove it. `onPick` makes the name itself selectable. */
-function CustomThemeName({ name, selected, onPick, rename, remove, variant }: { name: string; selected?: boolean; onPick?: () => void; rename: (oldName: string, next: string) => boolean; remove: (name: string) => void; variant: 'option' | 'tag' }) {
+type Actions = { rename: (id: string, next: string) => boolean; remove: (id: string) => void };
+
+/** One theme in your list, with buttons to edit (rename) and remove it. `onPick` makes the name itself selectable. */
+function ThemeName({ theme, selected, onPick, rename, remove, variant }: { theme: PypThemeItem; selected?: boolean; onPick?: () => void; variant: 'option' | 'tag' } & Actions) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(name);
+  const [draft, setDraft] = useState(theme.name);
   const [bad, setBad] = useState(false);
-  const save = () => { if (rename(name, draft)) { setEditing(false); setBad(false); } else setBad(true); };
+  const save = () => { if (rename(theme.id, draft)) { setEditing(false); setBad(false); } else setBad(true); };
   const wrap = variant === 'option' ? `pyp-option pyp-custom${selected ? ' on' : ''}` : '';
   if (editing) {
     const Box = variant === 'tag' ? 'li' : 'div';
     return (
       <Box className={`${wrap} pyp-editing`}>
-        <input className="pyp-edit-input" aria-label={`Edit theme name ${name}`} value={draft} maxLength={60} autoFocus aria-invalid={bad} onChange={(event) => { setDraft(event.target.value); setBad(false); }} onKeyDown={(event) => { if (event.key === 'Enter') save(); if (event.key === 'Escape') { setEditing(false); setBad(false); } }} />
+        <input className="pyp-edit-input" aria-label={`Edit theme name ${theme.name}`} value={draft} maxLength={60} autoFocus aria-invalid={bad} onChange={(event) => { setDraft(event.target.value); setBad(false); }} onKeyDown={(event) => { if (event.key === 'Enter') save(); if (event.key === 'Escape') { setEditing(false); setBad(false); } }} />
         <button type="button" className="pyp-edit-save" onClick={save} disabled={!draft.trim()}>Save</button>
         <button type="button" className="pyp-custom-remove" aria-label="Cancel editing" onClick={() => { setEditing(false); setBad(false); }}>✕</button>
         {bad && <small className="pyp-bad" role="alert">That name is empty or already used.</small>}
       </Box>
     );
   }
-  const edit = <button type="button" className="pyp-custom-edit" aria-label={`Edit theme ${name}`} title="Edit this theme name" onClick={() => { setDraft(name); setEditing(true); }}>✎</button>;
-  const del = <button type="button" className="pyp-custom-remove" aria-label={`Remove theme ${name}`} title="Remove this theme name" onClick={() => remove(name)}>✕</button>;
-  if (variant === 'tag') return <li><span>{name}</span>{edit}{del}</li>;
+  const edit = <button type="button" className="pyp-custom-edit" aria-label={`Edit theme ${theme.name}`} title="Edit this theme name" onClick={() => { setDraft(theme.name); setEditing(true); }}>✎</button>;
+  const del = <button type="button" className="pyp-custom-remove" aria-label={`Remove theme ${theme.name}`} title="Remove this theme" onClick={() => { if (window.confirm(`Remove the theme “${theme.name}”? Plans and notes already saved with it keep their text.`)) remove(theme.id); }}>✕</button>;
+  if (variant === 'tag') return <li><span>{themeEmoji(theme)} {theme.name}</span>{edit}{del}</li>;
   return (
     <div className={wrap}>
-      <button type="button" className="pyp-custom-pick" aria-pressed={selected} onClick={onPick}><span aria-hidden="true">✨</span><b>{name}</b></button>
+      <button type="button" className="pyp-custom-pick" aria-pressed={selected} onClick={onPick}><span aria-hidden="true">{themeEmoji(theme)}</span><b>{theme.name}</b></button>
       {edit}{del}
     </div>
   );
 }
 
 /**
- * The PYP theme for all of Grade 4 (every class shares it). Tap the chip to choose one of the six themes
- * or one you added yourself, add a new theme name, and write the central idea.
+ * The PYP theme for all of Grade 4 (every class shares it). Tap the chip to choose a theme, add a new one,
+ * rename or remove themes in the list, and write the central idea.
  */
 export default function PypTheme({ showIdea = false }: { showIdea?: boolean }) {
   const { current, set } = usePypCurrent();
-  const { custom, add, remove, rename } = useCustomThemes();
+  const { themes, add, remove, rename, restoreIb, missingIb } = useThemes();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [idea, setIdea] = useState('');
 
-  const emoji = PYP_SIX.find((t) => t.name === current.theme)?.emoji || (current.theme ? '✨' : '🌟');
+  const chosen = themes.find((t) => t.name === current.theme);
+  const emoji = chosen ? themeEmoji(chosen) : current.theme ? '✨' : '🌟';
   const show = () => { setIdea(current.idea); setName(''); setOpen(true); };
   const choose = (theme: string) => set({ theme, idea });
-  const addName = () => { const added = add(name); if (added) { set({ theme: added, idea }); setName(''); } };
+  const addName = () => { const added = add(name); if (added) { set({ theme: added.name, idea }); setName(''); } };
 
   return (
     <>
@@ -60,16 +63,13 @@ export default function PypTheme({ showIdea = false }: { showIdea?: boolean }) {
           <section className="pyp-pop" role="dialog" aria-modal="true" aria-label="PYP theme">
             <button type="button" className="pyp-close" aria-label="Close" onClick={() => setOpen(false)}>✕</button>
             <h2>PYP theme for Grade 4</h2>
-            <p>This theme is for all your Grade 4 classes. Pick one, or add your own theme name below.</p>
+            <p>This theme is for all your Grade 4 classes. Pick one, add a theme, or use ✎ and ✕ to rename or remove one.</p>
             <div className="pyp-pick-grid">
-              {PYP_SIX.map((t) => (
-                <button key={t.name} type="button" className={`pyp-option${current.theme === t.name ? ' on' : ''}`} aria-pressed={current.theme === t.name} onClick={() => choose(t.name)}>
-                  <span aria-hidden="true">{t.emoji}</span><b>{t.name}</b>
-                </button>
-              ))}
-              {custom.map((t) => <CustomThemeName key={t} variant="option" name={t} selected={current.theme === t} onPick={() => choose(t)} rename={rename} remove={remove} />)}
+              {themes.map((t) => <ThemeName key={t.id} variant="option" theme={t} selected={current.theme === t.name} onPick={() => choose(t.name)} rename={rename} remove={remove} />)}
+              {themes.length === 0 && <p className="pyp-none">No themes yet. Add one below.</p>}
             </div>
-            <label className="pyp-label" htmlFor="pyp-own">Add a theme name</label>
+            {missingIb && <button type="button" className="text-link pyp-restore" onClick={restoreIb}>Restore the removed IB themes</button>}
+            <label className="pyp-label" htmlFor="pyp-own">Add a theme</label>
             <div className="pyp-own">
               <input id="pyp-own" value={name} maxLength={60} placeholder="e.g. Our oceans" onChange={(event) => setName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') addName(); }} />
               <button type="button" className="primary-btn" disabled={!name.trim()} onClick={addName}>Add</button>
@@ -87,24 +87,24 @@ export default function PypTheme({ showIdea = false }: { showIdea?: boolean }) {
   );
 }
 
-/** Teacher Issues: set the Grade 4 theme and manage the theme names you added. */
+/** Teacher Issues: set the Grade 4 theme and manage your list of themes (add, rename, remove). */
 export function PypThemePanel() {
-  const { custom, add, remove, rename } = useCustomThemes();
+  const { themes, add, remove, rename, restoreIb, missingIb } = useThemes();
   const [name, setName] = useState('');
   return (
     <section className="panel ti-panel pyp-panel" aria-labelledby="pyp-themes-title">
-      <div className="panel-title"><div className="panel-icon purple">🌟</div><div><h2 id="pyp-themes-title">PYP theme for Grade 4</h2><p>One theme for all your Grade 4 classes. It also shows on the Today page, and every theme here can be picked in Unit plans.</p></div></div>
+      <div className="panel-title"><div className="panel-icon purple">🌟</div><div><h2 id="pyp-themes-title">PYP theme for Grade 4</h2><p>One theme for all your Grade 4 classes. It also shows on the Today page. Add, rename or remove themes below; every theme can be picked in Unit plans and notes.</p></div></div>
       <div className="pyp-current"><PypTheme showIdea /></div>
-      <label className="pyp-label" htmlFor="pyp-add-name">Add a theme name</label>
+      <label className="pyp-label" htmlFor="pyp-add-name">Add a theme</label>
       <div className="pyp-own">
         <input id="pyp-add-name" value={name} maxLength={60} placeholder="e.g. Our oceans" onChange={(event) => setName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && name.trim()) { add(name); setName(''); } }} />
         <button type="button" className="primary-btn" disabled={!name.trim()} onClick={() => { add(name); setName(''); }}>Add</button>
       </div>
-      {custom.length > 0 && (
-        <ul className="pyp-tool-list" aria-label="Theme names you added">
-          {custom.map((t) => <CustomThemeName key={t} variant="tag" name={t} rename={rename} remove={remove} />)}
-        </ul>
-      )}
+      <ul className="pyp-tool-list" aria-label="Your PYP themes">
+        {themes.map((t) => <ThemeName key={t.id} variant="tag" theme={t} rename={rename} remove={remove} />)}
+      </ul>
+      {themes.length === 0 && <p className="pyp-none">No themes yet. Add one above.</p>}
+      {missingIb && <button type="button" className="text-link pyp-restore" onClick={restoreIb}>Restore the removed IB themes</button>}
     </section>
   );
 }

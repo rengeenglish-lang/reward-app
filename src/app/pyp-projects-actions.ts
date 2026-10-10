@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { requireTutor } from '@/lib/session';
 import { PROJECT_IDEAS, THEME_INFO, type ProjectSuggestion } from '@/lib/teacher-issues';
 
-const input = z.object({ grade: z.number().int().min(1).max(4), theme: z.string().trim().min(1).max(60), description: z.string().trim().max(600).optional(), avoid: z.array(z.string().max(200)).max(20).default([]) });
+const input = z.object({ grade: z.number().int().min(1).max(4), theme: z.string().trim().min(1).max(60), description: z.string().trim().max(600).optional(), baseTheme: z.string().trim().max(60).optional(), avoid: z.array(z.string().max(200)).max(20).default([]) });
 const line = z.string().trim().min(1).max(300);
 const reply = z.object({
   title: z.string().trim().min(1).max(120),
@@ -18,19 +18,19 @@ const reply = z.object({
 const AGES: Record<number, string> = { 1: '6–7', 2: '7–8', 3: '8–9', 4: '9–10' };
 
 /** A ready-made idea for the grade and theme, used when no AI key is set or the request fails. */
-function starter(grade: number, theme: string, avoid: string[]): ProjectSuggestion {
+function starter(grade: number, theme: string, avoid: string[], label = theme): ProjectSuggestion {
   const pool = PROJECT_IDEAS.filter((i) => i.grade === grade && i.theme === theme);
   const pick = pool.find((i) => !avoid.includes(i.title)) ?? pool[0];
-  if (!pick) return { title: `${theme} project`, summary: `Plan a project for Grade ${grade} around the theme "${theme}". Add your own title and details, then save it.`, centralIdea: '', linesOfInquiry: [], activities: [], studentAction: '', source: 'starter' };
+  if (!pick) return { title: `${label} project`, summary: `Plan a project for Grade ${grade} around the theme "${label}". Add your own title and details, then save it.`, centralIdea: '', linesOfInquiry: [], activities: [], studentAction: '', source: 'starter' };
   return { title: pick.title, summary: pick.idea, centralIdea: '', linesOfInquiry: [], activities: [], studentAction: '', source: 'starter' };
 }
 
 export async function suggestProject(raw: z.input<typeof input>): Promise<ProjectSuggestion> {
   await requireTutor();
-  const { grade, theme, avoid, description } = input.parse(raw);
-  const themeInfo = description || (THEME_INFO as Record<string, { description: string } | undefined>)[theme]?.description || '';
+  const { grade, theme, avoid, description, baseTheme } = input.parse(raw);
+  const themeInfo = description || (THEME_INFO as Record<string, { description: string } | undefined>)[baseTheme ?? theme]?.description || '';
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return starter(grade, theme, avoid);
+  if (!apiKey) return starter(grade, baseTheme ?? theme, avoid, theme);
   const prompt = `You are helping a primary teacher at an IB PYP school in Turkey plan a unit of inquiry project.
 Grade ${grade} (ages ${AGES[grade]}), English-language classroom with Turkish-speaking learners.
 Transdisciplinary theme: "${theme}"${themeInfo ? ` — ${themeInfo}` : ''}
@@ -45,13 +45,13 @@ Reply with only JSON:
       body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] }),
       signal: AbortSignal.timeout(45000),
     });
-    if (!upstream.ok) return starter(grade, theme, avoid);
+    if (!upstream.ok) return starter(grade, baseTheme ?? theme, avoid, theme);
     const data = (await upstream.json()) as { content?: Array<{ type: string; text?: string }> };
     const text = data.content?.find((c) => c.type === 'text')?.text ?? '';
     const start = text.indexOf('{'), end = text.lastIndexOf('}');
-    if (start < 0 || end <= start) return starter(grade, theme, avoid);
+    if (start < 0 || end <= start) return starter(grade, baseTheme ?? theme, avoid, theme);
     return { ...reply.parse(JSON.parse(text.slice(start, end + 1))), source: 'ai' };
   } catch {
-    return starter(grade, theme, avoid);
+    return starter(grade, baseTheme ?? theme, avoid, theme);
   }
 }
