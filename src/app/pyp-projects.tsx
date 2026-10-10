@@ -3,14 +3,14 @@
 import { useEffect, useState, useTransition } from 'react';
 import { ExternalLink, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { suggestProject } from './pyp-projects-actions';
+import type { PypThemeItem } from './pyp-themes';
 import { addTeacherNote, deleteTeacherNote, listTeacherNotes, updateTeacherNote } from './teacher-notes-actions';
-import { useCustomThemes, useThemeDescriptions } from './pyp-themes';
-import { GRADES, IB_PYP_URL, PYP_THEMES, THEME_INFO, suggestionToText, type ProjectSuggestion, type TeacherNote } from '@/lib/teacher-issues';
+import { themeEmoji, useThemeDescriptions, useThemes } from './pyp-themes';
+import { GRADES, IB_PYP_URL, THEME_INFO, suggestionToText, type ProjectSuggestion, type TeacherNote } from '@/lib/teacher-issues';
 
 type Form = { theme: string; id: string | null; title: string; body: string };
 const today = () => { const d = new Date(); const p = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
 const ibDescription = (theme: string) => (THEME_INFO as Record<string, { description: string } | undefined>)[theme]?.description ?? '';
-const ibIcon = (theme: string) => (THEME_INFO as Record<string, { icon: string } | undefined>)[theme]?.icon ?? '✨';
 
 export default function PypProjects() {
   const [grade, setGrade] = useState<number>(1);
@@ -22,21 +22,24 @@ export default function PypProjects() {
   const [editingDesc, setEditingDesc] = useState<string | null>(null);
   const [descDraft, setDescDraft] = useState('');
   const [pending, start] = useTransition();
-  const { custom } = useCustomThemes();
+  const { themes, rename } = useThemes();
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [titleDraft, setTitleDraft] = useState('');
   const { map: descriptions, set: setDescription } = useThemeDescriptions();
-  const themes: string[] = [...PYP_THEMES, ...custom];
   const key = (theme: string) => `${grade}|${theme}`;
-  const describe = (theme: string) => descriptions[theme] ?? ibDescription(theme);
+  const describe = (t: PypThemeItem) => descriptions[t.id] ?? (t.base ? ibDescription(t.base) : '');
+  const saveTitle = (t: PypThemeItem) => { if (rename(t.id, titleDraft)) { setRenaming(null); setError(''); } else setError('That theme name is empty or already used.'); };
 
   useEffect(() => { listTeacherNotes().then((n) => setMine(n.filter((x) => x.kind === 'project'))).catch(() => setError('Could not load your saved projects.')); }, []);
 
-  const suggest = (theme: string) => {
+  const suggest = (t: PypThemeItem) => {
+    const theme = t.name;
     const k = key(theme);
     setBusy(k); setError('');
     start(async () => {
       const previous = results[k] ?? [];
       try {
-        const s = await suggestProject({ grade, theme, description: describe(theme) || undefined, avoid: previous.map((p) => p.title) });
+        const s = await suggestProject({ grade, theme, description: describe(t) || undefined, baseTheme: t.base ?? undefined, avoid: previous.map((p) => p.title) });
         setResults((r) => ({ ...r, [k]: [s, ...(r[k] ?? [])] }));
       } catch { setError('Could not get a suggestion. Try again.'); }
       finally { setBusy(''); }
@@ -57,32 +60,35 @@ export default function PypProjects() {
   };
   const removeProject = (id: string) => start(async () => { try { await deleteTeacherNote(id); setMine((l) => l.filter((x) => x.id !== id)); } catch { setError('Could not delete this project.'); } });
 
-  const saveDescription = (theme: string) => { setDescription(theme, descDraft); setEditingDesc(null); };
+  const saveDescription = (id: string) => { setDescription(id, descDraft); setEditingDesc(null); };
 
   return <section className="panel ti-panel" aria-labelledby="ti-pyp">
     <div className="panel-title"><div className="panel-icon purple"><Sparkles size={19} /></div><div><h2 id="ti-pyp">PYP projects</h2><p>The six IB PYP transdisciplinary themes, plus any theme you added. Choose a grade, then press <strong>Suggest a project</strong>, or <strong>Add a project</strong> of your own. Use <strong>Edit</strong> to change a theme’s description.</p></div></div>
     <div className="ti-filters" role="tablist" aria-label="Grade">{GRADES.map((g) => <button key={g} role="tab" aria-selected={grade === g} className={`ti-pill${grade === g ? ' active' : ''}`} onClick={() => { setGrade(g); setForm(null); }}>Grade {g}</button>)}</div>
     {error && <p className="form-error" role="alert">{error}</p>}
-    <div className="pyp-grid">{themes.map((theme) => {
+    <div className="pyp-grid">{themes.map((t) => {
+      const theme = t.name;
       const k = key(theme), list = results[k] ?? [], current = list[0], loading = busy === k;
       const projects = mine.filter((p) => p.grade === grade && p.theme === theme);
       const showForm = form?.theme === theme;
-      const isCustom = !(PYP_THEMES as readonly string[]).includes(theme);
+      const isCustom = !t.base;
       return <article className="pyp-card" key={theme}>
-        <h3><span aria-hidden="true">{ibIcon(theme)}</span> {theme}</h3>
-        {editingDesc === theme
+        {renaming === t.id
+          ? <div className="pyp-editing pyp-title-edit"><input className="pyp-edit-input" aria-label="Theme title" value={titleDraft} maxLength={60} autoFocus onChange={(e) => setTitleDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') saveTitle(t); if (e.key === 'Escape') setRenaming(null); }} /><button type="button" className="pyp-edit-save" onClick={() => saveTitle(t)} disabled={!titleDraft.trim()}>Save</button><button type="button" className="pyp-custom-remove" aria-label="Cancel" onClick={() => setRenaming(null)}>✕</button></div>
+          : <h3><span aria-hidden="true">{themeEmoji(t)}</span> {theme} <button type="button" className="pyp-custom-edit" aria-label={`Edit the title of ${theme}`} title="Change this theme’s title" onClick={() => { setRenaming(t.id); setTitleDraft(theme); }}>✎</button></h3>}
+        {editingDesc === t.id
           ? <div className="pyp-desc-edit">
             <textarea className="field-select" rows={5} maxLength={600} value={descDraft} aria-label={`Description of ${theme}`} onChange={(e) => setDescDraft(e.target.value)} />
             <div className="ti-actions">
-              <button type="button" className="primary-btn" onClick={() => saveDescription(theme)}>Save</button>
-              {!isCustom && descriptions[theme] !== undefined && <button type="button" className="outline-btn" onClick={() => { setDescription(theme, ''); setEditingDesc(null); }}>Back to IB text</button>}
+              <button type="button" className="primary-btn" onClick={() => saveDescription(t.id)}>Save</button>
+              {!isCustom && descriptions[t.id] !== undefined && <button type="button" className="outline-btn" onClick={() => { setDescription(t.id, ''); setEditingDesc(null); }}>Back to IB text</button>}
               <button type="button" className="outline-btn" onClick={() => setEditingDesc(null)}>Cancel</button>
             </div>
           </div>
-          : <><p className="pyp-desc">{describe(theme) || <em>No description yet.</em>}</p>
-            <button type="button" className="text-link pyp-edit" onClick={() => { setEditingDesc(theme); setDescDraft(describe(theme)); }}><Pencil size={12} /> Edit description</button></>}
+          : <><p className="pyp-desc">{describe(t) || <em>No description yet.</em>}</p>
+            <button type="button" className="text-link pyp-edit" onClick={() => { setEditingDesc(t.id); setDescDraft(describe(t)); }}><Pencil size={12} /> Edit description</button></>}
         <div className="pyp-buttons">
-          <button type="button" className="primary-btn pyp-suggest" onClick={() => suggest(theme)} disabled={loading}><Sparkles size={15} /> {loading ? 'Thinking…' : current ? 'Suggest another' : 'Suggest a project'}</button>
+          <button type="button" className="primary-btn pyp-suggest" onClick={() => suggest(t)} disabled={loading}><Sparkles size={15} /> {loading ? 'Thinking…' : current ? 'Suggest another' : 'Suggest a project'}</button>
           <button type="button" className="outline-btn" onClick={() => setForm({ theme, id: null, title: '', body: '' })}><Plus size={14} /> Add a project</button>
         </div>
         {showForm && form && <div className="pyp-form">

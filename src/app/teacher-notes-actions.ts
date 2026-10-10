@@ -35,6 +35,17 @@ export async function addTeacherNote(input: z.input<typeof noteInput>): Promise<
   return rows[0] as TeacherNote;
 }
 
+/** Renames a PYP theme on every unit plan and project note you saved with the old name. */
+export async function renameTheme(oldName: string, newName: string): Promise<void> {
+  const tutor = await requireTutor();
+  const names = z.object({ oldName: z.string().trim().min(1).max(60), newName: z.string().trim().min(1).max(60) }).parse({ oldName, newName });
+  const sql = sqlClient();
+  await sql.transaction([
+    sql`UPDATE unit_plans SET theme = ${names.newName} WHERE tutor_id = ${tutor.id} AND theme = ${names.oldName}`,
+    sql`UPDATE teacher_notes SET theme = ${names.newName} WHERE tutor_id = ${tutor.id} AND theme = ${names.oldName}`,
+  ]);
+}
+
 export async function deleteTeacherNote(id: string): Promise<void> {
   const tutor = await requireTutor();
   await sqlClient()`DELETE FROM teacher_notes WHERE id = ${z.string().uuid().parse(id)} AND tutor_id = ${tutor.id}`;
