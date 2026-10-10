@@ -29,3 +29,13 @@ export async function deleteActivity(id: string): Promise<void> {
   const tutor = await requireTutor();
   await sqlClient()`DELETE FROM department_activities WHERE id = ${z.string().uuid().parse(id)} AND tutor_id = ${tutor.id}`;
 }
+
+export async function updateActivity(id: string, input: z.input<typeof item>): Promise<Activity> {
+  const tutor = await requireTutor();
+  const a = item.parse(input);
+  const rows = await sqlClient()`UPDATE department_activities SET activity_date = ${a.date}, title = ${a.title}
+    WHERE id = ${z.string().uuid().parse(id)} AND tutor_id = ${tutor.id}
+    RETURNING id, to_char(activity_date, 'YYYY-MM-DD') AS activity_date, title, source`;
+  if (!rows.length) throw new Error('Activity not found');
+  return rows[0] as Activity;
+}

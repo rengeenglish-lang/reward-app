@@ -48,3 +48,13 @@ export async function deleteStudentEntry(id: string): Promise<void> {
   const tutor = await requireTutor();
   await sqlClient()`DELETE FROM student_analysis_entries WHERE id = ${uuid.parse(id)} AND tutor_id = ${tutor.id}`;
 }
+
+export async function updateStudentEntry(id: string, input: { body: string; entryDate: string }): Promise<StudentEntry> {
+  const tutor = await requireTutor();
+  const e = z.object({ body: z.string().trim().min(1).max(20000), entryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(input);
+  const rows = await sqlClient()`UPDATE student_analysis_entries SET body = ${e.body}, entry_date = ${e.entryDate}
+    WHERE id = ${uuid.parse(id)} AND tutor_id = ${tutor.id}
+    RETURNING id, area, body, to_char(entry_date, 'YYYY-MM-DD') AS entry_date, source`;
+  if (!rows.length) throw new Error('Entry not found');
+  return rows[0] as StudentEntry;
+}

@@ -37,3 +37,13 @@ export async function deleteUnitPlan(id: string): Promise<void> {
   const tutor = await requireTutor();
   await sqlClient()`DELETE FROM unit_plans WHERE id = ${z.string().uuid().parse(id)} AND tutor_id = ${tutor.id}`;
 }
+
+export async function updateUnitPlan(id: string, input: z.input<typeof planInput>): Promise<UnitPlan> {
+  const tutor = await requireTutor();
+  const p = planInput.parse(input);
+  const rows = await sqlClient()`UPDATE unit_plans SET title = ${p.title}, grade = ${p.grade}, theme = ${p.theme}, start_date = ${p.startDate}, end_date = ${p.endDate}, body = ${p.body}, source = ${p.source}
+    WHERE id = ${z.string().uuid().parse(id)} AND tutor_id = ${tutor.id}
+    RETURNING id, title, grade, theme, to_char(start_date, 'YYYY-MM-DD') AS start_date, to_char(end_date, 'YYYY-MM-DD') AS end_date, body, source`;
+  if (!rows.length) throw new Error('Plan not found');
+  return rows[0] as UnitPlan;
+}
