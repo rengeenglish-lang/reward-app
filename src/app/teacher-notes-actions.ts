@@ -39,3 +39,18 @@ export async function deleteTeacherNote(id: string): Promise<void> {
   const tutor = await requireTutor();
   await sqlClient()`DELETE FROM teacher_notes WHERE id = ${z.string().uuid().parse(id)} AND tutor_id = ${tutor.id}`;
 }
+
+export async function updateTeacherNote(id: string, input: z.input<typeof noteInput>): Promise<TeacherNote> {
+  const tutor = await requireTutor();
+  const note = noteInput.parse(input);
+  const needsGrade = note.kind === 'class' || note.kind === 'project';
+  if (needsGrade && note.grade === null) throw new Error('Choose a grade');
+  if (note.kind === 'project' && note.theme === null) throw new Error('Choose a PYP theme');
+  const grade = needsGrade ? note.grade : null;
+  const theme = note.kind === 'project' ? note.theme : null;
+  const rows = await sqlClient()`UPDATE teacher_notes SET kind = ${note.kind}, grade = ${grade}, theme = ${theme}, title = ${note.title}, body = ${note.body}, note_date = ${note.noteDate}, source = ${note.source}
+    WHERE id = ${z.string().uuid().parse(id)} AND tutor_id = ${tutor.id}
+    RETURNING id, kind, grade, theme, title, body, to_char(note_date, 'YYYY-MM-DD') AS note_date, source`;
+  if (!rows.length) throw new Error('Note not found');
+  return rows[0] as TeacherNote;
+}

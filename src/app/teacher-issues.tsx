@@ -8,7 +8,7 @@ import UnitPlans from './unit-plans';
 import PypProjects from './pyp-projects';
 import { readImageText } from './read-image-text';
 import { LESSONS, getProgram, resetProgram, saveProgram, type Slot } from './lesson-schedule';
-import { addTeacherNote, deleteTeacherNote, listTeacherNotes } from './teacher-notes-actions';
+import { addTeacherNote, deleteTeacherNote, listTeacherNotes, updateTeacherNote } from './teacher-notes-actions';
 import { GRADES, NOTE_KINDS, PYP_THEMES, kindLabel, type NoteKind, type TeacherNote } from '@/lib/teacher-issues';
 
 import { PypThemePanel } from './pyp-theme';
@@ -64,6 +64,7 @@ const emptyDraft = (): Draft => ({ kind: 'department', grade: null, theme: null,
 
 function MeetingNotes({ draft, setDraft }: { draft: Draft; setDraft: (d: Draft) => void }) {
   const themeNames = useThemeNames();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [notes, setNotes] = useState<TeacherNote[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
@@ -96,28 +97,31 @@ function MeetingNotes({ draft, setDraft }: { draft: Draft; setDraft: (d: Draft) 
     setError('');
     start(async () => {
       try {
-        const note = await addTeacherNote({ kind: draft.kind, grade: draft.grade, theme: draft.theme as never, title: draft.title, body: draft.body, noteDate: draft.date, source: draft.source });
-        setNotes((n) => [note, ...n]);
+        const input = { kind: draft.kind, grade: draft.grade, theme: draft.theme as never, title: draft.title, body: draft.body, noteDate: draft.date, source: draft.source };
+        if (editingId) { const note = await updateTeacherNote(editingId, input); setNotes((n) => n.map((x) => (x.id === editingId ? note : x))); setEditingId(null); }
+        else { const note = await addTeacherNote(input); setNotes((n) => [note, ...n]); }
         setDraft(emptyDraft());
       } catch (e) { setError(e instanceof Error ? e.message : 'Could not save this note.'); }
     });
   };
+  const startEdit = (n: TeacherNote) => { setDraft({ kind: n.kind, grade: n.grade, theme: n.theme, title: n.title, body: n.body, date: n.note_date, source: n.source }); setEditingId(n.id); setError(''); document.getElementById('ti-add')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  const cancelEdit = () => { setEditingId(null); setDraft(emptyDraft()); setError(''); };
   const remove = (id: string) => start(async () => { try { await deleteTeacherNote(id); setNotes((n) => n.filter((x) => x.id !== id)); } catch { setError('Could not delete this note.'); } });
 
   const shown = useMemo(() => notes.filter((n) => (fKind === 'all' || n.kind === fKind) && (!fGrade || n.grade === fGrade) && (!fTheme || n.theme === fTheme)), [notes, fKind, fGrade, fTheme]);
 
   return <>
     <section className="panel ti-panel" aria-labelledby="ti-add">
-      <div className="panel-title"><div className="panel-icon coral"><ClipboardList size={19} /></div><div><h2 id="ti-add">Add meeting notes or project notes</h2><p>Type them, or take a picture of handwritten or printed notes. The text is read on this device and stored with the date; the picture itself is not kept.</p></div></div>
+      <div className="panel-title"><div className="panel-icon coral"><ClipboardList size={19} /></div><div><h2 id="ti-add">{editingId ? 'Edit note' : 'Add meeting notes or project notes'}</h2><p>Type them, or take a picture of handwritten or printed notes. The text is read on this device and stored with the date; the picture itself is not kept.</p></div></div>
       <form className="ti-form" onSubmit={save}>
         <label><span className="field-label">Type</span><select className="field-select" value={draft.kind} onChange={(e) => setKind(e.target.value as NoteKind)}>{NOTE_KINDS.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}</select></label>
         {needsGrade && <label><span className="field-label">Grade</span><select className="field-select" value={draft.grade ?? 1} onChange={(e) => patch({ grade: Number(e.target.value) })}>{GRADES.map((g) => <option key={g} value={g}>Grade {g}</option>)}</select></label>}
-        {draft.kind === 'project' && <label><span className="field-label">PYP theme</span><select className="field-select" value={draft.theme ?? PYP_THEMES[0]} onChange={(e) => patch({ theme: e.target.value })}>{themeNames.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>}
+        {draft.kind === 'project' && <label><span className="field-label">PYP theme</span><select className="field-select" value={draft.theme ?? PYP_THEMES[0]} onChange={(e) => patch({ theme: e.target.value })}>{draft.theme && !themeNames.includes(draft.theme) && <option value={draft.theme}>{draft.theme}</option>}{themeNames.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>}
         <label><span className="field-label">Date</span><input className="field-select" type="date" value={draft.date} onChange={(e) => patch({ date: e.target.value })} required /></label>
         <label className="ti-wide"><span className="field-label">Title</span><input className="field-select" value={draft.title} onChange={(e) => patch({ title: e.target.value })} placeholder="e.g. Unit 2 planning" maxLength={160} required /></label>
         <label className="outline-btn ti-photo"><Camera size={16} /> {reading ? 'Reading the picture…' : 'Add notes from a picture'}<input type="file" accept="image/*" capture="environment" onChange={readPhoto} disabled={reading} /></label>
         <label className="ti-wide"><span className="field-label">Notes {draft.source === 'photo' && <small>read from a picture – check and correct</small>}</span><textarea className="field-select" rows={8} value={draft.body} onChange={(e) => patch({ body: e.target.value })} required /></label>
-        <button className="primary-btn" type="submit" disabled={pending || reading}><Plus size={16} /> Save note</button>
+        <button className="primary-btn" type="submit" disabled={pending || reading}><Plus size={16} /> {editingId ? 'Save changes' : 'Save note'}</button>{editingId && <button className="outline-btn" type="button" onClick={cancelEdit}>Cancel editing</button>}
       </form>
       {error && <p className="form-error" role="alert">{error}</p>}
     </section>
@@ -130,7 +134,7 @@ function MeetingNotes({ draft, setDraft }: { draft: Draft; setDraft: (d: Draft) 
         <select className="field-select" aria-label="Filter by PYP theme" value={fTheme} onChange={(e) => setFTheme(e.target.value)}><option value="">All themes</option>{themeNames.map((t) => <option key={t} value={t}>{t}</option>)}</select>
       </div>
       {!loaded ? <p className="ti-empty">Loading…</p> : shown.length === 0 ? <p className="ti-empty">No notes yet.</p> : <div className="ti-notes">{shown.map((n) => <article className="ti-note" key={n.id}>
-        <header><div><strong>{n.title}</strong><small>{noteTag(n)} · {n.note_date}{n.source === 'photo' ? ' · from picture' : ''}</small></div><button type="button" className="icon-btn" aria-label={`Delete ${n.title}`} onClick={() => remove(n.id)} disabled={pending}><Trash2 size={15} /></button></header>
+        <header><div><strong>{n.title}</strong><small>{noteTag(n)} · {n.note_date}{n.source === 'photo' ? ' · from picture' : ''}</small></div><div className="up-tools"><button type="button" className="outline-btn" onClick={() => startEdit(n)}>Edit</button><button type="button" className="icon-btn" aria-label={`Delete ${n.title}`} onClick={() => remove(n.id)} disabled={pending}><Trash2 size={15} /></button></div></header>
         <p>{n.body}</p>
       </article>)}</div>}
     </section>

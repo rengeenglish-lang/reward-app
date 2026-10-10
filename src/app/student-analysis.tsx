@@ -2,7 +2,7 @@
 
 import { ChangeEvent, useEffect, useState, useTransition } from 'react';
 import { Brain, Camera, Plus, Trash2, TrendingDown, TrendingUp, Minus } from 'lucide-react';
-import { addStudentEntry, deleteStudentEntry, getStudentAnalysis, listAnalysisStudents, type AnalysisStudent } from './student-analysis-actions';
+import { addStudentEntry, deleteStudentEntry, getStudentAnalysis, listAnalysisStudents, updateStudentEntry, type AnalysisStudent } from './student-analysis-actions';
 import { readImageText } from './read-image-text';
 import type { BehaviourSummary, StudentEntry } from '@/lib/student-analysis';
 
@@ -67,6 +67,11 @@ export default function StudentAnalysis() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [, start] = useTransition();
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editBody, setEditBody] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const beginEdit = (e: StudentEntry) => { setEditId(e.id); setEditBody(e.body); setEditDate(e.entry_date); setError(''); };
+  const saveEdit = () => start(async () => { if (!editId) return; try { const updated = await updateStudentEntry(editId, { body: editBody, entryDate: editDate }); setEntries((list) => list.map((x) => (x.id === editId ? updated : x))); setEditId(null); } catch { setError('Could not save this change. Write something first and try again.'); } });
 
   useEffect(() => { listAnalysisStudents().then(setStudents).catch(() => setError('Could not load students.')); }, []);
   useEffect(() => {
@@ -97,8 +102,8 @@ export default function StudentAnalysis() {
           <h3>{area.label}</h3>
           <EntryForm area={area} studentId={studentId} onAdded={(e) => setEntries((list) => [e, ...list])} />
           <div className="ti-notes">{entries.filter((e) => e.area === area.id).map((e) => <article className="ti-note" key={e.id}>
-            <header><small>{e.entry_date}{e.source === 'photo' ? ' · from picture' : ''}</small><button type="button" className="icon-btn" aria-label="Delete entry" onClick={() => remove(e.id)}><Trash2 size={15} /></button></header>
-            <p>{e.body}</p></article>)}</div>
+            {editId === e.id ? <div className="sa-form"><label><span className="field-label">Date</span><input className="field-select" type="date" value={editDate} onChange={(ev) => setEditDate(ev.target.value)} /></label><textarea className="field-select" rows={5} aria-label="Edit entry" value={editBody} onChange={(ev) => setEditBody(ev.target.value)} /><div className="sa-form-actions"><button className="primary-btn" type="button" onClick={saveEdit} disabled={!editBody.trim() || !editDate}>Save changes</button><button className="outline-btn" type="button" onClick={() => setEditId(null)}>Cancel</button></div></div> : <><header><small>{e.entry_date}{e.source === 'photo' ? ' · from picture' : ''}</small><div className="up-tools"><button type="button" className="outline-btn" onClick={() => beginEdit(e)}>Edit</button><button type="button" className="icon-btn" aria-label="Delete entry" onClick={() => remove(e.id)}><Trash2 size={15} /></button></div></header>
+            <p>{e.body}</p></>}</article>)}</div>
         </div>)}</div>
       </>}
     </>}
