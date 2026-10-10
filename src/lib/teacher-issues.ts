@@ -51,3 +51,24 @@ export const PROJECT_IDEAS: ProjectIdea[] = [
   { grade: 4, theme: 'How we organize ourselves', title: 'Mini Business Fair', idea: 'Design a product, calculate costs and prices, advertise it and run a small fair for profit and review.' },
   { grade: 4, theme: 'Sharing the planet', title: 'Endangered Animals Action Plan', idea: 'Research one endangered animal, make an awareness campaign and a plan the school can act on.' },
 ];
+
+export type UnitPlan = { id: string; title: string; grade: number | null; theme: string | null; start_date: string | null; end_date: string | null; body: string; source: 'typed' | 'photo' };
+
+export const IB_PYP_URL = 'https://www.ibo.org/programmes/primary-years-programme/curriculum/';
+
+// The IB's six transdisciplinary themes, with the IB's published description of each (paraphrased). Every PYP school,
+// including those in Turkey, plans units under these themes for each grade; the central ideas are written by each school.
+export const THEME_INFO: Record<(typeof PYP_THEMES)[number], { icon: string; description: string }> = {
+  'Who we are': { icon: '🧑‍🤝‍🧑', description: 'The nature of the self; beliefs and values; personal, physical, mental, social and spiritual health; human relationships; rights and responsibilities; what it means to be human.' },
+  'Where we are in place and time': { icon: '🧭', description: 'Orientation in place and time; personal histories; homes and journeys; the discoveries, explorations and migrations of humankind; how individuals and civilizations are connected, locally and globally.' },
+  'How we express ourselves': { icon: '🎭', description: 'The ways we discover and express ideas, feelings, nature, culture, beliefs and values; how we reflect on, extend and enjoy our creativity; our appreciation of the aesthetic.' },
+  'How the world works': { icon: '🔬', description: 'The natural world and its laws; how the natural world and human societies interact; how people use scientific principles; the impact of scientific and technological advances on society and the environment.' },
+  'How we organize ourselves': { icon: '🏛️', description: 'The connections between human-made systems and communities; the structure and function of organizations; societal decision-making; economic activities and their impact on people and the environment.' },
+  'Sharing the planet': { icon: '🌍', description: 'Rights and responsibilities in sharing finite resources with other people and living things; communities and the relationships within and between them; access to equal opportunities; peace and conflict resolution.' },
+};
+
+export type ProjectSuggestion = { title: string; summary: string; centralIdea: string; linesOfInquiry: string[]; activities: string[]; studentAction: string; source: 'ai' | 'starter' };
+
+export function suggestionToText(s: ProjectSuggestion): string {
+  return [s.summary, s.centralIdea && `Central idea: ${s.centralIdea}`, s.linesOfInquiry.length && `Lines of inquiry:\n${s.linesOfInquiry.map((l) => `- ${l}`).join('\n')}`, s.activities.length && `Activities:\n${s.activities.map((l) => `- ${l}`).join('\n')}`, s.studentAction && `Student action: ${s.studentAction}`].filter(Boolean).join('\n\n');
+}

@@ -1,13 +1,17 @@
 'use client';
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState, useTransition } from 'react';
-import { createWorker } from 'tesseract.js';
 import { Camera, CalendarDays, ClipboardList, Lightbulb, Lock, Plus, RotateCcw, Trash2, Unlock } from 'lucide-react';
+import StudentAnalysis from './student-analysis';
+import DepartmentTimeline from './department-timeline';
+import UnitPlans from './unit-plans';
+import PypProjects from './pyp-projects';
+import { readImageText } from './read-image-text';
 import { LESSONS, getProgram, resetProgram, saveProgram, type Slot } from './lesson-schedule';
 import { addTeacherNote, deleteTeacherNote, listTeacherNotes } from './teacher-notes-actions';
-import { GRADES, NOTE_KINDS, PROJECT_IDEAS, PYP_THEMES, kindLabel, type NoteKind, type TeacherNote } from '@/lib/teacher-issues';
+import { GRADES, NOTE_KINDS, PYP_THEMES, kindLabel, type NoteKind, type TeacherNote } from '@/lib/teacher-issues';
 
-type Section = 'program' | 'notes' | 'ideas';
+type Section = 'program' | 'notes' | 'students' | 'units' | 'timeline' | 'ideas';
 const DAYS = [{ n: 1, label: 'Monday' }, { n: 2, label: 'Tuesday' }, { n: 3, label: 'Wednesday' }, { n: 4, label: 'Thursday' }, { n: 5, label: 'Friday' }];
 const today = () => { const d = new Date(); const p = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
 const noteTag = (n: Pick<TeacherNote, 'kind' | 'grade' | 'theme'>) => [kindLabel(n.kind), n.grade ? `Grade ${n.grade}` : '', n.theme || ''].filter(Boolean).join(' · ');
@@ -77,11 +81,7 @@ function MeetingNotes({ draft, setDraft }: { draft: Draft; setDraft: (d: Draft) 
     if (!file) return;
     setError(''); setReading(true);
     try {
-      const worker = await createWorker('eng+tur');
-      const { data } = await worker.recognize(file);
-      await worker.terminate();
-      const text = data.text.trim();
-      if (!text) throw new Error('empty');
+      const text = await readImageText(file);
       setDraft({ ...draft, body: draft.body ? `${draft.body}\n\n${text}` : text, source: 'photo' });
     } catch { setError('Could not read any text in that picture. Try a clearer, well lit photo.'); }
     finally { setReading(false); }
@@ -133,34 +133,35 @@ function MeetingNotes({ draft, setDraft }: { draft: Draft; setDraft: (d: Draft) 
   </>;
 }
 
-function ProjectIdeas({ onUse }: { onUse: (d: Draft) => void }) {
-  const [grade, setGrade] = useState(0);
-  const [theme, setTheme] = useState('');
-  const ideas = PROJECT_IDEAS.filter((i) => (!grade || i.grade === grade) && (!theme || i.theme === theme));
-  return <section className="panel ti-panel" aria-labelledby="ti-ideas">
-    <div className="panel-title"><div className="panel-icon purple"><Lightbulb size={19} /></div><div><h2 id="ti-ideas">School project suggestions</h2><p>Ideas for every PYP theme, Grades 1–4. Use one to start a project note.</p></div></div>
-    <div className="ti-filters">
-      <select className="field-select" aria-label="Grade" value={grade} onChange={(e) => setGrade(Number(e.target.value))}><option value={0}>All grades</option>{GRADES.map((g) => <option key={g} value={g}>Grade {g}</option>)}</select>
-      <select className="field-select" aria-label="PYP theme" value={theme} onChange={(e) => setTheme(e.target.value)}><option value="">All themes</option>{PYP_THEMES.map((t) => <option key={t} value={t}>{t}</option>)}</select>
-    </div>
-    <div className="ti-ideas">{ideas.map((i) => <article className="ti-idea" key={`${i.grade}-${i.theme}`}>
-      <small>Grade {i.grade} · {i.theme}</small><h3>{i.title}</h3><p>{i.idea}</p>
-      <button type="button" className="outline-btn" onClick={() => onUse({ kind: 'project', grade: i.grade, theme: i.theme, title: i.title, body: `${i.idea}\n\n`, date: today(), source: 'typed' })}><Plus size={14} /> Use as project note</button>
-    </article>)}</div>
+function TodayStrip() {
+  const [lessons, setLessons] = useState<Slot[]>([]);
+  useEffect(() => { setLessons(getProgram()[new Date().getDay()] ?? []); }, []);
+  const now = new Date();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  const mins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const next = lessons.find((l) => mins(l.start) > minutes);
+  return <section className="ti-today" aria-label="Today">
+    <div><small>TODAY</small><strong>{now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</strong></div>
+    <div><small>LESSONS</small><strong>{lessons.length || 'None'}</strong></div>
+    <div><small>UP NEXT</small><strong>{next ? `${next.cls} · ${next.start}` : lessons.length ? 'Done for today' : '—'}</strong></div>
   </section>;
 }
 
 export default function TeacherIssues() {
   const [section, setSection] = useState<Section>('program');
   const [draft, setDraft] = useState<Draft>(emptyDraft);
-  const tabs: Array<[Section, string]> = [['program', 'Lesson program'], ['notes', 'Meeting & project notes'], ['ideas', 'Project suggestions']];
+  const tabs: Array<[Section, string, string, string]> = [['program', '🗓️', 'Lesson program', 'Your weekly timetable'], ['units', '📘', 'Unit plans', 'Type or scan pictures'], ['notes', '📝', 'Meeting & project notes', 'Type or scan a photo'], ['students', '🧠', 'Student analysis', 'Academic & behaviour'], ['timeline', '🧭', 'Department timeline', 'What comes next'], ['ideas', '💡', 'PYP projects', 'Suggest a project by theme']];
   return <div className="page-wrap alternate ti-page">
     <p className="eyebrow">FOR YOU, THE TEACHER</p>
     <h1>Teacher <em>Issues</em></h1>
-    <p className="subhead">Your lesson program, meeting notes and school projects in one place.</p>
-    <div className="ti-tabs" role="tablist">{tabs.map(([id, label]) => <button key={id} role="tab" aria-selected={section === id} className={section === id ? 'active' : ''} onClick={() => setSection(id)}>{label}</button>)}</div>
+    <p className="subhead">Your lesson program, meeting notes, student analysis and school projects in one place.</p>
+    <TodayStrip />
+    <div className="hub-tiles" role="tablist">{tabs.map(([id, icon, label, note]) => <button key={id} role="tab" aria-selected={section === id} className={`hub-tile ${section === id ? 'active' : ''}`} onClick={() => setSection(id)}><span className="hub-tile-icon" aria-hidden="true">{icon}</span><strong>{label}</strong><small>{note}</small></button>)}</div>
     {section === 'program' && <LessonProgram />}
+    {section === 'units' && <UnitPlans />}
     {section === 'notes' && <MeetingNotes draft={draft} setDraft={setDraft} />}
-    {section === 'ideas' && <ProjectIdeas onUse={(d) => { setDraft(d); setSection('notes'); }} />}
+    {section === 'students' && <StudentAnalysis />}
+    {section === 'timeline' && <DepartmentTimeline />}
+    {section === 'ideas' && <PypProjects onSave={(d) => { setDraft(d); setSection('notes'); }} />}
   </div>;
 }
