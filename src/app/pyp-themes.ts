@@ -57,7 +57,20 @@ export function useCustomThemes() {
     const current = read<PypCurrent>(CURRENT_KEY, { theme: '', idea: '' });
     if (current.theme === name) write(CURRENT_KEY, current.idea ? { theme: '', idea: current.idea } : null);
   }, []);
-  return { custom, add, remove };
+  /** Renames a theme you added. Keeps it selected if it was the grade's theme. Returns false if the new name is empty or already used. */
+  const rename = useCallback((oldName: string, raw: string) => {
+    const name = raw.trim().replace(/\s+/g, ' ').slice(0, 60);
+    if (!name) return false;
+    if (name === oldName) return true;
+    const list = read<string[]>(CUSTOM_KEY, []);
+    const taken = [...PYP_SIX.map((t) => t.name), ...list.filter((n) => n !== oldName)].some((n) => n.toLowerCase() === name.toLowerCase());
+    if (taken) return false;
+    write(CUSTOM_KEY, list.map((n) => (n === oldName ? name : n)));
+    const current = read<PypCurrent>(CURRENT_KEY, { theme: '', idea: '' });
+    if (current.theme === oldName) write(CURRENT_KEY, { theme: name, idea: current.idea });
+    return true;
+  }, []);
+  return { custom, add, remove, rename };
 }
 
 /** Every theme name to choose from: the six, then the teacher's own. Used by the Today chip and the plans. */

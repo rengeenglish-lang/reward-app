@@ -3,13 +3,42 @@
 import { useState } from 'react';
 import { PYP_SIX, useCustomThemes, usePypCurrent } from './pyp-themes';
 
+/** A theme name you added, with buttons to edit (rename) and remove it. `onPick` makes the name itself selectable. */
+function CustomThemeName({ name, selected, onPick, rename, remove, variant }: { name: string; selected?: boolean; onPick?: () => void; rename: (oldName: string, next: string) => boolean; remove: (name: string) => void; variant: 'option' | 'tag' }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+  const [bad, setBad] = useState(false);
+  const save = () => { if (rename(name, draft)) { setEditing(false); setBad(false); } else setBad(true); };
+  const wrap = variant === 'option' ? `pyp-option pyp-custom${selected ? ' on' : ''}` : '';
+  if (editing) {
+    const Box = variant === 'tag' ? 'li' : 'div';
+    return (
+      <Box className={`${wrap} pyp-editing`}>
+        <input className="pyp-edit-input" aria-label={`Edit theme name ${name}`} value={draft} maxLength={60} autoFocus aria-invalid={bad} onChange={(event) => { setDraft(event.target.value); setBad(false); }} onKeyDown={(event) => { if (event.key === 'Enter') save(); if (event.key === 'Escape') { setEditing(false); setBad(false); } }} />
+        <button type="button" className="pyp-edit-save" onClick={save} disabled={!draft.trim()}>Save</button>
+        <button type="button" className="pyp-custom-remove" aria-label="Cancel editing" onClick={() => { setEditing(false); setBad(false); }}>✕</button>
+        {bad && <small className="pyp-bad" role="alert">That name is empty or already used.</small>}
+      </Box>
+    );
+  }
+  const edit = <button type="button" className="pyp-custom-edit" aria-label={`Edit theme ${name}`} title="Edit this theme name" onClick={() => { setDraft(name); setEditing(true); }}>✎</button>;
+  const del = <button type="button" className="pyp-custom-remove" aria-label={`Remove theme ${name}`} title="Remove this theme name" onClick={() => remove(name)}>✕</button>;
+  if (variant === 'tag') return <li><span>{name}</span>{edit}{del}</li>;
+  return (
+    <div className={wrap}>
+      <button type="button" className="pyp-custom-pick" aria-pressed={selected} onClick={onPick}><span aria-hidden="true">✨</span><b>{name}</b></button>
+      {edit}{del}
+    </div>
+  );
+}
+
 /**
  * The PYP theme for all of Grade 4 (every class shares it). Tap the chip to choose one of the six themes
  * or one you added yourself, add a new theme name, and write the central idea.
  */
 export default function PypTheme({ showIdea = false }: { showIdea?: boolean }) {
   const { current, set } = usePypCurrent();
-  const { custom, add, remove } = useCustomThemes();
+  const { custom, add, remove, rename } = useCustomThemes();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [idea, setIdea] = useState('');
@@ -38,12 +67,7 @@ export default function PypTheme({ showIdea = false }: { showIdea?: boolean }) {
                   <span aria-hidden="true">{t.emoji}</span><b>{t.name}</b>
                 </button>
               ))}
-              {custom.map((t) => (
-                <div key={t} className={`pyp-option pyp-custom${current.theme === t ? ' on' : ''}`}>
-                  <button type="button" className="pyp-custom-pick" aria-pressed={current.theme === t} onClick={() => choose(t)}><span aria-hidden="true">✨</span><b>{t}</b></button>
-                  <button type="button" className="pyp-custom-remove" aria-label={`Remove theme ${t}`} title="Remove this theme name" onClick={() => remove(t)}>✕</button>
-                </div>
-              ))}
+              {custom.map((t) => <CustomThemeName key={t} variant="option" name={t} selected={current.theme === t} onPick={() => choose(t)} rename={rename} remove={remove} />)}
             </div>
             <label className="pyp-label" htmlFor="pyp-own">Add a theme name</label>
             <div className="pyp-own">
@@ -65,7 +89,7 @@ export default function PypTheme({ showIdea = false }: { showIdea?: boolean }) {
 
 /** Teacher Issues: set the Grade 4 theme and manage the theme names you added. */
 export function PypThemePanel() {
-  const { custom, add, remove } = useCustomThemes();
+  const { custom, add, remove, rename } = useCustomThemes();
   const [name, setName] = useState('');
   return (
     <section className="panel ti-panel pyp-panel" aria-labelledby="pyp-themes-title">
@@ -78,7 +102,7 @@ export function PypThemePanel() {
       </div>
       {custom.length > 0 && (
         <ul className="pyp-tool-list" aria-label="Theme names you added">
-          {custom.map((t) => <li key={t}><span>{t}</span><button type="button" aria-label={`Remove theme ${t}`} onClick={() => remove(t)}>✕</button></li>)}
+          {custom.map((t) => <CustomThemeName key={t} variant="tag" name={t} rename={rename} remove={remove} />)}
         </ul>
       )}
     </section>
