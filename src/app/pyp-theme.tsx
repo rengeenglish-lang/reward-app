@@ -17,7 +17,7 @@ export const PYP_THEMES = [
 const key = (classroomId: string) => `ezgili-pyp-theme:${classroomId}`;
 
 /** A chip on the Today page showing the class's PYP theme. Tap it to choose one of the six or type your own. */
-export default function PypTheme({ classroomId }: { classroomId: string }) {
+export default function PypTheme({ classroomId, showIdea = false }: { classroomId: string; showIdea?: boolean }) {
   const [saved, setSaved] = useState<Saved>({ theme: '', idea: '' });
   const [open, setOpen] = useState(false);
   const [custom, setCustom] = useState('');
@@ -46,6 +46,7 @@ export default function PypTheme({ classroomId }: { classroomId: string }) {
         <span aria-hidden="true">{saved.theme ? emoji : '🌟'}</span>
         <span className="pyp-chip-text"><small>PYP theme</small><b>{saved.theme || 'Add theme'}</b></span>
       </button>
+      {showIdea && <p className="pyp-idea">{saved.idea ? `Central idea: ${saved.idea}` : 'No central idea yet.'}</p>}
       {open && (
         <div className="pyp-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
           <section className="pyp-pop" role="dialog" aria-modal="true" aria-label="PYP theme">
@@ -74,5 +75,76 @@ export default function PypTheme({ classroomId }: { classroomId: string }) {
         </div>
       )}
     </>
+  );
+}
+
+/** Teacher Issues: every class with its PYP theme and central idea, ready to change. */
+export function PypThemeList({ classrooms }: { classrooms: Array<{ id: string; name: string }> }) {
+  return (
+    <section className="panel ti-panel pyp-panel" aria-labelledby="pyp-themes-title">
+      <div className="panel-title"><div className="panel-icon purple">🌟</div><div><h2 id="pyp-themes-title">PYP theme for each class</h2><p>Choose one of the six transdisciplinary themes or type your own. The theme also shows on the Today page.</p></div></div>
+      {classrooms.length === 0 ? <p className="readers-empty">Add a classroom first.</p> : (
+        <ul className="pyp-rows">
+          {classrooms.map((c) => (
+            <li key={c.id} className="pyp-row"><strong>{c.name}</strong><div><PypTheme classroomId={c.id} showIdea /></div></li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+type Tool = { id: string; name: string };
+const TOOLS_KEY = 'ezgili-pyp-tools';
+
+/** Your own list of PYP tools. Type one, or paste a whole list with one tool on each line. */
+export function PypToolList() {
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [text, setText] = useState('');
+  const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(TOOLS_KEY) || '[]') as Tool[];
+      if (Array.isArray(saved)) setTools(saved.filter((t) => t && typeof t.name === 'string'));
+    } catch { /* start empty */ }
+  }, []);
+
+  const save = (next: Tool[]) => {
+    setTools(next);
+    try { localStorage.setItem(TOOLS_KEY, JSON.stringify(next)); } catch { /* storage can be blocked */ }
+  };
+  const add = () => {
+    const have = new Set(tools.map((t) => t.name.toLowerCase()));
+    const fresh: Tool[] = [];
+    for (const raw of text.split(/\r?\n|;/)) {
+      const name = raw.replace(/^[\s\-*•\d.)]+/, '').trim().slice(0, 80);
+      if (!name || have.has(name.toLowerCase())) continue;
+      have.add(name.toLowerCase());
+      fresh.push({ id: `${Date.now()}-${fresh.length}`, name });
+    }
+    if (fresh.length) save([...tools, ...fresh]);
+    setText('');
+  };
+  const shown = tools.filter((t) => t.name.toLowerCase().includes(query.trim().toLowerCase()));
+
+  return (
+    <section className="panel ti-panel pyp-panel" aria-labelledby="pyp-tools-title">
+      <div className="panel-title"><div className="panel-icon coral">🧰</div><div><h2 id="pyp-tools-title">My PYP tools</h2><p>Add your own list of PYP tools. Paste many at once, one on each line.</p></div></div>
+      <label className="pyp-label" htmlFor="pyp-tools-input">Add tools</label>
+      <textarea id="pyp-tools-input" className="pyp-tools-input" rows={4} value={text} placeholder={'Thinking routines\nLearner profile\nKey concepts\nApproaches to learning'} onChange={(event) => setText(event.target.value)} />
+      <div className="pyp-actions"><button type="button" className="primary-btn" disabled={!text.trim()} onClick={add}>Add to my list</button></div>
+      {tools.length > 0 && (
+        <>
+          <div className="pyp-list-head"><strong>{tools.length} {tools.length === 1 ? 'tool' : 'tools'}</strong><input className="pyp-search" value={query} placeholder="Search" aria-label="Search PYP tools" onChange={(event) => setQuery(event.target.value)} /></div>
+          <ul className="pyp-tool-list">
+            {shown.map((t) => (
+              <li key={t.id}><span>{t.name}</span><button type="button" aria-label={`Remove ${t.name}`} onClick={() => save(tools.filter((x) => x.id !== t.id))}>✕</button></li>
+            ))}
+            {shown.length === 0 && <li className="pyp-none">No tools match.</li>}
+          </ul>
+        </>
+      )}
+    </section>
   );
 }

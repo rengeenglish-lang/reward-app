@@ -525,3 +525,14 @@ button.student-avatar:hover{transform:scale(1.06)}
 .pyp-own{display:flex;gap:8px}
 .pyp-own input,.pyp-pop textarea{flex:1;width:100%;padding:10px 12px;border:2px solid #e6e1f5;border-radius:12px;font:inherit;color:inherit;background:#fff}
 .pyp-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+.pyp-rows{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:12px}
+.pyp-row{display:flex;align-items:flex-start;gap:14px;padding:12px 14px;border:2px solid #efeaf9;border-radius:16px;background:#faf8ff}
+.pyp-row>strong{flex:none;min-width:48px;font-family:var(--display,inherit);font-size:20px;padding-top:6px}
+.pyp-idea{margin:6px 2px 0;font-size:13px;color:#6b6585;font-weight:700}
+.pyp-tools-input{width:100%;padding:10px 12px;border:2px solid #e6e1f5;border-radius:12px;font:inherit;color:inherit;background:#fff;resize:vertical}
+.pyp-list-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 8px}
+.pyp-search{padding:6px 10px;border:2px solid #e6e1f5;border-radius:10px;font:inherit}
+.pyp-tool-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.pyp-tool-list li{display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-radius:99px;background:#efe9ff;color:#41336f;font-weight:800;font-size:13px}
+.pyp-tool-list li button{border:0;width:22px;height:22px;border-radius:50%;background:#fff;color:#6b6585;cursor:pointer;line-height:1}
+.pyp-tool-list .pyp-none{background:transparent;color:#8a84a3}
