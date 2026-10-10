@@ -2,7 +2,8 @@
 
 import { ChangeEvent, FormEvent, MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { upload } from '@vercel/blob/client';
-import { ExternalLink, FileText, Globe2, Maximize2, Minimize2, Plus, X, Lightbulb } from 'lucide-react';
+import { BookMarked, ExternalLink, FileText, Globe2, Maximize2, Minimize2, Plus, X, Lightbulb } from 'lucide-react';
+import { bookrWeeks, isIssued, issueDate, latestFriday } from '@/lib/bookr-schedule';
 import { readingAnswerBanks } from '@/lib/reading-answers';
 
 type SavedSite = { id: string; name: string; url: string };
@@ -11,6 +12,7 @@ type CloudMaterial = { name: string; size: number; updatedAt: string };
 const STORAGE_KEY = 'ezgili-classroom-sites';
 const MATERIAL_DB = 'ezgili-classroom-materials';
 const MATERIAL_STORE = 'materials';
+const BOOKR_START_KEY = 'ezgili-bookr-start-friday';
 const MATERIAL_ID = 'shared-pdf';
 const MATERIAL_PATH = 'classroom-materials/shared.pdf';
 
@@ -94,6 +96,8 @@ export default function ClassroomSites() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [answerBankId, setAnswerBankId] = useState(readingAnswerBanks[0]?.id || '');
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(() => new Set());
+  const [bookrOpen, setBookrOpen] = useState(false);
+  const [bookrStart, setBookrStart] = useState('');
   const viewerRef = useRef<HTMLElement | null>(null);
   const objectUrlRef = useRef('');
 
@@ -134,6 +138,7 @@ export default function ClassroomSites() {
 
   useEffect(() => {
     setSites(readSites());
+    try { setBookrStart(localStorage.getItem(BOOKR_START_KEY) || latestFriday()); } catch { setBookrStart(latestFriday()); }
     const handleStorage = (event: StorageEvent) => {
       if (event.key === STORAGE_KEY) setSites(readSites());
     };
@@ -179,6 +184,12 @@ export default function ClassroomSites() {
     document.addEventListener('fullscreenchange', syncFullscreen);
     return () => document.removeEventListener('fullscreenchange', syncFullscreen);
   }, []);
+
+  const changeBookrStart = (value: string) => {
+    if (!value) return;
+    setBookrStart(value);
+    try { localStorage.setItem(BOOKR_START_KEY, value); } catch { /* keep the choice for this visit only */ }
+  };
 
   const saveSites = (next: SavedSite[]) => {
     setSites(next);
@@ -291,6 +302,22 @@ export default function ClassroomSites() {
       <p className="eyebrow">YOUR CLASSROOM WEB LAUNCHPAD</p>
       <h1>Bring a website <em>in.</em></h1>
       <p className="subhead">Your saved websites stay in this browser. Your PDF material is shared securely across classrooms and devices.</p>
+
+      <div className="bookr-toolbar"><button className={`primary-btn bookr-toggle ${bookrOpen?'active':''}`} type="button" aria-expanded={bookrOpen} aria-controls="bookr-panel" onClick={()=>setBookrOpen((open)=>!open)}><BookMarked size={16}/> BOOKR books</button></div>
+
+      {bookrOpen&&bookrStart&&<section id="bookr-panel" className="panel bookr-panel" aria-labelledby="bookr-title">
+        <div className="panel-title"><div className="panel-icon coral"><BookMarked size={19}/></div><div><h2 id="bookr-title">BOOKR books · weekly issue</h2><p>New books are issued every Friday. Cambridge Primary Path 3 · Grade 4.</p></div></div>
+        <label className="bookr-start"><span className="field-label">Week 1 issue Friday</span><input className="field-select" type="date" value={bookrStart} onChange={(event)=>changeBookrStart(event.target.value)}/></label>
+        <div className="bookr-weeks">{bookrWeeks.map((entry)=>{
+          const open=isIssued(bookrStart,entry.week);
+          const when=issueDate(bookrStart,entry.week).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+          return <article key={entry.week} className={`bookr-week ${open?'issued':'locked'}`}>
+            <header><strong>Week {entry.week}</strong><span>{open?`Issued ${when}`:`Opens ${when}`}</span></header>
+            <small>{entry.unit}</small>
+            {open?<ul>{entry.books.map((book)=><li key={book}>{book}</li>)}</ul>:<p className="bookr-locked-note">Books appear on this Friday.</p>}
+          </article>;
+        })}</div>
+      </section>}
 
       <section className="panel classroom-site-add">
         <div className="panel-title"><div className="panel-icon purple"><Globe2 size={19}/></div><div><h2>Add a website</h2><p>Links you save here are shared across all classrooms on this browser.</p></div></div>
