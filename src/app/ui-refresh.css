@@ -502,3 +502,26 @@ button.student-avatar:hover{transform:scale(1.06)}
 .lesson-panel .lesson-start-copy{flex:1 1 220px;min-width:0}
 .lesson-panel .lesson-start-copy .eyebrow{display:none}
 .lesson-panel .lesson-auto{flex:1 0 100%;margin:0;font-size:12px}
+
+/* ---------- PYP theme chip + picker ---------- */
+.pyp-chip{display:inline-flex;align-items:center;gap:10px;padding:6px 14px 6px 10px;border:2px solid #e6e1f5;border-radius:16px;background:#fff;color:#27364b;font:inherit;cursor:pointer;box-shadow:0 3px 0 #e6e1f5;text-align:left;max-width:100%}
+.pyp-chip>span:first-child{font-size:24px;line-height:1}
+.pyp-chip-text{display:flex;flex-direction:column;min-width:0}
+.pyp-chip-text small{font-size:10px;font-weight:900;letter-spacing:.1em;color:#7a6aa8}
+.pyp-chip-text b{font-size:13px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px}
+.pyp-chip:focus-visible,.pyp-option:focus-visible{outline:3px solid var(--purple,#8566d6);outline-offset:2px}
+.pyp-backdrop{position:fixed;inset:0;z-index:950;display:grid;place-items:center;padding:16px;background:rgba(30,18,70,.5)}
+.pyp-pop{position:relative;width:min(560px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:#fff;color:#27364b;border-radius:26px;padding:24px 22px 20px;box-shadow:0 24px 70px rgba(20,10,60,.4)}
+.pyp-pop h2{margin:0;font-family:var(--display,inherit);font-size:24px}
+.pyp-pop>p{margin:4px 0 14px;color:#6b6585;font-weight:700}
+.pyp-close{position:absolute;top:12px;right:12px;width:34px;height:34px;border:0;border-radius:50%;background:#eceaf6;cursor:pointer}
+.pyp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.pyp-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid #e6e1f5;border-radius:16px;background:#faf8ff;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.pyp-option span{font-size:26px;line-height:1}
+.pyp-option b{font-size:13px;line-height:1.2}
+.pyp-option.on{background:#e9e2ff;border-color:var(--purple,#8566d6)}
+.pyp-label{display:block;margin:16px 0 6px;font-weight:800;font-size:13px}
+.pyp-label small{font-weight:600;color:#8a84a3}
+.pyp-own{display:flex;gap:8px}
+.pyp-own input,.pyp-pop textarea{flex:1;width:100%;padding:10px 12px;border:2px solid #e6e1f5;border-radius:12px;font:inherit;color:inherit;background:#fff}
+.pyp-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
