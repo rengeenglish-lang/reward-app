@@ -11,7 +11,9 @@ import { LESSONS, getProgram, resetProgram, saveProgram, type Slot } from './les
 import { addTeacherNote, deleteTeacherNote, listTeacherNotes } from './teacher-notes-actions';
 import { GRADES, NOTE_KINDS, PYP_THEMES, kindLabel, type NoteKind, type TeacherNote } from '@/lib/teacher-issues';
 
-type Section = 'program' | 'notes' | 'students' | 'units' | 'timeline' | 'ideas';
+import { PypThemeList, PypToolList } from './pyp-theme';
+
+type Section = 'program' | 'notes' | 'students' | 'units' | 'timeline' | 'ideas' | 'pyp';
 const DAYS = [{ n: 1, label: 'Monday' }, { n: 2, label: 'Tuesday' }, { n: 3, label: 'Wednesday' }, { n: 4, label: 'Thursday' }, { n: 5, label: 'Friday' }];
 const today = () => { const d = new Date(); const p = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
 const noteTag = (n: Pick<TeacherNote, 'kind' | 'grade' | 'theme'>) => [kindLabel(n.kind), n.grade ? `Grade ${n.grade}` : '', n.theme || ''].filter(Boolean).join(' · ');
@@ -147,10 +149,10 @@ function TodayStrip() {
   </section>;
 }
 
-export default function TeacherIssues() {
+export default function TeacherIssues({ classrooms = [] }: { classrooms?: Array<{ id: string; name: string }> }) {
   const [section, setSection] = useState<Section>('program');
   const [draft, setDraft] = useState<Draft>(emptyDraft);
-  const tabs: Array<[Section, string, string, string]> = [['program', '🗓️', 'Lesson program', 'Your weekly timetable'], ['units', '📘', 'Unit plans', 'Type or scan pictures'], ['notes', '📝', 'Meeting & project notes', 'Type or scan a photo'], ['students', '🧠', 'Student analysis', 'Academic & behaviour'], ['timeline', '🧭', 'Department timeline', 'What comes next'], ['ideas', '💡', 'PYP projects', 'Suggest a project by theme']];
+  const tabs: Array<[Section, string, string, string]> = [['program', '🗓️', 'Lesson program', 'Your weekly timetable'], ['units', '📘', 'Unit plans', 'Type or scan pictures'], ['notes', '📝', 'Meeting & project notes', 'Type or scan a photo'], ['students', '🧠', 'Student analysis', 'Academic & behaviour'], ['timeline', '🧭', 'Department timeline', 'What comes next'], ['ideas', '💡', 'PYP projects', 'Suggest a project by theme'], ['pyp', '🌟', 'PYP theme & tools', 'Each class’s theme + your list']];
   return <div className="page-wrap alternate ti-page">
     <p className="eyebrow">FOR YOU, THE TEACHER</p>
     <h1>Teacher <em>Issues</em></h1>
@@ -162,6 +164,7 @@ export default function TeacherIssues() {
     {section === 'notes' && <MeetingNotes draft={draft} setDraft={setDraft} />}
     {section === 'students' && <StudentAnalysis />}
     {section === 'timeline' && <DepartmentTimeline />}
-    {section === 'ideas' && <PypProjects onSave={(d) => { setDraft(d); setSection('notes'); }} />}
+    {section === 'pyp' && <><PypThemeList classrooms={classrooms} /><PypToolList /></>}
+    {section === 'ideas' &&<PypProjects onSave={(d) => { setDraft(d); setSection('notes'); }} />}
   </div>;
 }
