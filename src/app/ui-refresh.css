@@ -559,3 +559,13 @@ button.student-avatar:hover{transform:scale(1.06)}
   body.printing-petition .petition-sheet,body.printing-petition .petition-sheet *{visibility:visible!important}
   body.printing-petition .petition-sheet{display:block;position:absolute;left:0;top:0;width:100%;padding:24mm 20mm;box-sizing:border-box;font:12pt/1.55 'Times New Roman',Georgia,serif;color:#000;background:#fff;white-space:pre-wrap}
 }
+
+/* ---------- PYP projects: edit + add ---------- */
+.pyp-edit{display:inline-flex;align-items:center;gap:4px;margin:2px 0 8px;font-size:12px}
+.pyp-desc-edit textarea{width:100%}
+.pyp-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.pyp-form{display:flex;flex-direction:column;gap:10px;margin-top:12px;padding:12px;border-radius:14px;background:#faf8ff;border:2px solid #efeaf9}
+.pyp-mine{margin-top:14px;padding-top:10px;border-top:2px dashed #e6e1f5}
+.pyp-mine ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.pyp-mine li{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:2px solid #efeaf9}
+.pyp-mine li p{margin:4px 0 0;font-size:13px;color:#4b4666;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
