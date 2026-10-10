@@ -3,6 +3,7 @@ import { Fredoka, Nunito } from 'next/font/google';
 import './globals.css';
 import './ui-refresh.css';
 import FloatingTimer from './floating-timer';
+import BallotAlert from './ballot-alert-overlay';
 
 const rounded = Nunito({ subsets: ['latin'], weight: 'variable', variable: '--font-rounded', display: 'swap' });
 const playful = Fredoka({ subsets: ['latin'], weight: 'variable', variable: '--font-playful', display: 'swap' });
@@ -19,5 +20,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en" className={`${rounded.variable} ${playful.variable}`}><body>{children}<FloatingTimer /></body></html>;
+  return <html lang="en" className={`${rounded.variable} ${playful.variable}`}><body>{children}<FloatingTimer /><BallotAlert /></body></html>;
 }

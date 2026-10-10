@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { castBallot, getBallot, getBallotResults, resetBallot } from './actions';
+import { announceBallot, setBallotAuto, useBallotProgress } from './ballot-alert';
 
 type Person = { id: string; name: string; avatar: string };
 type Tally = { id: string; student: string; avatar_key: string; votes: number };
@@ -42,6 +43,7 @@ export default function SecretBallot({ paneClass, classroomId, classroom, studen
   const [teacher, setTeacher] = useState(false);
   const [results, setResults] = useState<{ tally: Tally[]; voters: number } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progress = useBallotProgress(classroom);
 
   const people = presentIds ? students.filter((s) => presentIds.includes(s.id)) : students;
 
@@ -90,6 +92,11 @@ export default function SecretBallot({ paneClass, classroomId, classroom, studen
       <div className="ballot-head">
         <span className="ballot-emoji" aria-hidden="true">🤫</span>
         <div><h2>Secret ballot</h2><p>Who deserves a reward in {classroom || 'our class'}? Choose quietly. Nobody sees your choice.</p></div>
+      </div>
+      <div className="ballot-announce">
+        <button type="button" className="fun-action secondary" onClick={() => announceBallot(classroom, 'manual')}>📢 Announce ballot time</button>
+        <label><input type="checkbox" checked={progress.auto} onChange={(event) => setBallotAuto(event.target.checked)} /> Announce by itself after every 3 lessons</label>
+        <small>{classroom || 'This class'}: {progress.count} {progress.count === 1 ? 'lesson' : 'lessons'} finished this week · the next announcement comes after {progress.untilNext} more</small>
       </div>
       {!ready && <p className="book-error" role="alert">The ballot is not ready yet. It needs one more database update.</p>}
       {error && ready && <p className="book-error" role="alert">{error}</p>}

@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
+import { recordLesson } from './ballot-alert';
 import { className, currentLesson, nextLesson, scheduleClock, type Slot } from './lesson-schedule';
 
 /**
@@ -8,6 +9,8 @@ import { className, currentLesson, nextLesson, scheduleClock, type Slot } from '
  */
 export type LessonState = {
   deadline: number | null; classroom: string; label: string;
+  /** When the running lesson began, so an early End lesson can still count if most of it was taught. */
+  startedAt: number | null;
   /** True when the timetable started this lesson (the teacher did not press Start). */
   fromSchedule: boolean;
   auto: boolean; now: number;
@@ -19,7 +22,7 @@ const KEY = 'ezgili-lesson-bell';
 const AUTO_KEY = 'ezgili-auto-lessons';
 const DONE_KEY = 'ezgili-auto-lesson-done';
 
-const initial: LessonState = { deadline: null, classroom: '', label: '', fromSchedule: false, auto: true, now: 0, ended: null };
+const initial: LessonState = { deadline: null, startedAt: null, classroom: '', label: '', fromSchedule: false, auto: true, now: 0, ended: null };
 let state: LessonState = initial;
 let loaded = false;
 let autoDone = '';
@@ -33,7 +36,7 @@ function set(patch: Partial<LessonState>) { state = { ...state, ...patch }; list
 
 function save() {
   try {
-    if (state.deadline) localStorage.setItem(KEY, JSON.stringify({ deadline: state.deadline, classroom: state.classroom, label: state.label, fromSchedule: state.fromSchedule }));
+    if (state.deadline) localStorage.setItem(KEY, JSON.stringify({ deadline: state.deadline, startedAt: state.startedAt, classroom: state.classroom, label: state.label, fromSchedule: state.fromSchedule }));
     else localStorage.removeItem(KEY);
   } catch { /* storage can be blocked */ }
 }
@@ -80,7 +83,7 @@ export function loadLessons() {
     const saved = JSON.parse(localStorage.getItem(KEY) || 'null') as Partial<LessonState> | null;
     autoDone = localStorage.getItem(DONE_KEY) || '';
     const auto = localStorage.getItem(AUTO_KEY) !== 'off';
-    if (saved?.deadline && saved.deadline > Date.now()) set({ auto, now: Date.now(), deadline: saved.deadline, classroom: saved.classroom || '', label: saved.label || '', fromSchedule: Boolean(saved.fromSchedule) });
+    if (saved?.deadline && saved.deadline > Date.now()) set({ auto, now: Date.now(), deadline: saved.deadline, startedAt: saved.startedAt ?? null, classroom: saved.classroom || '', label: saved.label || '', fromSchedule: Boolean(saved.fromSchedule) });
     else { set({ auto, now: Date.now() }); if (saved) save(); }
   } catch { set({ now: Date.now() }); }
 }
@@ -90,9 +93,10 @@ function tick() {
   if (state.deadline) {
     if (at >= state.deadline) {
       const name = state.classroom || 'your class';
-      set({ deadline: null, classroom: '', label: '', fromSchedule: false, now: at, ended: name });
+      set({ deadline: null, startedAt: null, classroom: '', label: '', fromSchedule: false, now: at, ended: name });
       save();
       ringSchoolBell();
+      recordLesson(name === 'your class' ? '' : name); // every 3rd lesson of the week for a class starts the ballot alert
       announce('ezgili-lesson-ended', { classroom: name });
     } else set({ now: at });
   } else if (Math.floor(at / 60000) !== Math.floor(state.now / 60000)) set({ now: at }); // keeps "up next" fresh
@@ -103,7 +107,7 @@ function tick() {
   autoDone = lesson.key;
   try { localStorage.setItem(DONE_KEY, autoDone); } catch { /* ignore */ }
   const name = className(lesson.cls);
-  set({ deadline: lesson.endsAt, classroom: name, label: lesson.label, fromSchedule: true, now: at, ended: null });
+  set({ deadline: lesson.endsAt, startedAt: lesson.startsAt, classroom: name, label: lesson.label, fromSchedule: true, now: at, ended: null });
   save();
   if (at - lesson.startsAt < 20000) ringSchoolBell(); // a lesson that is starting right now gets a bell; one joined late does not
   announce('ezgili-lesson-started', { classroom: name, label: lesson.label });
@@ -123,10 +127,17 @@ export function startLessonEngine() {
 export const lessonStore = {
   start(classroom: string) {
     prepareBell();
-    set({ deadline: Date.now() + 40 * 60 * 1000, classroom, label: classroom, fromSchedule: false, now: Date.now(), ended: null });
+    set({ deadline: Date.now() + 40 * 60 * 1000, startedAt: Date.now(), classroom, label: classroom, fromSchedule: false, now: Date.now(), ended: null });
     save();
   },
-  stop() { set({ deadline: null, classroom: '', label: '', fromSchedule: false, ended: null }); save(); },
+  stop() {
+    // ending a lesson with most of it taught still counts towards the ballot, without the alert popping up while you are closing the lesson
+    const taught = state.startedAt && state.deadline ? Date.now() - state.startedAt >= (state.deadline - state.startedAt) / 2 : false;
+    const name = state.classroom;
+    set({ deadline: null, startedAt: null, classroom: '', label: '', fromSchedule: false, ended: null });
+    save();
+    if (taught && name) recordLesson(name);
+  },
   setAuto(auto: boolean) { try { localStorage.setItem(AUTO_KEY, auto ? 'on' : 'off'); } catch { /* ignore */ } set({ auto }); },
   clearEnded() { set({ ended: null }); },
 };
