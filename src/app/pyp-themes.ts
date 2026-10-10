@@ -14,6 +14,7 @@ export const PYP_SIX = [
 
 const CUSTOM_KEY = 'ezgili-pyp-custom-themes';
 const CURRENT_KEY = 'ezgili-pyp-theme-grade4';
+const DESC_KEY = 'ezgili-pyp-theme-descriptions';
 const EVENT = 'ezgili-pyp-updated';
 
 export type PypCurrent = { theme: string; idea: string };
@@ -66,6 +67,8 @@ export function useCustomThemes() {
     const taken = [...PYP_SIX.map((t) => t.name), ...list.filter((n) => n !== oldName)].some((n) => n.toLowerCase() === name.toLowerCase());
     if (taken) return false;
     write(CUSTOM_KEY, list.map((n) => (n === oldName ? name : n)));
+    const descriptions = read<Record<string, string>>(DESC_KEY, {});
+    if (descriptions[oldName] !== undefined) { const { [oldName]: moved, ...rest } = descriptions; write(DESC_KEY, { ...rest, [name]: moved }); }
     const current = read<PypCurrent>(CURRENT_KEY, { theme: '', idea: '' });
     if (current.theme === oldName) write(CURRENT_KEY, { theme: name, idea: current.idea });
     return true;
@@ -77,6 +80,18 @@ export function useCustomThemes() {
 export function useThemeNames(): string[] {
   const { custom } = useCustomThemes();
   return [...PYP_SIX.map((t) => t.name), ...custom];
+}
+
+/** Descriptions you wrote for a theme. A theme without one shows the IB text (or nothing for a theme you added). */
+export function useThemeDescriptions() {
+  const map = useSynced<Record<string, string>>(() => read<Record<string, string>>(DESC_KEY, {}), {});
+  const set = useCallback((name: string, description: string) => {
+    const next = { ...read<Record<string, string>>(DESC_KEY, {}) };
+    const text = description.trim().slice(0, 600);
+    if (text) next[name] = text; else delete next[name];
+    write(DESC_KEY, next);
+  }, []);
+  return { map, set };
 }
 
 /** The PYP theme of the whole grade (all Grade 4 classes share it). */

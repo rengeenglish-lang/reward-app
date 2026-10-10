@@ -2,9 +2,9 @@
 
 import { z } from 'zod';
 import { requireTutor } from '@/lib/session';
-import { PROJECT_IDEAS, PYP_THEMES, THEME_INFO, type ProjectSuggestion } from '@/lib/teacher-issues';
+import { PROJECT_IDEAS, THEME_INFO, type ProjectSuggestion } from '@/lib/teacher-issues';
 
-const input = z.object({ grade: z.number().int().min(1).max(4), theme: z.enum(PYP_THEMES), avoid: z.array(z.string().max(200)).max(20).default([]) });
+const input = z.object({ grade: z.number().int().min(1).max(4), theme: z.string().trim().min(1).max(60), description: z.string().trim().max(600).optional(), avoid: z.array(z.string().max(200)).max(20).default([]) });
 const line = z.string().trim().min(1).max(300);
 const reply = z.object({
   title: z.string().trim().min(1).max(120),
@@ -18,20 +18,22 @@ const reply = z.object({
 const AGES: Record<number, string> = { 1: '6–7', 2: '7–8', 3: '8–9', 4: '9–10' };
 
 /** A ready-made idea for the grade and theme, used when no AI key is set or the request fails. */
-function starter(grade: number, theme: (typeof PYP_THEMES)[number], avoid: string[]): ProjectSuggestion {
+function starter(grade: number, theme: string, avoid: string[]): ProjectSuggestion {
   const pool = PROJECT_IDEAS.filter((i) => i.grade === grade && i.theme === theme);
   const pick = pool.find((i) => !avoid.includes(i.title)) ?? pool[0];
+  if (!pick) return { title: `${theme} project`, summary: `Plan a project for Grade ${grade} around the theme "${theme}". Add your own title and details, then save it.`, centralIdea: '', linesOfInquiry: [], activities: [], studentAction: '', source: 'starter' };
   return { title: pick.title, summary: pick.idea, centralIdea: '', linesOfInquiry: [], activities: [], studentAction: '', source: 'starter' };
 }
 
 export async function suggestProject(raw: z.input<typeof input>): Promise<ProjectSuggestion> {
   await requireTutor();
-  const { grade, theme, avoid } = input.parse(raw);
+  const { grade, theme, avoid, description } = input.parse(raw);
+  const themeInfo = description || (THEME_INFO as Record<string, { description: string } | undefined>)[theme]?.description || '';
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return starter(grade, theme, avoid);
   const prompt = `You are helping a primary teacher at an IB PYP school in Turkey plan a unit of inquiry project.
 Grade ${grade} (ages ${AGES[grade]}), English-language classroom with Turkish-speaking learners.
-Transdisciplinary theme: "${theme}" — ${THEME_INFO[theme].description}
+Transdisciplinary theme: "${theme}"${themeInfo ? ` — ${themeInfo}` : ''}
 Suggest ONE practical, age-appropriate project for this theme. Use PYP language (central idea, lines of inquiry, student action). Where natural, connect to Turkish culture or places children know, but do not claim a specific MEB outcome code.
 ${avoid.length ? `Do not repeat these earlier ideas: ${avoid.join('; ')}.` : ''}
 Reply with only JSON:

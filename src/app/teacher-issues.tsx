@@ -171,6 +171,6 @@ export default function TeacherIssues() {
     {section === 'students' && <StudentAnalysis />}
     {section === 'timeline' && <DepartmentTimeline />}
     {section === 'pyp' && <PypThemePanel />}
-    {section === 'ideas' &&<PypProjects onSave={(d) => { setDraft(d); setSection('notes'); }} />}
+    {section === 'ideas' &&<PypProjects />}
   </div>;
 }
