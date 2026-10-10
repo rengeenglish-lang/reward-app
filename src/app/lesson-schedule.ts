@@ -36,6 +36,19 @@ export const LESSONS: Record<number, Slot[]> = {
   ],
 };
 
+const PROGRAM_KEY = 'ezgili-lesson-program';
+
+/** The program in use: the teacher's saved edits in this browser, otherwise the default timetable above. */
+export function getProgram(): Record<number, Slot[]> {
+  try {
+    if (typeof localStorage === 'undefined') return LESSONS;
+    const saved = JSON.parse(localStorage.getItem(PROGRAM_KEY) || 'null') as Record<number, Slot[]> | null;
+    return saved && typeof saved === 'object' ? saved : LESSONS;
+  } catch { return LESSONS; }
+}
+export function saveProgram(program: Record<number, Slot[]>) { localStorage.setItem(PROGRAM_KEY, JSON.stringify(program)); }
+export function resetProgram() { try { localStorage.removeItem(PROGRAM_KEY); } catch { /* storage can be blocked */ } }
+
 /** "4/A" in the timetable is the classroom called "4A". */
 export const className = (cls: string) => cls.replace('/', '');
 
@@ -57,7 +70,7 @@ export type ActiveLesson = Slot & { key: string; startsAt: number; endsAt: numbe
 /** The lesson that should be running right now, if any. */
 export function currentLesson(at: Date = scheduleClock.now()): ActiveLesson | null {
   const { dayKey, minutes, stamp, weekday } = dayParts(at);
-  const slot = (LESSONS[weekday] ?? []).find((s) => minutes >= toMinutes(s.start) && minutes < toMinutes(s.end));
+  const slot = (getProgram()[weekday] ?? []).find((s) => minutes >= toMinutes(s.start) && minutes < toMinutes(s.end));
   if (!slot) return null;
   return { ...slot, key: `${dayKey}-${slot.period}-${slot.cls}`, startsAt: stamp(slot.start), endsAt: stamp(slot.end), label: `${className(slot.cls)} · Period ${slot.period}` };
 }
@@ -65,5 +78,5 @@ export function currentLesson(at: Date = scheduleClock.now()): ActiveLesson | nu
 /** The next lesson today, for the "up next" note. */
 export function nextLesson(at: Date = scheduleClock.now()): Slot | null {
   const { minutes, weekday } = dayParts(at);
-  return (LESSONS[weekday] ?? []).find((s) => toMinutes(s.start) > minutes) ?? null;
+  return (getProgram()[weekday] ?? []).find((s) => toMinutes(s.start) > minutes) ?? null;
 }
