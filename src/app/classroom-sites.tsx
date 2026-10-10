@@ -2,7 +2,8 @@
 
 import { ChangeEvent, FormEvent, MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { upload } from '@vercel/blob/client';
-import { ExternalLink, FileText, Globe2, Maximize2, Minimize2, Plus, X, Lightbulb } from 'lucide-react';
+import { BookMarked, ExternalLink, FileText, Globe2, Maximize2, Minimize2, Plus, X, Lightbulb } from 'lucide-react';
+import { bookrWeeks, isIssued, issueDate, latestFriday } from '@/lib/bookr-schedule';
 import { readingAnswerBanks } from '@/lib/reading-answers';
 
 type SavedSite = { id: string; name: string; url: string };
@@ -11,6 +12,7 @@ type CloudMaterial = { name: string; size: number; updatedAt: string };
 const STORAGE_KEY = 'ezgili-classroom-sites';
 const MATERIAL_DB = 'ezgili-classroom-materials';
 const MATERIAL_STORE = 'materials';
+const BOOKR_START_KEY = 'ezgili-bookr-start-friday';
 const MATERIAL_ID = 'shared-pdf';
 const MATERIAL_PATH = 'classroom-materials/shared.pdf';
 
@@ -94,6 +96,8 @@ export default function ClassroomSites() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [answerBankId, setAnswerBankId] = useState(readingAnswerBanks[0]?.id || '');
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(() => new Set());
+  const [hub, setHub] = useState<'bookr' | 'pdf' | 'sites' | 'answers'>('bookr');
+  const [bookrStart, setBookrStart] = useState('');
   const viewerRef = useRef<HTMLElement | null>(null);
   const objectUrlRef = useRef('');
 
@@ -134,6 +138,7 @@ export default function ClassroomSites() {
 
   useEffect(() => {
     setSites(readSites());
+    try { setBookrStart(localStorage.getItem(BOOKR_START_KEY) || latestFriday()); } catch { setBookrStart(latestFriday()); }
     const handleStorage = (event: StorageEvent) => {
       if (event.key === STORAGE_KEY) setSites(readSites());
     };
@@ -179,6 +184,12 @@ export default function ClassroomSites() {
     document.addEventListener('fullscreenchange', syncFullscreen);
     return () => document.removeEventListener('fullscreenchange', syncFullscreen);
   }, []);
+
+  const changeBookrStart = (value: string) => {
+    if (!value) return;
+    setBookrStart(value);
+    try { localStorage.setItem(BOOKR_START_KEY, value); } catch { /* keep the choice for this visit only */ }
+  };
 
   const saveSites = (next: SavedSite[]) => {
     setSites(next);
@@ -263,6 +274,7 @@ export default function ClassroomSites() {
     const source = materialIsCloud ? '/api/classroom-material/file' : (objectUrlRef.current || materialUrl.split('#')[0]);
     if (!source) return;
     setActiveSite(null);
+    setHub('pdf');
     setMaterialUrl(`${source.split('#')[0]}#page=${pdfPage}`);
     window.setTimeout(() => viewerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   };
@@ -288,27 +300,42 @@ export default function ClassroomSites() {
 
   return (
     <div className="page-wrap alternate classroom-sites-page">
-      <p className="eyebrow">YOUR CLASSROOM WEB LAUNCHPAD</p>
-      <h1>Bring a website <em>in.</em></h1>
-      <p className="subhead">Your saved websites stay in this browser. Your PDF material is shared securely across classrooms and devices.</p>
+      <p className="eyebrow">YOUR READING HUB</p>
+      <h1>Reading &amp; <em>resources</em></h1>
+      <p className="subhead">BOOKR books, the anthology, websites and answer keys, all in one place.</p>
+      <div className="hub-tiles" role="tablist">{([['bookr','📚','BOOKR books','Weekly Friday issue'],['pdf','📖','Anthology PDF','Shared material'],['sites','🌐','Websites','Saved classroom links'],['answers','💡','Answer reveal','Story answers']] as const).map(([id,icon,label,note])=><button key={id} role="tab" aria-selected={hub===id} className={`hub-tile ${hub===id?'active':''}`} onClick={()=>setHub(id)}><span className="hub-tile-icon" aria-hidden="true">{icon}</span><strong>{label}</strong><small>{note}</small></button>)}</div>
 
-      <section className="panel classroom-site-add">
+      {hub==='bookr'&&bookrStart&&<section id="bookr-panel" className="panel bookr-panel" aria-labelledby="bookr-title">
+        <div className="panel-title"><div className="panel-icon coral"><BookMarked size={19}/></div><div><h2 id="bookr-title">BOOKR books · weekly issue</h2><p>New books are issued every Friday. Cambridge Primary Path 3 · Grade 4.</p></div></div>
+        <label className="bookr-start"><span className="field-label">Week 1 issue Friday</span><input className="field-select" type="date" value={bookrStart} onChange={(event)=>changeBookrStart(event.target.value)}/></label>
+        <div className="bookr-weeks">{bookrWeeks.map((entry)=>{
+          const open=isIssued(bookrStart,entry.week);
+          const when=issueDate(bookrStart,entry.week).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+          return <article key={entry.week} className={`bookr-week ${open?'issued':'locked'}`}>
+            <header><strong>Week {entry.week}</strong><span>{open?`Issued ${when}`:`Opens ${when}`}</span></header>
+            <small>{entry.unit}</small>
+            {open?<ul>{entry.books.map((book)=><li key={book}>{book}</li>)}</ul>:<p className="bookr-locked-note">Books appear on this Friday.</p>}
+          </article>;
+        })}</div>
+      </section>}
+
+      {hub==='sites'&&<section className="panel classroom-site-add">
         <div className="panel-title"><div className="panel-icon purple"><Globe2 size={19}/></div><div><h2>Add a website</h2><p>Links you save here are shared across all classrooms on this browser.</p></div></div>
         <form className="classroom-site-form" onSubmit={addSite}>
           <label><span className="field-label">Website name <small>optional</small></span><input className="field-select" value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Math games" maxLength={70}/></label>
           <label><span className="field-label">Website link</span><input className="field-select" type="text" inputMode="url" value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://example.com" required/></label>
           <button className="primary-btn" type="submit"><Plus size={16}/> Save and open</button>
         </form>
-      </section>
+      </section>}
 
-      <section id="pdf-material" className="panel classroom-material-add">
+      {hub==='pdf'&&<section id="pdf-material" className="panel classroom-material-add">
         <div className="panel-title"><div className="panel-icon coral"><FileText size={19}/></div><div><h2>Shared PDF material</h2><p>Upload once and it stays in every classroom on every device. PDFs open unchanged in the browser viewer.</p></div></div>
         <div className="material-upload-row"><label className="outline-btn material-upload-label"><Plus size={16}/>{materialBusy?`Saving PDF… ${materialProgress}%`:material?'Replace PDF material':'Add a PDF'}<input type="file" accept="application/pdf,.pdf" onChange={uploadPdf} disabled={materialBusy}/></label>{materialBusy&&<progress className="material-upload-progress" max="100" value={materialProgress} aria-label="PDF upload progress"/>}{material&&<div className="material-current"><FileText size={16}/><span><strong>{material.name}</strong><small>{formatSize(material.size)} · {materialIsCloud?'Shared securely across classrooms and devices':'Saved on this browser; moving it to shared storage…'}</small></span><button type="button" className="outline-btn material-open" onClick={()=>{setActiveSite(null);setMaterialUrl(objectUrlRef.current||'/api/classroom-material/file')}}>Open PDF</button><button type="button" className="material-remove" onClick={removePdf} aria-label="Remove PDF material">Remove</button></div>}</div>
-      </section>
+      </section>}
 
       {error&&<p className="form-error classroom-sites-error" role="alert">{error}</p>}
 
-      {sites.length>0&&<section className="classroom-saved-sites" aria-label="Shared saved websites">
+      {hub==='sites'&&sites.length>0&&<section className="classroom-saved-sites" aria-label="Shared saved websites">
         <div className="section-heading compact"><div><h2>Your saved websites</h2><p>Open a saved site in any classroom.</p></div></div>
         <div className="classroom-site-list">{sites.map((site)=><div className={`classroom-site-chip ${activeSite?.id===site.id?'selected':''}`} key={site.id}>
           <button className="classroom-site-open" type="button" onClick={()=>chooseSite(site)}><Globe2 size={17}/><span><strong>{site.name}</strong><small>{new URL(site.url).hostname}</small></span></button>
@@ -316,23 +343,23 @@ export default function ClassroomSites() {
         </div>)}</div>
       </section>}
 
-      {activeSite&&<section ref={viewerRef} className={`classroom-site-viewer ${enlarged?'enlarged':''} ${isFullscreen?'fullscreen':''}`} aria-label={`${activeSite.name} embedded website`}>
+      {hub==='sites'&&activeSite&&<section ref={viewerRef} className={`classroom-site-viewer ${enlarged?'enlarged':''} ${isFullscreen?'fullscreen':''}`} aria-label={`${activeSite.name} embedded website`}>
         <header className="classroom-site-viewer-head"><div className="classroom-site-viewer-title"><Globe2 size={18}/><div><strong>{activeSite.name}</strong><small>{activeSite.url}</small></div></div><div className="classroom-site-controls">{viewerControls}<a className="outline-btn" href={activeSite.url} target="_blank" rel="noreferrer"><ExternalLink size={15}/> Open in new tab</a><button className="icon-btn" type="button" aria-label="Close website" onClick={()=>setActiveSite(null)}><X size={18}/></button></div></header>
         <iframe key={activeSite.id} className="classroom-site-frame" src={activeSite.url} title={`${activeSite.name} website`} allow="fullscreen; autoplay" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation"/>
         <p className="classroom-site-note">If the frame stays blank, this website may block embedding. Try <a href={activeSite.url} target="_blank" rel="noreferrer">opening it in a new tab</a>.</p>
       </section>}
 
-      {material&&materialUrl&&<section ref={viewerRef} className={`classroom-site-viewer ${enlarged?'enlarged':''} ${isFullscreen?'fullscreen':''}`} aria-label={`${material.name} PDF viewer`}>
+      {hub==='pdf'&&material&&materialUrl&&<section ref={viewerRef} className={`classroom-site-viewer ${enlarged?'enlarged':''} ${isFullscreen?'fullscreen':''}`} aria-label={`${material.name} PDF viewer`}>
         <header className="classroom-site-viewer-head"><div className="classroom-site-viewer-title"><FileText size={18}/><div><strong>{material.name}</strong><small>{formatSize(material.size)} · This original PDF is displayed without conversion</small></div></div><a className="outline-btn material-open" href={materialUrl} target="_blank" rel="noreferrer"><ExternalLink size={15}/> Open in browser tab</a>{viewerControls}<button className="icon-btn" type="button" aria-label="Close PDF" onClick={()=>setMaterialUrl('')}><X size={18}/></button></header>
         <iframe key={materialUrl} className="classroom-site-frame pdf-material-frame" src={materialUrl} title={`${material.name} PDF`} allow="fullscreen" allowFullScreen/>
         <p className="classroom-site-note">If your in-app browser shows a blank PDF preview, choose <strong>Open in browser tab</strong> to use its PDF reader.</p>
       </section>}
 
-      <section className="panel answer-reveal-panel" aria-labelledby="answer-reveal-title">
+      {hub==='answers'&&<section className="panel answer-reveal-panel" aria-labelledby="answer-reveal-title">
         <div className="answer-reveal-heading"><div className="panel-icon purple"><Lightbulb size={19}/></div><div><p className="eyebrow">READ, THINK, THEN REVEAL</p><h2 id="answer-reveal-title">Story answer reveal</h2><p>Reveal answers individually or show all answers for the selected exercise. Matching answers show the complete line.</p></div></div>
         <label className="answer-reveal-select"><span className="field-label">Reading</span><select className="field-select" value={answerBank?.id || ''} onChange={(event)=>{setAnswerBankId(event.target.value);setRevealedAnswers(new Set())}}>{readingAnswerBanks.map((bank)=><option key={bank.id} value={bank.id}>Unit {bank.unit} · {bank.kind} · {bank.title} · Exercise p. {bank.printedPage}</option>)}</select></label>
         {answerBank&&<><div className="answer-reveal-meta"><strong>Exercises: Student Book p. {answerBank.printedPage}</strong><span>PDF page {answerBank.pdfPage} · {answerBank.answers.length} answer reveals</span></div><div className="answer-reveal-tools"><span>Choose how to reveal answers</span><button type="button" className="fun-action secondary answer-reveal-all-button" aria-controls="answer-reveal-list" aria-expanded={allExerciseAnswersRevealed} onClick={toggleAllExerciseAnswers}>{allExerciseAnswersRevealed?'Hide all answers in this exercise':'Reveal all answers in this exercise'}</button></div><div id="answer-reveal-list" className="answer-reveal-list">{answerBank.answers.map((item,index)=>{const id=`${answerBank.id}-${index}`;const isRevealed=revealedAnswers.has(id);return <article className={`answer-reveal-item ${isRevealed?'is-revealed':''}`} key={id}><div className="answer-reveal-question"><span className="answer-reveal-number">{index+1}</span><div><p>{item.prompt}</p><a className="answer-reveal-pdf-link" href={material ? `${materialIsCloud?'/api/classroom-material/file':objectUrlRef.current}#page=${answerBank.pdfPage}` : '#pdf-material'} onClick={(event)=>openExercisePage(event,answerBank.pdfPage)}>Student Book p. {answerBank.printedPage} · Open in PDF</a></div></div><button type="button" className="fun-action secondary answer-reveal-button" aria-expanded={isRevealed} onClick={()=>toggleAnswer(id)}>{isRevealed?'Hide answer':'View answer'}</button>{isRevealed&&<p className={`answer-reveal-answer ${item.matching?'matching-answer':''}`}><strong>{item.matching?'Answer line':'Answer'}:</strong> {item.answer}</p>}</article>})}</div></>}
-      </section>
+      </section>}
     </div>
   );
 }
