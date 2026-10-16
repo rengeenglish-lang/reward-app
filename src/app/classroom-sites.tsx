@@ -98,6 +98,7 @@ export default function ClassroomSites() {
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(() => new Set());
   const [hub, setHub] = useState<'bookr' | 'pdf' | 'sites' | 'answers'>('bookr');
   const [bookrStart, setBookrStart] = useState('');
+  const [bookrWeekOverrides, setBookrWeekOverrides] = useState<Record<number, boolean>>({});
   const viewerRef = useRef<HTMLElement | null>(null);
   const objectUrlRef = useRef('');
 
@@ -188,6 +189,7 @@ export default function ClassroomSites() {
   const changeBookrStart = (value: string) => {
     if (!value) return;
     setBookrStart(value);
+    setBookrWeekOverrides({});
     try { localStorage.setItem(BOOKR_START_KEY, value); } catch { /* keep the choice for this visit only */ }
   };
 
@@ -310,11 +312,19 @@ export default function ClassroomSites() {
         <label className="bookr-start"><span className="field-label">Week 1 issue Friday</span><input className="field-select" type="date" value={bookrStart} onChange={(event)=>changeBookrStart(event.target.value)}/></label>
         <div className="bookr-weeks">{bookrWeeks.map((entry)=>{
           const open=isIssued(bookrStart,entry.week);
+          const expanded=Object.prototype.hasOwnProperty.call(bookrWeekOverrides,entry.week)?bookrWeekOverrides[entry.week]:open;
+          const toggle=()=>setBookrWeekOverrides((current)=>({
+            ...current,
+            [entry.week]:!(Object.prototype.hasOwnProperty.call(current,entry.week)?current[entry.week]:open),
+          }));
           const when=issueDate(bookrStart,entry.week).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
-          return <article key={entry.week} className={`bookr-week ${open?'issued':'locked'}`}>
+          return <article key={entry.week} role="button" tabIndex={0} aria-expanded={expanded}
+            onClick={toggle}
+            onKeyDown={(event)=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();toggle();}}}
+            className={`bookr-week ${open?'issued':'locked'}${expanded?' expanded':''}`}>
             <header><strong>Week {entry.week}</strong><span>{open?`Issued ${when}`:`Opens ${when}`}</span></header>
             <small>{entry.unit}</small>
-            {open?<ul>{entry.books.map((book)=><li key={book}>{book}</li>)}</ul>:<p className="bookr-locked-note">Books appear on this Friday.</p>}
+            {expanded?<ul>{entry.books.map((book)=><li key={book}>{book}</li>)}</ul>:<p className="bookr-locked-note">{open?'Click to hide the book titles.':'Click to reveal the book titles.'}</p>}
           </article>;
         })}</div>
       </section>}
