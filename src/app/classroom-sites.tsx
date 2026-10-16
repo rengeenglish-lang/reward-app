@@ -90,6 +90,9 @@ export default function ClassroomSites() {
   const [material, setMaterial] = useState<StoredMaterial | null>(null);
   const [materialIsCloud, setMaterialIsCloud] = useState(false);
   const [materialUrl, setMaterialUrl] = useState('');
+  const [pdfPage, setPdfPage] = useState(1);
+  const [pdfPageInput, setPdfPageInput] = useState('1');
+  const [pdfPageReady, setPdfPageReady] = useState(false);
   const [materialBusy, setMaterialBusy] = useState(false);
   const [materialProgress, setMaterialProgress] = useState(0);
   const [enlarged, setEnlarged] = useState(false);
@@ -136,6 +139,16 @@ export default function ClassroomSites() {
       setMaterialProgress(0);
     }
   }, []);
+
+  useEffect(() => {
+    try { const savedPage = Math.max(1, Number(localStorage.getItem('ezgili-classroom-pdf-page') || 1)); setPdfPage(savedPage); setPdfPageInput(String(savedPage)); } catch { /* start at page one */ }
+    setPdfPageReady(true);
+  }, []);
+  useEffect(() => {
+    if (!pdfPageReady) return;
+    try { localStorage.setItem('ezgili-classroom-pdf-page', String(pdfPage)); } catch { /* bookmark is best effort */ }
+    setPdfPageInput(String(pdfPage));
+  }, [pdfPage, pdfPageReady]);
 
   useEffect(() => {
     setSites(readSites());
@@ -360,9 +373,9 @@ export default function ClassroomSites() {
       </section>}
 
       {hub==='pdf'&&material&&materialUrl&&<section ref={viewerRef} className={`classroom-site-viewer ${enlarged?'enlarged':''} ${isFullscreen?'fullscreen':''}`} aria-label={`${material.name} PDF viewer`}>
-        <header className="classroom-site-viewer-head"><div className="classroom-site-viewer-title"><FileText size={18}/><div><strong>{material.name}</strong><small>{formatSize(material.size)} · This original PDF is displayed without conversion</small></div></div><a className="outline-btn material-open" href={materialUrl} target="_blank" rel="noreferrer"><ExternalLink size={15}/> Open in browser tab</a>{viewerControls}<button className="icon-btn" type="button" aria-label="Close PDF" onClick={()=>setMaterialUrl('')}><X size={18}/></button></header>
-        <iframe key={materialUrl} className="classroom-site-frame pdf-material-frame" src={materialUrl} title={`${material.name} PDF`} allow="fullscreen" allowFullScreen/>
-        <p className="classroom-site-note">If your in-app browser shows a blank PDF preview, choose <strong>Open in browser tab</strong> to use its PDF reader.</p>
+        <header className="classroom-site-viewer-head"><div className="classroom-site-viewer-title"><FileText size={18}/><div><strong>{material.name}</strong><small>{formatSize(material.size)} · Bookmark saved at page {pdfPage}</small></div></div><div className="pdf-page-controls" aria-label="Saved PDF page controls"><button type="button" className="outline-btn" onClick={()=>setPdfPage(page=>Math.max(1,page-1))} aria-label="Previous page">‹</button><label><span>Page</span><input type="number" min="1" max="9999" value={pdfPageInput} aria-label="PDF page number" onChange={event=>setPdfPageInput(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'){const page=Math.max(1,Math.floor(Number(pdfPageInput)||1));setPdfPage(page);}}}/><button type="button" className="outline-btn" onClick={()=>setPdfPage(Math.max(1,Math.floor(Number(pdfPageInput)||1)))}>Go</button></label><button type="button" className="outline-btn" onClick={()=>setPdfPage(page=>page+1)} aria-label="Next page">›</button></div><a className="outline-btn material-open" href={`${materialUrl}#page=${pdfPage}`} target="_blank" rel="noreferrer"><ExternalLink size={15}/> Open in browser tab</a>{viewerControls}<button className="icon-btn" type="button" aria-label="Close PDF" onClick={()=>setMaterialUrl('')}><X size={18}/></button></header>
+        <iframe key={`${materialUrl}#page=${pdfPage}`} className="classroom-site-frame pdf-material-frame" src={`${materialUrl}#page=${pdfPage}`} title={`${material.name} PDF, page ${pdfPage}`} allow="fullscreen" allowFullScreen/>
+        <p className="classroom-site-note">The last page is saved in this browser, even after you close the site. Use the page controls to update the shared bookmark before switching activities.</p>
       </section>}
 
       {hub==='answers'&&<section className="panel answer-reveal-panel" aria-labelledby="answer-reveal-title">
