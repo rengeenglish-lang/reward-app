@@ -196,14 +196,14 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
               const out = rows.filter((r) => r.book_id === b.id && !r.returned).length;
               return (
                 <div key={b.id} className="shelf-item" role="listitem">
-                  <button type="button" className="shelf-book" style={{ ['--w' as string]: Math.round(b.aspect * 150), ['--h' as string]: 150, ['--t' as string]: '24px', animationDelay: `${i * -0.45}s` }}
+                  <button type="button" className={`shelf-book${picked?.id === b.id ? ' is-selected' : ''}`} aria-pressed={picked?.id === b.id} style={{ ['--w' as string]: Math.round(b.aspect * 150), ['--h' as string]: 150, ['--t' as string]: '24px', animationDelay: `${i * -0.45}s` }}
                     onClick={() => { setPicked(b); setPhase('revealed'); }} aria-label={`Show ${b.title}`}>
                     <span className="bk-face bk-front">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={b.cover_path} alt="" /></span>
                     <span className="bk-face bk-back" />
                     <span className="bk-face bk-spine" />
                     <span className="bk-face bk-pages" />
                   </button>
-                  <span className="shelf-title">{b.title}</span>
+                  <button type="button" className={`shelf-title${picked?.id === b.id ? ' is-selected' : ''}`} aria-pressed={picked?.id === b.id} onClick={() => { setPicked(b); setPhase('revealed'); }}>{b.title}</button>
                   {readers && <span className={`shelf-count${out ? ' out' : ''}`}>{out ? `${out} with students` : 'on the shelf'}</span>}
                 </div>
               );
