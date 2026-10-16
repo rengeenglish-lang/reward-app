@@ -155,13 +155,13 @@ function TodayStrip() {
   </section>;
 }
 
-export default function TeacherIssues() {
-  const [section, setSection] = useState<Section>('program');
+export default function TeacherIssues({ initialSection = 'program' }: { initialSection?: Section }) {
+  const [section, setSection] = useState<Section>(initialSection);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const tabs: Array<[Section, string, string, string]> = [['program', '🗓️', 'Lesson program', 'Your weekly timetable'], ['units', '📘', 'Unit plans', 'Type or scan pictures'], ['notes', '📝', 'Meeting & project notes', 'Type or scan a photo'], ['students', '🧠', 'Student analysis', 'Academic & behaviour'], ['timeline', '🧭', 'Department timeline', 'What comes next'], ['ideas', '💡', 'PYP projects', 'Suggest a project by theme'], ['pyp', '🌟', 'PYP theme', 'Grade 4 theme & your own names']];
   return <div className="page-wrap alternate ti-page">
     <p className="eyebrow">FOR YOU, THE TEACHER</p>
-    <h1>Teacher <em>Issues</em></h1>
+    <h1>{initialSection === 'students' ? <>Student <em>analysis</em></> : <>Teacher <em>tools</em></>}</h1>
     <p className="subhead">Your lesson program, meeting notes, student analysis and school projects in one place.</p>
     <TodayStrip />
     <div className="hub-tiles" role="tablist">{tabs.map(([id, icon, label, note]) => <button key={id} role="tab" aria-selected={section === id} className={`hub-tile ${section === id ? 'active' : ''}`} onClick={() => setSection(id)}><span className="hub-tile-icon" aria-hidden="true">{icon}</span><strong>{label}</strong><small>{note}</small></button>)}</div>

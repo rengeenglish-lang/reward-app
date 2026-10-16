@@ -8,6 +8,10 @@ import StudentPetition from './student-petition';
 import type { BehaviourSummary, StudentEntry } from '@/lib/student-analysis';
 
 type Area = 'academic' | 'behaviour';
+const ANALYSIS_MODALITIES: Array<{ group: string; items: Array<{ id: string; label: string }> }> = [
+  { group: 'Academic', items: [{ id: 'reading', label: 'Reading' }, { id: 'writing', label: 'Writing' }, { id: 'speaking', label: 'Speaking' }, { id: 'listening', label: 'Listening' }, { id: 'vocabulary', label: 'Vocabulary' }, { id: 'grammar', label: 'Grammar' }, { id: 'assessment', label: 'Assessment results' }] },
+  { group: 'Classroom & wellbeing', items: [{ id: 'participation', label: 'Participation' }, { id: 'focus', label: 'Focus' }, { id: 'cooperation', label: 'Cooperation' }, { id: 'confidence', label: 'Confidence' }, { id: 'readiness', label: 'Class readiness' }, { id: 'routines', label: 'Classroom routines' }] },
+];
 const AREAS: Array<{ id: Area; label: string; hint: string }> = [
   { id: 'academic', label: 'Academic analysis', hint: 'Reading, writing, speaking, test results, strengths and what to work on.' },
   { id: 'behaviour', label: 'Behaviour analysis', hint: 'Attitude, social skills, concerns, incidents and what helps.' },
@@ -63,6 +67,7 @@ function Summary({ s }: { s: BehaviourSummary }) {
 export default function StudentAnalysis() {
   const [students, setStudents] = useState<AnalysisStudent[]>([]);
   const [studentId, setStudentId] = useState('');
+  const [selectedModalities, setSelectedModalities] = useState<string[]>([]);
   const [summary, setSummary] = useState<BehaviourSummary | null>(null);
   const [entries, setEntries] = useState<StudentEntry[]>([]);
   const [error, setError] = useState('');
@@ -90,7 +95,7 @@ export default function StudentAnalysis() {
   return <section className="panel ti-panel" aria-labelledby="ti-students">
     <div className="panel-title"><div className="panel-icon purple"><Brain size={19} /></div><div><h2 id="ti-students">Student academic &amp; behaviour analysis</h2><p>Pick a student. Behaviour is analysed automatically from the daily goal checklists; add your own academic and behaviour observations, typed or from a picture.</p></div></div>
     <label className="sa-pick"><span className="field-label">Student</span>
-      <select className="field-select" value={studentId} onChange={(e) => { setStudentId(e.target.value); setSummary(null); setEntries([]); }}>
+      <select className="field-select" value={studentId} onChange={(e) => { setStudentId(e.target.value); setSummary(null); setEntries([]); setSelectedModalities([]); }}>
         <option value="">Choose a student…</option>
         {classrooms.map((c) => <optgroup key={c} label={c}>{students.filter((s) => s.classroom === c).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</optgroup>)}
       </select></label>
@@ -98,6 +103,7 @@ export default function StudentAnalysis() {
     {studentId && <>
       <h3 className="sa-name">{student?.name} <small>{student?.classroom}</small></h3>
       {loading ? <p className="ti-empty">Loading…</p> : <>
+        <section className="sa-modalities" aria-labelledby="sa-modalities-title"><div><h3 id="sa-modalities-title">Choose analysis areas</h3><p>Tick the areas you want highlighted in the generated dilekçe.</p></div><div className="sa-modalities-groups">{ANALYSIS_MODALITIES.map((group) => <fieldset key={group.group}><legend>{group.group}</legend><div>{group.items.map((item) => <label key={item.id}><input type="checkbox" checked={selectedModalities.includes(item.id)} onChange={(event) => setSelectedModalities((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))} /><span>{item.label}</span></label>)}</div></fieldset>)}</div></section>
         {summary && <Summary s={summary} />}
         <div className="sa-areas">{AREAS.map((area) => <div className="sa-area" key={area.id}>
           <h3>{area.label}</h3>
@@ -106,7 +112,7 @@ export default function StudentAnalysis() {
             {editId === e.id ? <div className="sa-form"><label><span className="field-label">Date</span><input className="field-select" type="date" value={editDate} onChange={(ev) => setEditDate(ev.target.value)} /></label><textarea className="field-select" rows={5} aria-label="Edit entry" value={editBody} onChange={(ev) => setEditBody(ev.target.value)} /><div className="sa-form-actions"><button className="primary-btn" type="button" onClick={saveEdit} disabled={!editBody.trim() || !editDate}>Save changes</button><button className="outline-btn" type="button" onClick={() => setEditId(null)}>Cancel</button></div></div> : <><header><small>{e.entry_date}{e.source === 'photo' ? ' · from picture' : ''}</small><div className="up-tools"><button type="button" className="outline-btn" onClick={() => beginEdit(e)}>Edit</button><button type="button" className="icon-btn" aria-label="Delete entry" onClick={() => remove(e.id)}><Trash2 size={15} /></button></div></header>
             <p>{e.body}</p></>}</article>)}</div>
         </div>)}</div>
-        <StudentPetition studentName={student?.name ?? ''} classroom={student?.classroom ?? ''} summary={summary} entries={entries} />
+        <StudentPetition studentName={student?.name ?? ''} classroom={student?.classroom ?? ''} summary={summary} entries={entries} modalities={selectedModalities} />
       </>}
     </>}
   </section>;

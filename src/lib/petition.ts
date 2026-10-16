@@ -1,6 +1,6 @@
 import type { BehaviourSummary, StudentEntry } from './student-analysis';
 
-export type Recipient = 'counsellor' | 'principal' | 'both';
+export type Recipient = 'none' | 'counsellor' | 'principal' | 'both';
 export type Purpose = 'support' | 'info' | 'meeting';
 
 export const RECIPIENTS: Array<{ id: Recipient; label: string }> = [
@@ -45,6 +45,7 @@ export type PetitionInput = {
   classroom: string;
   summary: BehaviourSummary | null;
   entries: StudentEntry[];
+  modalities?: string[];
 };
 
 /** Builds a formal Turkish dilekçe (petition letter) from a student's analysis. The teacher can edit the text afterwards. */
@@ -53,7 +54,7 @@ export function buildPetition(p: PetitionInput): string {
   const name = p.studentName.trim();
   const klass = p.classroom.trim();
 
-  const to = p.recipient === 'principal'
+  const to = p.recipient === 'none' ? [] : p.recipient === 'principal'
     ? [`${school} MÜDÜRLÜĞÜNE`]
     : p.recipient === 'counsellor'
       ? [`${school} REHBERLİK SERVİSİNE`, '(Rehber Öğretmen)']
@@ -64,14 +65,18 @@ export function buildPetition(p: PetitionInput): string {
       : `${name} adlı öğrenci ile ilgili görüşme talebi.`;
 
   const request = p.purpose === 'support'
-    ? (p.recipient === 'principal'
-      ? 'gerekli önlemlerin alınmasını ve öğrencinin rehberlik servisine yönlendirilmesini'
-      : 'öğrencinin değerlendirilmesini ve gerekli rehberlik desteğinin sağlanmasını')
+    ? (p.recipient === 'none'
+      ? 'öğrencinin durumunun değerlendirilmesini ve uygun desteğin sağlanmasını'
+      : p.recipient === 'principal'
+        ? 'gerekli önlemlerin alınmasını ve öğrencinin rehberlik servisine yönlendirilmesini'
+        : 'öğrencinin değerlendirilmesini ve gerekli rehberlik desteğinin sağlanmasını')
     : p.purpose === 'info'
       ? 'durumun bilgilerinize sunulmasını'
       : 'ilgili taraflarla bir görüşme yapılmasını';
 
   const lines: string[] = ['T.C.', ...to, '', `Tarih: ${trDate(p.date)}`, '', `Konu: ${subject}`, ''];
+  const modalityLabels: Record<string, string> = { reading: 'okuma', writing: 'yazma', speaking: 'konuşma', listening: 'dinleme', vocabulary: 'kelime bilgisi', grammar: 'dil bilgisi', assessment: 'ölçme ve değerlendirme sonuçları', participation: 'katılım', focus: 'odaklanma', cooperation: 'iş birliği', confidence: 'öz güven', readiness: 'sınıf hazırlığı', routines: 'sınıf rutinleri' };
+  if (p.modalities?.length) lines.push(`İncelenen analiz alanları: ${p.modalities.map((id) => modalityLabels[id] ?? id).join(', ')}.`, '');
   lines.push(`Okulunuz${klass ? ` ${klass} sınıfı` : ''} öğrencisi ${name} ile ilgili aşağıda sunduğum gözlemler doğrultusunda ${request} saygılarımla arz ederim.`, '');
 
   const take = (area: 'academic' | 'behaviour') => p.entries.filter((e) => e.area === area).slice(0, 5);
