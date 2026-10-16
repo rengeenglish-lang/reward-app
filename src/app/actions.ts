@@ -10,8 +10,7 @@ const uuid = z.string().uuid();
 const name = z.string().trim().min(1).max(100);
 const avatarKeys = ['fox','bear','panda','lion','frog','tiger','koala','unicorn','penguin','octopus','dolphin','whale','turtle','butterfly','bee','ladybug','parrot','flamingo','peacock','rabbit','cat','dog','hamster','monkey','elephant','giraffe','zebra','crocodile','dinosaur','dragon','owl','chick','hedgehog','raccoon','squirrel','otter','seal','sloth','llama','deer','horse','mouse','wolf','bird','shell','star','rainbow','rocket','heart','sun','flower','cherry','cupcake','icecream','robot','alien'] as const;
 const criteriaKeys = ['homework_complete','class_participation','speaking_effort','project_complete','class_readiness','speaking_day_rules'] as const;
-const criteriaShape = Object.fromEntries(criteriaKeys.map(k => [k,z.boolean()]));
-const criteriaSchema = z.object(criteriaShape).strict();
+const pointCriterion = z.enum(criteriaKeys);
 
 export async function signIn(formData: FormData) {
   const email = z.string().email().safeParse(formData.get('email'));
@@ -57,7 +56,24 @@ export async function getInitialData() {
   const [classrooms,groups,students,prizes,recentDraws] = await Promise.all([
     sql`SELECT id,name FROM classrooms WHERE archived_at IS NULL ORDER BY name`,
     sql`SELECT g.id,g.name,g.grade_label,g.classroom_id,c.name AS classroom_name FROM groups g JOIN classrooms c ON c.id=g.classroom_id WHERE g.archived_at IS NULL AND c.archived_at IS NULL ORDER BY c.name,g.name`,
-    sql`SELECT s.id,s.display_name,s.avatar_key,s.group_id,g.classroom_id,c.name AS classroom_name,br.criteria FROM students s JOIN groups g ON g.id=s.group_id JOIN classrooms c ON c.id=g.classroom_id LEFT JOIN behavior_records br ON br.student_id=s.id AND br.record_date=${today} WHERE s.archived_at IS NULL AND g.archived_at IS NULL AND c.archived_at IS NULL ORDER BY s.display_name`,
+    sql`SELECT s.id,s.display_name,s.avatar_key,s.group_id,g.classroom_id,c.name AS classroom_name,
+      COALESCE(points.total,0)::int AS lifetime_points,
+      COALESCE(points.homework_complete,0)::int AS homework_complete,
+      COALESCE(points.class_participation,0)::int AS class_participation,
+      COALESCE(points.speaking_effort,0)::int AS speaking_effort,
+      COALESCE(points.project_complete,0)::int AS project_complete,
+      COALESCE(points.class_readiness,0)::int AS class_readiness,
+      COALESCE(points.speaking_day_rules,0)::int AS speaking_day_rules
+      FROM students s JOIN groups g ON g.id=s.group_id JOIN classrooms c ON c.id=g.classroom_id
+      LEFT JOIN LATERAL (SELECT sum(points)::int AS total,
+        sum(points) FILTER (WHERE criterion='homework_complete')::int AS homework_complete,
+        sum(points) FILTER (WHERE criterion='class_participation')::int AS class_participation,
+        sum(points) FILTER (WHERE criterion='speaking_effort')::int AS speaking_effort,
+        sum(points) FILTER (WHERE criterion='project_complete')::int AS project_complete,
+        sum(points) FILTER (WHERE criterion='class_readiness')::int AS class_readiness,
+        sum(points) FILTER (WHERE criterion='speaking_day_rules')::int AS speaking_day_rules
+        FROM student_point_awards WHERE student_id=s.id) points ON true
+      WHERE s.archived_at IS NULL AND g.archived_at IS NULL AND c.archived_at IS NULL ORDER BY s.display_name`,
     sql`SELECT id,name,description,active FROM prizes ORDER BY active DESC,name`,
     sql`SELECT d.id,d.drawn_at,d.prize_name_snapshot AS prize,s.display_name AS student,s.avatar_key FROM reward_draws d JOIN students s ON s.id=d.student_id ORDER BY d.drawn_at DESC LIMIT 8`
   ]);
@@ -194,10 +210,15 @@ export async function getGroupRoster(groupId: string,recordDate: string) {
   await requireTutor(); const group=uuid.parse(groupId),date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(recordDate);
   return sqlClient()`SELECT s.id,s.display_name,s.avatar_key,br.criteria,br.updated_at FROM students s JOIN groups g ON g.id=s.group_id LEFT JOIN behavior_records br ON br.student_id=s.id AND br.record_date=${date} WHERE s.group_id=${group} AND s.archived_at IS NULL AND g.archived_at IS NULL ORDER BY s.display_name`;
 }
-export async function saveBehaviorRecord(studentId: string,groupId: string,recordDate: string,checks: unknown) {
-  await requireTutor(); const student=uuid.parse(studentId),group=uuid.parse(groupId),date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(recordDate),valid=criteriaSchema.parse(checks);
-  const rows=await sqlClient()`INSERT INTO behavior_records(student_id,group_id,record_date,criteria) SELECT s.id,s.group_id,${date},${JSON.stringify(valid)}::jsonb FROM students s JOIN groups g ON g.id=s.group_id WHERE s.id=${student} AND s.group_id=${group} AND s.archived_at IS NULL AND g.archived_at IS NULL ON CONFLICT(student_id,record_date) DO UPDATE SET criteria=EXCLUDED.criteria,updated_at=now() WHERE behavior_records.group_id=EXCLUDED.group_id RETURNING id,criteria,updated_at`;
-  if(!rows.length) throw new Error('Student is not active in this group'); return rows[0];
+export async function awardStudentPoints(studentId:string,groupId:string,criterion:string,points:number) {
+  const tutor=await requireTutor();
+  const student=uuid.parse(studentId),group=uuid.parse(groupId),key=pointCriterion.parse(criterion),amount=z.number().int().min(1).max(1000).parse(points),date=new Intl.DateTimeFormat('en-CA',{timeZone:tutor.timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const rows=await sqlClient()`INSERT INTO student_point_awards(student_id,group_id,criterion,points,awarded_on)
+    SELECT s.id,s.group_id,${key},${amount},${date}::date FROM students s JOIN groups g ON g.id=s.group_id
+    WHERE s.id=${student} AND s.group_id=${group} AND s.archived_at IS NULL AND g.archived_at IS NULL
+    RETURNING id,student_id,group_id,criterion,points,awarded_on`;
+  if(!rows.length) throw new Error('Student is not active in this group');
+  return rows[0];
 }
 
 export async function createPrize(input: string,description?: string) {
@@ -242,7 +263,18 @@ export async function drawReward(input: {idempotencyKey:string;classroomId:strin
 export async function getReport(classroomId: string,start: string,end: string) {
   await requireTutor(); const classroom=uuid.parse(classroomId),from=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(start),to=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(end);
   if(from>to) throw new Error('Invalid report date range');
-  return sqlClient()`SELECT s.id,s.display_name,s.avatar_key,COALESCE(sum(((br.criteria->>'homework_complete')::boolean)::int+((br.criteria->>'class_participation')::boolean)::int+((br.criteria->>'speaking_effort')::boolean)::int+((br.criteria->>'project_complete')::boolean)::int+((br.criteria->>'class_readiness')::boolean)::int+((br.criteria->>'speaking_day_rules')::boolean)::int),0)::int AS total,COALESCE(sum(((br.criteria->>'homework_complete')::boolean)::int),0)::int AS homework_complete,COALESCE(sum(((br.criteria->>'class_participation')::boolean)::int),0)::int AS class_participation,COALESCE(sum(((br.criteria->>'speaking_effort')::boolean)::int),0)::int AS speaking_effort,COALESCE(sum(((br.criteria->>'project_complete')::boolean)::int),0)::int AS project_complete,COALESCE(sum(((br.criteria->>'class_readiness')::boolean)::int),0)::int AS class_readiness,COALESCE(sum(((br.criteria->>'speaking_day_rules')::boolean)::int),0)::int AS speaking_day_rules FROM students s JOIN groups g ON g.id=s.group_id LEFT JOIN behavior_records br ON br.student_id=s.id AND br.record_date BETWEEN ${from} AND ${to} WHERE g.classroom_id=${classroom} AND g.archived_at IS NULL AND s.archived_at IS NULL GROUP BY s.id ORDER BY s.display_name`;
+  return sqlClient()`SELECT s.id,s.display_name,s.avatar_key,
+    COALESCE(sum(a.points),0)::int AS total,
+    COALESCE(sum(a.points) FILTER (WHERE a.criterion='homework_complete'),0)::int AS homework_complete,
+    COALESCE(sum(a.points) FILTER (WHERE a.criterion='class_participation'),0)::int AS class_participation,
+    COALESCE(sum(a.points) FILTER (WHERE a.criterion='speaking_effort'),0)::int AS speaking_effort,
+    COALESCE(sum(a.points) FILTER (WHERE a.criterion='project_complete'),0)::int AS project_complete,
+    COALESCE(sum(a.points) FILTER (WHERE a.criterion='class_readiness'),0)::int AS class_readiness,
+    COALESCE(sum(a.points) FILTER (WHERE a.criterion='speaking_day_rules'),0)::int AS speaking_day_rules
+    FROM students s JOIN groups g ON g.id=s.group_id
+    LEFT JOIN student_point_awards a ON a.student_id=s.id AND a.awarded_on BETWEEN ${from} AND ${to}
+    WHERE g.classroom_id=${classroom} AND g.archived_at IS NULL AND s.archived_at IS NULL
+    GROUP BY s.id ORDER BY s.display_name`;
 }
 
 export async function getPeriodReport(classroomId: string,period: 'week'|'month') {

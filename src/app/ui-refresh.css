@@ -422,8 +422,15 @@ button.student-avatar:hover{transform:scale(1.06)}
 .dojo-criterion .dojo-crit-icon{font-size:34px;line-height:1}
 .dojo-criterion b{font-size:13px;line-height:1.2}
 .dojo-criterion svg{position:absolute;top:8px;right:8px;color:#fff;background:#4caf7d;border-radius:50%;padding:3px;width:22px;height:22px}
+.dojo-criterion small{color:#62758a;font-size:11px;font-weight:700}
+.criterion-award-label{padding:5px 10px;border-radius:999px;background:#e1f6ed;color:#1c795e;font-size:11px;font-weight:900}
+.dojo-criterion:disabled,.award-count-button:disabled{opacity:.65;cursor:wait}
+.manual-award-amount{margin:10px 0 14px}
+.award-count-button{width:auto;min-width:34px;padding:0 5px;background:#e7f8ef;color:#23775e;border-color:#a8ddc6;font-size:11px;font-weight:900}
+.award-count-button:hover{background:#d5f2e3;border-color:#55b887}
+.points-cell span{white-space:nowrap}
 .dojo-pop-actions{display:flex;justify-content:center;gap:10px;margin-top:18px}
-@media (max-width:560px){.dojo-grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px}.dojo-avatar.student-avatar{width:60px;height:60px;font-size:32px}.dojo-criteria{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.dojo-grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px}.dojo-avatar.student-avatar{width:60px;height:60px;font-size:32px}.dojo-criteria{grid-template-columns:1fr 1fr}.award-count-button{min-width:27px;padding:0 3px;font-size:10px}}
 
 /* Calmer spacing and clearer headings (ClassDojo-style airy cards) */
 .today-layout .section-heading h2,.today-layout .section-heading p{color:#fff;text-shadow:0 2px 14px rgba(20,10,60,.35)}
