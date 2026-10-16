@@ -1,0 +1,96 @@
+/* Sparkle dashboard: bright classroom-first surfaces with clear, playful hierarchy. */
+.sparkle-dashboard{
+  --spark-ink:#20274b;--spark-muted:#7b829c;--spark-paper:#fbfaff;--spark-line:#eceaf5;
+  --spark-purple:#6e4de6;--spark-mint:#39c7ad;--spark-sun:#ffca45;--spark-coral:#ff7f73;
+  color:var(--spark-ink);
+  background:radial-gradient(ellipse at 91% 0%,#eee8ff 0,transparent 34rem),linear-gradient(135deg,#fbfaff,#f8f7ff 60%,#fffaf0);
+}
+.sparkle-dashboard .sidebar{width:246px;padding:22px 15px 16px;background:#fff;color:var(--spark-ink);border-right:1px solid var(--spark-line);box-shadow:8px 0 30px #30245d0b}
+.sparkle-dashboard .sidebar.collapsed{width:76px}
+.sparkle-dashboard .brand{padding:2px 8px 22px;color:var(--spark-ink)}
+.sparkle-dashboard .brand-mark{background:linear-gradient(145deg,#ffda58,#ffab35);color:#fff;box-shadow:0 7px 16px #ffd76a80}
+.sparkle-dashboard .collapse-btn,.sparkle-dashboard .sidebar .icon-btn{color:#717891}
+.sparkle-dashboard .workspace-label,.sparkle-dashboard .nav-label{color:#a3a7b8}
+.sparkle-dashboard .class-switch{height:62px;border:1px solid #e8e0ff;border-radius:16px;background:#f6f3ff;color:var(--spark-ink);box-shadow:none}
+.sparkle-dashboard .class-switch strong{color:var(--spark-purple)}
+.sparkle-dashboard .class-switch small,.sparkle-dashboard .class-switch>svg:last-child{color:var(--spark-muted)}
+.sparkle-dashboard .switch-icon{background:#e6fbf6;color:#278a7a;border-radius:12px}
+.sparkle-dashboard .nav-item{height:44px;border-radius:13px;color:#717891;font-weight:800}
+.sparkle-dashboard .nav-item:hover{background:#f5f2ff;color:#5d3cd4;transform:translateX(2px)}
+.sparkle-dashboard .nav-item.active{color:#5d3cd4;background:#eee9ff;box-shadow:none;font-weight:900}
+.sparkle-dashboard .nav-item.active:before{display:none}
+.sparkle-dashboard .group-item{color:#717891}
+.sparkle-dashboard .group-item:hover,.sparkle-dashboard .group-item.selected{color:#5d3cd4;background:#f5f2ff}
+.sparkle-dashboard .teacher-card{border-color:var(--spark-line);background:#fff}
+.sparkle-dashboard .teacher-card strong{color:var(--spark-ink)}
+.sparkle-dashboard .teacher-card small{color:var(--spark-muted)}
+.sparkle-dashboard .teacher-avatar{background:#e6fbf6;color:#267a68}
+.sparkle-dashboard .topbar{background:#ffffffd9;border-color:var(--spark-line);backdrop-filter:blur(16px)}
+.sparkle-dashboard .crumb{color:#898da2}.sparkle-dashboard .crumb strong{color:#5740bb}
+.sparkle-dashboard .top-actions .icon-btn{color:#717891;border-radius:12px}
+.sparkle-dashboard .top-actions .icon-btn:hover{background:#f5f2ff;color:#5d3cd4}
+.sparkle-dashboard .page-wrap{max-width:1510px;padding:26px clamp(18px,3vw,42px) 40px}
+.sparkle-dashboard .today-layout{gap:0}
+.sparkle-dashboard .sparkle-today .welcome-row{position:relative;min-height:112px;align-items:center;margin:0 0 17px;padding:8px 8px 14px;overflow:hidden}
+.sparkle-dashboard .sparkle-today .welcome-row:after{content:"✦";position:absolute;right:105px;top:2px;color:#ffcc52;font-size:24px;opacity:.8;transform:rotate(12deg)}
+.sparkle-dashboard .sparkle-today .welcome-row h1{font-size:clamp(27px,3vw,36px);line-height:1.08;letter-spacing:-1px;color:var(--spark-ink)}
+.sparkle-dashboard .sparkle-today .welcome-row h1 em{color:var(--spark-purple);font-style:normal}
+.sparkle-dashboard .sparkle-today .welcome-row .eyebrow{font-weight:900;color:#7658d9}
+.sparkle-dashboard .sparkle-today .welcome-row .subhead{font-size:14px;color:var(--spark-muted);margin-top:7px}
+.sparkle-mascot{width:84px;height:84px;flex:none;display:grid;place-items:center;border-radius:26px;background:linear-gradient(145deg,#fff0b3,#ffd95d);box-shadow:0 9px 20px #f8d35c55;transform:rotate(4deg)}
+.sparkle-mascot img{width:78px;height:78px;object-fit:contain;filter:drop-shadow(0 4px 3px #80622a23)}
+.sparkle-dashboard .sparkle-toolbar{padding:12px 14px;margin:0 0 18px;border:1px solid var(--spark-line);border-radius:18px;background:#ffffffd9;box-shadow:0 5px 18px #34235b08;gap:10px}
+.sparkle-dashboard .sparkle-toolbar .toolbar-actions{gap:8px}
+.sparkle-dashboard .sparkle-toolbar .outline-btn{height:40px;border:1px solid #e8e0ff;border-radius:12px;background:#fff;color:#5c4d91;font-weight:900}
+.sparkle-dashboard .sparkle-toolbar .outline-btn:hover{background:#f7f4ff;border-color:#c9bcff}
+.sparkle-dashboard .sparkle-toolbar .group-picker{height:40px;border:1px solid #e8e0ff;border-radius:12px;background:#f6f3ff;color:#5d3cd4;box-shadow:none}
+.sparkle-dashboard .sparkle-quick-section{margin:3px 0 18px;padding:18px 20px 20px;border:1px solid var(--spark-line);border-radius:22px;background:#ffffffd9;box-shadow:0 14px 38px #3c2b7510}
+.sparkle-section-head{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:13px}
+.sparkle-section-head h2{margin:0;color:var(--spark-ink);font:800 21px/1.1 var(--font-playful),sans-serif;letter-spacing:-.3px}
+.sparkle-section-head h2 span{color:#f4b820}
+.sparkle-section-head p{margin:5px 0 0;color:var(--spark-muted);font-size:12px;font-weight:700}
+.sparkle-text-link{display:flex;align-items:center;gap:5px;border:0;background:none;color:var(--spark-purple);font:900 12px var(--font-rounded),sans-serif;cursor:pointer;white-space:nowrap}
+.sparkle-text-link:hover{text-decoration:underline}
+.sparkle-quick-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.sparkle-quick{display:flex;align-items:center;gap:11px;min-width:0;padding:12px;border:1px solid var(--spark-line);border-radius:17px;background:#fff;text-align:left;box-shadow:0 4px 12px #34235b08;cursor:pointer;transition:transform .18s,box-shadow .18s,border-color .18s}
+.sparkle-quick:hover{transform:translateY(-2px);box-shadow:0 14px 30px #3c2b7514;border-color:#dcd3fa}
+.sparkle-quick:focus-visible{outline:3px solid #39c7ad;outline-offset:3px}
+.sparkle-quick-icon{width:40px;height:40px;display:grid;place-items:center;flex:none;border-radius:14px;font-size:22px}
+.sparkle-quick strong{display:block;color:#292e55;font-size:12px;font-weight:900}
+.sparkle-quick small{display:block;margin-top:3px;color:var(--spark-muted);font-size:10px;font-weight:700}
+.sparkle-quick.qi1 .sparkle-quick-icon{background:#fff0c5}.sparkle-quick.qi2 .sparkle-quick-icon{background:#e4f8f2}.sparkle-quick.qi3 .sparkle-quick-icon{background:#ffe7e2}.sparkle-quick.qi4 .sparkle-quick-icon{background:#e9efff}
+.sparkle-dashboard .lesson-panel{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(260px,.9fr);gap:12px;margin:0 0 18px}
+.sparkle-dashboard .lesson-start-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:14px;row-gap:8px;padding:16px 18px;border:1px solid #e8e0ff!important;border-radius:20px!important;background:linear-gradient(115deg,#6847dc,#8c62ee)!important;color:#fff;box-shadow:0 12px 24px #7958dc35!important}
+.sparkle-dashboard .lesson-start-icon{grid-row:span 2;width:46px;height:46px;display:grid;place-items:center;border-radius:16px;background:#ffffff20;color:#fff}
+.sparkle-dashboard .lesson-start-copy .eyebrow{color:#ffe79d}
+.sparkle-dashboard .lesson-start-copy h2{margin:4px 0;color:#fff;font:800 17px var(--font-playful),sans-serif}
+.sparkle-dashboard .lesson-start-copy p{margin:0;color:#f3eeff;font-size:11px;line-height:1.45}
+.sparkle-dashboard .lesson-start-button,.sparkle-dashboard .lesson-stop-button{grid-column:3;grid-row:1 / span 2;align-self:center;white-space:nowrap;border:0;border-radius:13px;padding:11px 14px;background:#ffda58;color:#302657;font:900 12px var(--font-rounded),sans-serif;box-shadow:0 4px 0 #c48b2e;cursor:pointer}
+.sparkle-dashboard .lesson-start-button:hover,.sparkle-dashboard .lesson-stop-button:hover{transform:translateY(-1px)}
+.sparkle-dashboard .lesson-countdown{grid-column:3;grid-row:1 / span 2;color:#fff;font-size:23px;font-variant-numeric:tabular-nums}
+.sparkle-dashboard .lesson-auto{grid-column:2 / 4;color:#f3eeff;font-size:10px}
+.sparkle-dashboard .lesson-goal-part{padding:15px 17px;border:1px solid var(--spark-line);border-radius:20px;background:#fff;box-shadow:0 10px 24px #3c2b750c}
+.sparkle-dashboard .section-heading{margin:8px 2px 12px}
+.sparkle-dashboard .section-heading h2{color:var(--spark-ink);font:800 21px var(--font-playful),sans-serif}
+.sparkle-dashboard .section-heading p{color:var(--spark-muted)}
+.sparkle-dashboard .dojo-grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:11px;margin-bottom:18px}
+.sparkle-dashboard .dojo-tile{min-height:102px;border:1px solid var(--spark-line);border-radius:18px;background:#fff;box-shadow:0 5px 14px #34235b09;transition:transform .16s,box-shadow .16s,border-color .16s}
+.sparkle-dashboard .dojo-tile:hover{transform:translateY(-2px);border-color:#cfc3ff;box-shadow:0 12px 24px #3c2b7515}
+.sparkle-dashboard .dojo-tile strong{color:#292e55}
+.sparkle-dashboard .dojo-pts{background:#f2efff;color:#6850ce}
+.sparkle-dashboard .roster-card,.sparkle-dashboard .champion-section,.sparkle-dashboard .stat-card,.sparkle-dashboard .insight-card{border:1px solid var(--spark-line)!important;border-radius:21px!important;background:#fff!important;box-shadow:0 14px 38px #3c2b7510!important}
+.sparkle-dashboard .roster-head{background:linear-gradient(100deg,#fff,#fbfaff);border-color:var(--spark-line)}
+.sparkle-dashboard .roster-title{color:#292e55}
+.sparkle-dashboard .criteria-head{background:#f7f6ff;color:#717891}
+.sparkle-dashboard .student-row:hover{background:#faf8ff}
+.sparkle-dashboard .student-name{color:#292e55}
+.sparkle-dashboard .check-button.checked{background:#39c7ad!important;border-color:#39c7ad!important;box-shadow:0 3px 0 #1b9583!important}
+.sparkle-dashboard .roster-foot,.sparkle-dashboard .roster-collapsed-summary{background:#fafaff;color:#697492}
+.sparkle-dashboard .champion-heading h2,.sparkle-dashboard .card-heading h3{color:#292e55}
+.sparkle-dashboard .champion-bubble{box-shadow:0 9px 18px #31326020!important}
+.sparkle-dashboard .stats-grid{gap:14px}.sparkle-dashboard .stat-main{color:#292e55}
+.sparkle-dashboard .bottom-grid{gap:15px}
+@media(max-width:1050px){.sparkle-dashboard .sparkle-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sparkle-dashboard .lesson-panel{grid-template-columns:1fr}.sparkle-dashboard .lesson-goal-part{min-height:90px}}
+@media(max-width:700px){.sparkle-dashboard .sparkle-today .welcome-row{min-height:90px;padding:6px 2px 12px}.sparkle-dashboard .sparkle-today .welcome-row h1{font-size:28px}.sparkle-dashboard .sparkle-mascot{width:62px;height:62px;border-radius:19px}.sparkle-dashboard .sparkle-mascot img{width:58px;height:58px}.sparkle-dashboard .sparkle-today .welcome-row:after{right:70px}.sparkle-dashboard .sparkle-toolbar{padding:10px;margin-bottom:14px}.sparkle-dashboard .sparkle-quick-section{padding:14px;margin-bottom:14px}.sparkle-section-head h2{font-size:19px}.sparkle-dashboard .sparkle-quick{padding:10px 8px;gap:8px}.sparkle-quick-icon{width:34px;height:34px;font-size:19px}.sparkle-quick strong{font-size:11px}.sparkle-quick small{font-size:9px}.sparkle-dashboard .lesson-start-card{grid-template-columns:auto minmax(0,1fr);padding:14px}.sparkle-dashboard .lesson-start-button,.sparkle-dashboard .lesson-stop-button,.sparkle-dashboard .lesson-countdown{grid-column:2;grid-row:auto;justify-self:start}.sparkle-dashboard .lesson-auto{grid-column:1 / -1}.sparkle-dashboard .dojo-grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr))}}
+@media(max-width:420px){.sparkle-dashboard .sparkle-section-head{align-items:start}.sparkle-dashboard .sparkle-text-link{font-size:10px}.sparkle-dashboard .sparkle-quick-grid{gap:7px}.sparkle-dashboard .sparkle-quick{align-items:flex-start;flex-direction:column}.sparkle-dashboard .sparkle-quick small{min-height:12px}}
+@media(prefers-reduced-motion:reduce){.sparkle-dashboard .sparkle-quick,.sparkle-dashboard .dojo-tile{transition:none}}
