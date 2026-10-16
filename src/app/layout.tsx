@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Fredoka, Nunito } from 'next/font/google';
 import './globals.css';
 import './ui-refresh.css';
+import './premium-refresh.css';
 import FloatingTimer from './floating-timer';
 import BallotAlert from './ballot-alert-overlay';
 
