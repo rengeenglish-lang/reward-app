@@ -45,7 +45,7 @@ export default function SecretBallot({ paneClass, classroomId, classroom, studen
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progress = useBallotProgress(classroom);
 
-  const people = presentIds ? students.filter((s) => presentIds.includes(s.id)) : students;
+  const people = students; // Voting is open to the whole classroom, even when roll call is active.
 
   useEffect(() => { // is the ballot table there yet?
     if (!classroomId) return;
@@ -103,7 +103,7 @@ export default function SecretBallot({ paneClass, classroomId, classroom, studen
 
       {step === 'who' && (
         <>
-          <h3 className="ballot-step">Step 1 · Tap your own name</h3>
+          <h3 className="ballot-step">Step 1 · Tap your own name</h3><p className="ballot-note">Every student in this classroom can vote, including students not marked present.{presentIds ? ` Roll call has ${presentIds.length} marked present; voting is still open to all ${students.length}.` : ''}</p>
           {people.length === 0 ? <p className="readers-empty">No students here yet.</p> : (
             <ul className="ballot-grid">
               {people.map((s) => (
