@@ -9,7 +9,7 @@ import { createSession, requireTutor, revokeSession } from '@/lib/session';
 const uuid = z.string().uuid();
 const name = z.string().trim().min(1).max(100);
 const avatarKeys = ['fox','bear','panda','lion','frog','tiger','koala','unicorn','penguin','octopus','dolphin','whale','turtle','butterfly','bee','ladybug','parrot','flamingo','peacock','rabbit','cat','dog','hamster','monkey','elephant','giraffe','zebra','crocodile','dinosaur','dragon','owl','chick','hedgehog','raccoon','squirrel','otter','seal','sloth','llama','deer','horse','mouse','wolf','bird','shell','star','rainbow','rocket','heart','sun','flower','cherry','cupcake','icecream','robot','alien'] as const;
-const criteriaKeys = ['homework_complete','class_participation','speaking_effort','project_complete','class_readiness','speaking_day_rules'] as const;
+const criteriaKeys = ['homework_complete','class_participation','speaking_effort','project_complete','class_readiness','speaking_day_rules','book_return'] as const;
 const pointCriterion = z.enum(criteriaKeys);
 
 export async function signIn(formData: FormData) {
@@ -99,12 +99,10 @@ export async function getBooks() {
   return sqlClient()`SELECT id,title,series,level,cover_path,aspect::float AS aspect,position FROM books WHERE active ORDER BY position`;
 }
 
-const readerField = z.enum(['returned', 'project_done']);
-
 /** Everything the "Our Readers" list needs for one class: each student's books, plus students who have none yet. */
 export async function getReaders(classroomId: string) {
   await requireTutor(); const classroom=uuid.parse(classroomId),sql=sqlClient();
-  const rows=await sql`SELECT sb.id,s.id AS student_id,s.display_name AS student,s.avatar_key,b.id AS book_id,b.title,sb.returned,sb.project_done
+  const rows=await sql`SELECT sb.id,s.id AS student_id,s.display_name AS student,s.avatar_key,b.id AS book_id,b.title,sb.returned,sb.lost,sb.project_done
     FROM student_books sb JOIN students s ON s.id=sb.student_id JOIN groups g ON g.id=s.group_id JOIN books b ON b.id=sb.book_id
     WHERE g.classroom_id=${classroom}::uuid AND s.archived_at IS NULL AND g.archived_at IS NULL
     ORDER BY sb.returned ASC,s.display_name,sb.assigned_at DESC`;
@@ -133,12 +131,40 @@ export async function assignBook(studentId: string, bookId: string) {
   return true;
 }
 
-export async function setReaderFlag(id: string, field: 'returned' | 'project_done', value: boolean) {
-  await requireTutor(); const key=uuid.parse(id),which=readerField.parse(field),flag=z.boolean().parse(value),sql=sqlClient();
-  const rows=which==='returned'
-    ? await sql`UPDATE student_books SET returned=${flag},returned_at=CASE WHEN ${flag}::boolean THEN now() ELSE NULL END WHERE id=${key}::uuid RETURNING id`
-    : await sql`UPDATE student_books SET project_done=${flag},project_done_at=CASE WHEN ${flag}::boolean THEN now() ELSE NULL END WHERE id=${key}::uuid RETURNING id`;
+export async function setReaderFlag(id: string, field: 'project_done', value: boolean) {
+  await requireTutor(); const key=uuid.parse(id),flag=z.boolean().parse(value),sql=sqlClient();
+  const rows=await sql`UPDATE student_books SET project_done=${flag},project_done_at=CASE WHEN ${flag}::boolean THEN now() ELSE NULL END WHERE id=${key}::uuid RETURNING id`;
   if(!rows.length) throw new Error('Reader record not found'); return true;
+}
+
+export async function setReaderStatus(id:string,status:'returned'|'not_returned'|'lost') {
+  const tutor=await requireTutor(),key=uuid.parse(id),state=z.enum(['returned','not_returned','lost']).parse(status);
+  const awardedOn=new Intl.DateTimeFormat('en-CA',{timeZone:tutor.timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const rows=await sqlClient()`WITH prior AS (
+      SELECT sb.id,sb.student_id,s.group_id,sb.returned,sb.lost
+      FROM student_books sb JOIN students s ON s.id=sb.student_id JOIN groups g ON g.id=s.group_id
+      WHERE sb.id=${key}::uuid AND s.archived_at IS NULL AND g.archived_at IS NULL
+      FOR UPDATE OF sb
+    ), updated AS (
+      UPDATE student_books sb SET
+        returned=${state==='returned'},
+        lost=${state==='lost'},
+        returned_at=CASE WHEN ${state==='returned'}::boolean THEN COALESCE(sb.returned_at,now()) ELSE NULL END
+      FROM prior p
+      WHERE sb.id=p.id AND (sb.returned IS DISTINCT FROM ${state==='returned'}::boolean OR sb.lost IS DISTINCT FROM ${state==='lost'}::boolean)
+      RETURNING sb.id,sb.student_id,sb.returned,sb.lost
+    ), awarded AS (
+      INSERT INTO student_point_awards(student_id,group_id,criterion,points,awarded_on)
+      SELECT u.student_id,p.group_id,'book_return',10,${awardedOn}::date
+      FROM updated u JOIN prior p ON p.id=u.id
+      WHERE u.returned AND NOT p.returned
+      RETURNING id
+    )
+    SELECT u.id,u.returned,u.lost,EXISTS(SELECT 1 FROM awarded) AS points_awarded FROM updated u`;
+  if(rows.length)return rows[0];
+  const existing=await sqlClient()`SELECT id,returned,lost,false AS points_awarded FROM student_books WHERE id=${key}::uuid`;
+  if(!existing.length)throw new Error('Reader book not found');
+  return existing[0];
 }
 
 export async function removeReader(id: string) {
@@ -270,7 +296,8 @@ export async function getReport(classroomId: string,start: string,end: string) {
     COALESCE(sum(a.points) FILTER (WHERE a.criterion='speaking_effort'),0)::int AS speaking_effort,
     COALESCE(sum(a.points) FILTER (WHERE a.criterion='project_complete'),0)::int AS project_complete,
     COALESCE(sum(a.points) FILTER (WHERE a.criterion='class_readiness'),0)::int AS class_readiness,
-    COALESCE(sum(a.points) FILTER (WHERE a.criterion='speaking_day_rules'),0)::int AS speaking_day_rules
+    COALESCE(sum(a.points) FILTER (WHERE a.criterion='speaking_day_rules'),0)::int AS speaking_day_rules,
+    COALESCE(sum(a.points) FILTER (WHERE a.criterion='book_return'),0)::int AS book_return
     FROM students s JOIN groups g ON g.id=s.group_id
     LEFT JOIN student_point_awards a ON a.student_id=s.id AND a.awarded_on BETWEEN ${from} AND ${to}
     WHERE g.classroom_id=${classroom} AND g.archived_at IS NULL AND s.archived_at IS NULL

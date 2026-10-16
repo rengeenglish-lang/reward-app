@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Shuffle, X } from 'lucide-react';
-import { assignBook, assignBookToClass, getBooks, getReaders, pickBook, removeReader, setReaderFlag } from './actions';
+import { assignBook, assignBookToClass, getBooks, getReaders, pickBook, removeReader, setReaderFlag, setReaderStatus } from './actions';
 import { avatarEmoji } from './avatars';
 
 export type Book = { id: string; title: string; series: string; level: string | null; cover_path: string; aspect: number; position: number };
-export type Reader = { id: string; student_id: string; student: string; avatar_key: string; book_id: string; title: string; returned: boolean; project_done: boolean };
+export type Reader = { id: string; student_id: string; student: string; avatar_key: string; book_id: string; title: string; returned: boolean; lost: boolean; project_done: boolean };
 export type ReadersData = { rows: Reader[]; without: { student_id: string; student: string; avatar_key: string }[] };
 export type BookApi = {
   getBooks: () => Promise<Book[]>;
@@ -14,7 +14,8 @@ export type BookApi = {
   getReaders: (classroomId: string) => Promise<ReadersData>;
   assignBookToClass: (classroomId: string, bookId: string, studentIds?: string[]) => Promise<number>;
   assignBook: (studentId: string, bookId: string) => Promise<unknown>;
-  setReaderFlag: (id: string, field: 'returned' | 'project_done', value: boolean) => Promise<unknown>;
+  setReaderFlag: (id: string, field: 'project_done', value: boolean) => Promise<unknown>;
+  setReaderStatus: (id: string, status: 'returned' | 'not_returned' | 'lost') => Promise<{points_awarded?:boolean}>;
   removeReader: (id: string) => Promise<unknown>;
 };
 
@@ -41,10 +42,11 @@ const serverApi: BookApi = {
   assignBookToClass: (classroomId, bookId, studentIds) => assignBookToClass(classroomId, bookId, studentIds),
   assignBook: (studentId, bookId) => assignBook(studentId, bookId),
   setReaderFlag: (id, field, value) => setReaderFlag(id, field, value),
+  setReaderStatus: (id,status) => setReaderStatus(id,status) as Promise<{points_awarded?:boolean}>,
   removeReader: (id) => removeReader(id),
 };
 
-export default function BookPickerCard({ classroomId, classroom, api = serverApi, active, presentIds, studentCount, onRollCall }: { classroomId: string; classroom: string; api?: BookApi; active?: boolean; presentIds?: string[]; studentCount?: number; onRollCall?: () => void }) {
+export default function BookPickerCard({ classroomId, classroom, api = serverApi, active, presentIds, studentCount, onRollCall, onPointsAwarded }: { classroomId: string; classroom: string; api?: BookApi; active?: boolean; presentIds?: string[]; studentCount?: number; onRollCall?: () => void; onPointsAwarded?: (studentId:string,points:number)=>boolean }) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [books, setBooks] = useState<Book[]>([]);
   const [picked, setPicked] = useState<Book | null>(null);
@@ -53,8 +55,10 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
   const [scale, setScale] = useState(1);
   const [readers, setReaders] = useState<ReadersData | null>(null);
   const [readersError, setReadersError] = useState('');
-  const [filter, setFilter] = useState<'all' | 'out' | 'project'>('all');
+  const [filter, setFilter] = useState<'all' | 'out' | 'lost' | 'project'>('all');
   const [note, setNote] = useState('');
+  const [returnCelebration,setReturnCelebration]=useState<{name:string;title:string}|null>(null);
+  const [updatingReader,setUpdatingReader]=useState<string|null>(null);
   const [giveStudent, setGiveStudent] = useState('');
   const [giveBook, setGiveBook] = useState('');
   const [presentOnly, setPresentOnly] = useState(true);
@@ -88,11 +92,19 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
   useEffect(() => { loadReaders(); }, [loadReaders]);
   useEffect(() => { api.getBooks().then(setBooks).catch(() => { /* the list loads again when you pick */ }); }, [api]);
 
-  const flag = async (r: Reader, field: 'returned' | 'project_done') => {
+  const flag = async (r: Reader, field: 'project_done') => {
     const value = !r[field];
     setReaders((cur) => cur && { ...cur, rows: cur.rows.map((x) => (x.id === r.id ? { ...x, [field]: value } : x)) });
     try { await api.setReaderFlag(r.id, field, value); }
     catch { setReaders((cur) => cur && { ...cur, rows: cur.rows.map((x) => (x.id === r.id ? { ...x, [field]: !value } : x)) }); setNote('Could not save that. Please try again.'); }
+  };
+  const bookStatus=(r:Reader):'returned'|'not_returned'|'lost'=>r.returned?'returned':r.lost?'lost':'not_returned';
+  const setBookStatus=async(r:Reader,status:'returned'|'not_returned'|'lost')=>{
+    if(updatingReader===r.id||bookStatus(r)===status)return;
+    const previous=bookStatus(r);setUpdatingReader(r.id);setReaders(cur=>cur&&{...cur,rows:cur.rows.map(row=>row.id===r.id?{...row,returned:status==='returned',lost:status==='lost'}:row)});
+    try{const result=await api.setReaderStatus(r.id,status);if(status==='returned'&&result.points_awarded){const crossedMilestone=onPointsAwarded?.(r.student_id,10)||false;if(crossedMilestone)setNote(`Book returned! ${shortName(r.student)} earned 10 points and reached a 50-point milestone!`);else setReturnCelebration({name:shortName(r.student),title:r.title});}}
+    catch{setReaders(cur=>cur&&{...cur,rows:cur.rows.map(row=>row.id===r.id?{...row,returned:previous==='returned',lost:previous==='lost'}:row)});setNote('Could not save the book status. Please try again.');}
+    finally{setUpdatingReader(null);}
   };
   const giveToClass = async () => {
     if (!picked) return;
@@ -117,10 +129,11 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
 
   const rows = readers?.rows ?? [];
   const backCount = rows.filter((r) => r.returned).length;
+  const lostCount = rows.filter((r) => r.lost).length;
   const doneCount = rows.filter((r) => r.project_done).length;
   const whoLabel = presentOnly && presentIds ? `Give to students who are here (${presentIds.length})` : 'Give to the whole class';
   const studentOptions = [...(readers?.without ?? []).map((s) => ({ id: s.student_id, name: s.student })), ...Array.from(new Map(rows.map((r) => [r.student_id, { id: r.student_id, name: r.student }])).values())];
-  const shown = rows.filter((r) => (filter === 'out' ? !r.returned : filter === 'project' ? !r.project_done : true));
+  const shown = rows.filter((r) => (filter === 'out' ? !r.returned&&!r.lost : filter === 'lost' ? r.lost : filter === 'project' ? !r.project_done : true));
 
   // The 3D shuffle: books ring around the stage, swap places a few times, then the ring spins down onto the chosen book.
   useEffect(() => {
@@ -188,12 +201,12 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
       <section className={`fun-card readers-card${active === undefined ? '' : ' tool-pane'}${active ? ' is-active' : ''}`}>
         <div className="readers-head">
           <span className="readers-emoji" aria-hidden="true">📚</span>
-          <div><h2>OUR READERS</h2><p>Pick a book for {classroom || 'your class'}, then see who returned it and who finished the project.</p></div>
+          <div><h2>OUR READERS</h2><p>Keep a return checklist for {classroom || 'your class'}, celebrate every returned book, and track reading projects.</p></div>
         </div>
         {books.length > 0 && (
           <div className="shelf" role="list" aria-label="All reader books">
             {books.map((b, i) => {
-              const out = rows.filter((r) => r.book_id === b.id && !r.returned).length;
+              const out = rows.filter((r) => r.book_id === b.id && !r.returned && !r.lost).length;
               return (
                 <div key={b.id} className="shelf-item" role="listitem">
                   <button type="button" className={`shelf-book${picked?.id === b.id ? ' is-selected' : ''}`} aria-pressed={picked?.id === b.id} style={{ ['--w' as string]: Math.round(b.aspect * 150), ['--h' as string]: 150, ['--t' as string]: '24px', animationDelay: `${i * -0.45}s` }}
@@ -248,9 +261,10 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
               <>
                 <div className="readers-stats">
                   <span className="chip-stat">📕 Returned <b>{backCount}</b>/{rows.length}</span>
+                  <span className="chip-stat lost-stat">⚠️ Lost <b>{lostCount}</b></span>
                   <span className="chip-stat">⭐ Projects done <b>{doneCount}</b>/{rows.length}</span>
                   <div className="seg" role="group" aria-label="Show">
-                    {([['all', 'Everyone'], ['out', 'Not returned'], ['project', 'Project to do']] as const).map(([id, label]) => (
+                    {([['all', 'Everyone'], ['out', 'Not returned'], ['lost', 'Lost'], ['project', 'Project to do']] as const).map(([id, label]) => (
                       <button key={id} type="button" className={filter === id ? 'on' : ''} aria-pressed={filter === id} onClick={() => setFilter(id)}>{label}</button>
                     ))}
                   </div>
@@ -258,10 +272,12 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
                 {rows.length === 0 ? <p className="readers-empty">No books given out yet. Pick a book, or use “Give a book”, and it will show up here.</p> : (
                   <ul className="readers-list">
                     {shown.map((r) => (
-                      <li key={r.id} className={`reader-row${r.returned ? ' is-back' : ''}`}>
+                      <li key={r.id} className={`reader-row${r.returned ? ' is-back' : ''}${r.lost ? ' is-lost' : ''}`}>
                         <span className="reader-avatar" aria-hidden="true">{avatarEmoji[r.avatar_key] || '🙂'}</span>
                         <span className="reader-who"><strong>{shortName(r.student)}</strong><small>📖 {r.title}</small></span>
-                        <button type="button" className={`reader-toggle${r.returned ? ' on' : ''}`} aria-pressed={r.returned} onClick={() => flag(r, 'returned')}>{r.returned ? '✅ Returned' : '📕 Not returned'}</button>
+                        <div className="reader-status-options" role="group" aria-label={`Book status for ${shortName(r.student)} · ${r.title}`}>
+                          {([['returned','✅ Returned'],['not_returned','📕 Not returned'],['lost','⚠️ Lost']] as const).map(([status,label])=><button key={status} type="button" className={`reader-status-option ${bookStatus(r)===status?'selected':''} ${status==='lost'?'lost':''}`} aria-pressed={bookStatus(r)===status} disabled={updatingReader===r.id} onClick={()=>setBookStatus(r,status)}>{label}</button>)}
+                        </div>
                         <button type="button" className={`reader-toggle project${r.project_done ? ' on' : ''}`} aria-pressed={r.project_done} onClick={() => flag(r, 'project_done')}>{r.project_done ? '⭐ Project done' : '✏️ Project to do'}</button>
                         <button type="button" className="reader-x" aria-label={`Remove ${r.title} from ${shortName(r.student)}`} onClick={() => dropRow(r)}>×</button>
                       </li>
@@ -317,6 +333,7 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
           )}
         </div>
       )}
+      {returnCelebration&&<div className="reader-return-celebration" role="dialog" aria-modal="true" aria-labelledby="reader-return-title"><div className="reader-return-confetti" aria-hidden="true">{Array.from({length:70},(_,i)=><i key={i} style={{left:`${(i*43)%100}%`,animationDelay:`${(i%18)*.06}s`}}/>)}</div><div className="reader-return-card"><span className="reader-return-emoji">📚</span><span className="reader-return-kicker">BOOK BACK, POINTS EARNED!</span><h2 id="reader-return-title">{returnCelebration.name}!</h2><p>Thanks for bringing back <strong>{returnCelebration.title}</strong>.</p><div className="reader-return-reward">⭐ +10 points <span>👏 🎉 👏</span></div><button className="fun-action primary" onClick={()=>setReturnCelebration(null)}>Hooray!</button></div></div>}
     </>
   );
 }

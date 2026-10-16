@@ -23,6 +23,7 @@ function LessonProgram() {
   const [program, setProgram] = useState<Record<number, Slot[]>>(LESSONS);
   const [locked, setLocked] = useState(true);
   const [saved, setSaved] = useState('');
+  const [readingProgram, setReadingProgram] = useState(false);
   useEffect(() => { setProgram(structuredClone(getProgram())); }, []);
 
   const edit = (day: number, index: number, patch: Partial<Slot>) => { setSaved(''); setProgram((p) => ({ ...p, [day]: (p[day] ?? []).map((s, i) => (i === index ? { ...s, ...patch } : s)) })); };
@@ -35,11 +36,60 @@ function LessonProgram() {
   };
   const reset = () => { resetProgram(); setProgram(structuredClone(LESSONS)); setSaved('Back to the original program.'); };
 
+  const importPhoto = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setReadingProgram(true); setSaved('Reading the timetable picture…');
+    try {
+      const { createWorker } = await import('tesseract.js');
+      const worker = await createWorker('eng');
+      let lines: Array<{ text: string; bbox: { x0: number; x1: number; y0: number; y1: number } }>;
+      try {
+        const result = await worker.recognize(file);
+        lines = result.data.lines.map((line) => ({ text: line.text.trim(), bbox: line.bbox })).filter((line) => line.text);
+      } finally { await worker.terminate(); }
+
+      const dayPattern = /\b(monday|tuesday|wednesday|thursday|friday)\b/i;
+      const dayIds: Record<string, number> = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5 };
+      const headers = lines.flatMap((line) => {
+        const match = line.text.match(dayPattern);
+        return match ? [{ day: dayIds[match[1].toLowerCase()], x: (line.bbox.x0 + line.bbox.x1) / 2 }] : [];
+      });
+      if (!headers.length) throw new Error('I could not find weekday headings. Include Monday to Friday in the picture.');
+
+      const imported: Record<number, Slot[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+      for (const line of lines) {
+        const time = line.text.match(/\b(\d{1,2}[:.]\d{2})\s*(?:-|–|—|to)\s*(\d{1,2}[:.]\d{2})\b/i);
+        if (!time) continue;
+        const cls = line.text.match(/\b(\d{1,2}\s*[/.\-]\s*[A-Za-z]{1,3}|\d{1,2}\s*[A-Za-z]{1,3}|[A-Za-z]{2,}\s*\d{1,2})\b/);
+        if (!cls) continue;
+        const period = line.text.match(/\bP\s*(\d{1,2})\b/i);
+        const x = (line.bbox.x0 + line.bbox.x1) / 2;
+        const day = headers.reduce((closest, header) => Math.abs(header.x - x) < Math.abs(closest.x - x) ? header : closest).day;
+        const normalizeTime = (value: string) => value.replace('.', ':').padStart(5, '0');
+        const start = normalizeTime(time[1]), end = normalizeTime(time[2]);
+        if (start >= end) continue;
+        imported[day].push({ period: Number(period?.[1] || imported[day].length + 1), start, end, cls: cls[1].replace(/\s*([/.\-])\s*/, '$1').replace(/\s+/g, ' ').trim() });
+      }
+      const count = Object.values(imported).reduce((total, slots) => total + slots.length, 0);
+      if (!count) throw new Error('I could not find lesson rows. Use a clear picture showing class names and start/end times.');
+      setProgram((current) => Object.fromEntries(DAYS.map(({ n }) => {
+        const combined = [...(current[n] ?? []), ...imported[n]];
+        const unique = combined.filter((slot, index) => combined.findIndex((other) => other.cls.toLowerCase() === slot.cls.toLowerCase() && other.start === slot.start && other.end === slot.end) === index);
+        return [n, unique.sort((a, b) => a.start.localeCompare(b.start))];
+      })));
+      setSaved(`Found ${count} lesson${count === 1 ? '' : 's'}. Check the timetable below, then save the program.`);
+    } catch (error) {
+      setSaved(error instanceof Error ? error.message : 'Could not read that timetable picture. Try a clearer image.');
+    } finally { setReadingProgram(false); }
+  };
+
   return <section className="panel ti-panel" aria-labelledby="ti-program">
-    <div className="panel-title"><div className="panel-icon purple"><CalendarDays size={19} /></div><div><h2 id="ti-program">Teacher lesson program</h2><p>Your weekly timetable. Unlock it to adjust lessons; the automatic lesson timer follows it. Use class names like 4/A.</p></div></div>
+    <div className="panel-title"><div className="panel-icon purple"><CalendarDays size={19} /></div><div><h2 id="ti-program">Teacher lesson program</h2><p>Your full weekly timetable for every grade and class. Unlock it to adjust lessons; the automatic lesson timer follows it.</p></div></div>
     <div className="ti-actions">
       <button type="button" className="outline-btn" onClick={() => setLocked((v) => !v)}>{locked ? <><Unlock size={15} /> Adjust program</> : <><Lock size={15} /> Lock</>}</button>
-      {!locked && <><button type="button" className="primary-btn" onClick={save}>Save program</button><button type="button" className="outline-btn" onClick={reset}><RotateCcw size={15} /> Original program</button></>}
+      {!locked && <><button type="button" className="primary-btn" onClick={save}>Save program</button><label className="outline-btn ti-photo ti-program-photo"><Camera size={15} /> {readingProgram ? 'Reading picture…' : 'Create from picture'}<input type="file" accept="image/*" onChange={importPhoto} disabled={readingProgram} aria-label="Create timetable from an uploaded picture" /></label><button type="button" className="outline-btn" onClick={reset}><RotateCcw size={15} /> Original program</button></>}
       {saved && <span className="ti-status" role="status">{saved}</span>}
     </div>
     <div className="ti-days">{DAYS.map(({ n, label }) => <div className="ti-day" key={n}>
@@ -48,7 +98,7 @@ function LessonProgram() {
       {(program[n] ?? []).map((s, i) => locked
         ? <div className="ti-slot" key={i}><strong>{s.cls}</strong><span>P{s.period} · {s.start}–{s.end}</span></div>
         : <div className="ti-slot edit" key={i}>
-          <input aria-label={`${label} lesson ${i + 1} class`} className="field-select" value={s.cls} onChange={(e) => edit(n, i, { cls: e.target.value })} placeholder="4/A" maxLength={12} />
+          <input aria-label={`${label} lesson ${i + 1} class`} className="field-select" value={s.cls} onChange={(e) => edit(n, i, { cls: e.target.value })} placeholder="Grade 1/A, 2/B…" maxLength={40} />
           <input aria-label="Period" className="field-select ti-period" type="number" min={1} max={12} value={s.period} onChange={(e) => edit(n, i, { period: Number(e.target.value) || 1 })} />
           <input aria-label="Start" className="field-select" type="time" value={s.start} onChange={(e) => edit(n, i, { start: e.target.value })} />
           <input aria-label="End" className="field-select" type="time" value={s.end} onChange={(e) => edit(n, i, { end: e.target.value })} />
