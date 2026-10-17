@@ -90,6 +90,10 @@
 .sparkle-dashboard .dojo-tile.is-top-champ:hover{filter:saturate(1.14) brightness(1.02)}
 .sparkle-dashboard .top-champ-trophy{position:absolute;z-index:2;top:8px;left:8px;width:29px;height:29px;display:grid;place-items:center;border:2px solid #fff;border-radius:50%;background:linear-gradient(145deg,#fff3a6,#ffbf24);box-shadow:0 3px 8px #82540055;font-size:16px;line-height:1}
 .sparkle-dashboard .dojo-pts{background:#f2efff;color:#6850ce}
+.sparkle-dashboard .checkin-display-actions{display:flex;align-items:center;gap:8px}
+.sparkle-dashboard .points-visibility-toggle{height:38px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 11px;border:1px solid #ded5f6;border-radius:12px;background:#fff;color:#55427f;font-size:11px;font-weight:900;white-space:nowrap}
+.sparkle-dashboard .points-visibility-toggle:hover{border-color:#b7a4ec;background:#f8f5ff}
+.sparkle-dashboard .dojo-points-hidden .dojo-pts{min-width:38px;background:#e7e4ef;color:#746e83;font-size:10px;letter-spacing:2px}
 .sparkle-dashboard .roster-card,.sparkle-dashboard .champion-section,.sparkle-dashboard .stat-card,.sparkle-dashboard .insight-card{border:1px solid var(--spark-line)!important;border-radius:21px!important;background:#fff!important;box-shadow:0 14px 38px #3c2b7510!important}
 .sparkle-dashboard .roster-head{background:linear-gradient(100deg,#fff,#fbfaff);border-color:var(--spark-line)}
 .sparkle-dashboard .roster-title{color:#292e55}
