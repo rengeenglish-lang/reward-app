@@ -204,6 +204,15 @@
 .classroom-fun-page .fun-feature-grid{max-width:none}
 .classroom-fun-page .tool-pane.is-active{max-width:1120px;margin-inline:auto}
 .classroom-fun-page .fun-goal-card.tool-pane.is-active,.classroom-fun-page .timer-panel.tool-pane.is-active{max-width:1120px}
+.classroom-fun-page.timer-dedicated{display:flex;min-height:calc(100vh - 150px);flex-direction:column}
+.classroom-fun-page.timer-dedicated .timer-panel{display:flex;width:100%;max-width:none!important;min-height:calc(100vh - 165px);flex:1;flex-direction:column;margin:0;padding:clamp(22px,4vw,52px);border-radius:26px}
+.classroom-fun-page.timer-dedicated .fun-timer-head{margin-bottom:22px}
+.classroom-fun-page.timer-dedicated .fun-timer-head h2{font-size:clamp(22px,2.5vw,32px)}
+.classroom-fun-page.timer-dedicated .fun-timer-head p{font-size:13px}
+.classroom-fun-page.timer-dedicated .fun-timer-clock{min-height:300px;flex:1;align-items:center;padding:30px 0}
+.classroom-fun-page.timer-dedicated .fun-clock-ring{width:clamp(230px,25vw,320px);height:clamp(230px,25vw,320px)}
+.classroom-fun-page.timer-dedicated .fun-clock-ring strong{font-size:clamp(48px,5vw,68px)}
+@media(max-width:700px){.classroom-fun-page.timer-dedicated{min-height:calc(100vh - 110px)}.classroom-fun-page.timer-dedicated .timer-panel{min-height:calc(100vh - 125px);padding:18px 14px}.classroom-fun-page.timer-dedicated .fun-timer-clock{min-height:245px}}
 .readers-body{display:grid;gap:18px;align-items:start}
 .readers-give-box{display:grid;gap:10px;padding:14px;border:2px solid #eadfc8;border-radius:18px;background:#fffdf7}
 .readers-give-box h3{margin:0;font-size:17px}
