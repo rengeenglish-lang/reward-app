@@ -10,7 +10,7 @@ const ITEMS = [
   { id: 'picker', label: 'Who’s next?', emoji: '🎯' },
   { id: 'timer', label: 'Timer', emoji: '⏱️' },
   { id: 'lesson', label: 'Lesson bell', emoji: '🔔' },
-  { id: 'draw', label: 'Rewards', emoji: '🎁' },
+  { id: 'draw', label: 'Reward', emoji: '🎁' },
   { id: 'book', label: 'Our Readers', emoji: '📚' },
   { id: 'badges', label: 'Badges', emoji: '💛' },
   { id: 'parade', label: 'Parade', emoji: '🎉' },
