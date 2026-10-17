@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import BookPickerCard from './book-picker';
 import TimerStage, { TIMER_EFFECTS, type TimerEffect } from './timer-effects';
 import { formatClock, timerStore, useTimer } from './timer-store';
@@ -12,7 +12,7 @@ import { Award, BadgeCheck, BellRing, Check, ChevronDown, Clock3, Gift, Heart, P
 type FunStudent = { id: string; name: string; avatar: string };
 export type ClassroomThemeOption = { id: string; label: string };
 export function displayStudentName(name:string){const parts=name.trim().split(/\s+/).filter(Boolean);return parts.length<2?parts[0]||name:`${parts[0]} ${parts.slice(1).map(part=>`${Array.from(part)[0]?.toLocaleUpperCase()||''}.`).join(' ')}`;}
-type FunProps = { weekly?: WeeklyState; tool?: string; onToolChange?: (tool: string) => void; presentIds?: string[]; onRollCall?: () => void; onPointsAwarded?: (studentId:string,points:number)=>boolean; onRandomAward?: (studentId:string)=>void; classroomId: string; classroom: string; students: FunStudent[]; prizes: string[]; earned: number; themeOptions: readonly ClassroomThemeOption[]; currentTheme: string; onThemeChange: (classroomId: string, theme: string) => void };
+type FunProps = { weekly?: WeeklyState; tool?: string; onToolChange?: (tool: string) => void; autoPickTrigger?: number; presentIds?: string[]; onRollCall?: () => void; onPointsAwarded?: (studentId:string,points:number)=>boolean; onRandomAward?: (studentId:string)=>void; classroomId: string; classroom: string; students: FunStudent[]; prizes: string[]; earned: number; themeOptions: readonly ClassroomThemeOption[]; currentTheme: string; onThemeChange: (classroomId: string, theme: string) => void };
 type SurpriseIdea={emoji:string;title:string;prompt:string;answer?:string};
 const goalKey=(id:string)=>`ezgili-class-goal-${id}`;
 const surpriseIdeas:SurpriseIdea[]=[{emoji:'🕺',title:'Movement minute',prompt:'Stretch tall like a giraffe, then wiggle like a jellyfish!'},{emoji:'🎨',title:'Tiny art challenge',prompt:'Draw a happy monster using only three shapes.'},{emoji:'🧠',title:'Brain break riddle',prompt:'What has a face and two hands but no arms or legs?',answer:'A clock!'},{emoji:'🐙',title:'Animal trivia',prompt:'Which sea animal has three hearts?',answer:'An octopus!'},{emoji:'💛',title:'Kindness mission',prompt:'Give someone a specific compliment about their effort.'},{emoji:'🎤',title:'Silly speaking prompt',prompt:'If your pencil could talk, what would it say today?'},{emoji:'🐾',title:'Animal stretch',prompt:'Move like a cat, a flamingo, and a sleepy bear!'},{emoji:'🌈',title:'Gratitude sparkle',prompt:'Name one small thing that made you smile this week.'}];
@@ -34,7 +34,7 @@ export function ClassGoalMeter({classroomId,earned}:{classroomId:string;earned:n
   return <section className="fun-goal-strip"><div className="fun-goal-icon">🌈</div><div className="fun-goal-copy"><strong>Our class goal</strong><span>{earned} of {goal} stars · {progress>=100?'We did it!':'Every little effort counts'}</span><div className="fun-goal-track"><i style={{width:`${progress}%`}}/></div></div><span className="fun-goal-percent">{progress}%</span></section>;
 }
 const toolTiles=[{id:'picker',label:'Who’s next?',emoji:'🎯'},{id:'timer',label:'Timer',emoji:'⏱️'},{id:'book',label:'Our Readers',emoji:'📚'},{id:'badges',label:'Badges',emoji:'💛'},{id:'goal',label:'Class goal',emoji:'🌈'},{id:'vote',label:'Class vote',emoji:'🗳️'},{id:'ballot',label:'Secret ballot',emoji:'🤫'},{id:'surprise',label:'Surprise',emoji:'🎲'},{id:'colors',label:'Colors',emoji:'🎨'},{id:'mascot',label:'Mascot',emoji:'🦊'},{id:'certificate',label:'Certificate',emoji:'🏅'}];
-export default function ClassroomFun({weekly,tool:toolProp,onToolChange,presentIds,onRollCall,onPointsAwarded,onRandomAward,classroomId,classroom,students,prizes,earned,themeOptions,currentTheme,onThemeChange}:FunProps){
+export default function ClassroomFun({weekly,tool:toolProp,onToolChange,autoPickTrigger=0,presentIds,onRollCall,onPointsAwarded,onRandomAward,classroomId,classroom,students,prizes,earned,themeOptions,currentTheme,onThemeChange}:FunProps){
   const [data,setData]=useState<LocalData>(defaultData);
   const [localTool,setLocalTool]=useState('picker');
   const tool=toolProp??localTool;
@@ -44,6 +44,7 @@ export default function ClassroomFun({weekly,tool:toolProp,onToolChange,presentI
   const [candidate,setCandidate]=useState<FunStudent|null>(null);
   const [picking,setPicking]=useState(false);
   const pickRef=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const lastAutoPick=useRef(0);
   const [badgeStudent,setBadgeStudent]=useState('');
   const [voteStudent,setVoteStudent]=useState('');
   const [customGoal,setCustomGoal]=useState('');
@@ -80,7 +81,8 @@ export default function ClassroomFun({weekly,tool:toolProp,onToolChange,presentI
   useEffect(()=>()=>{if(themeSpinRef.current)clearTimeout(themeSpinRef.current);},[]);
   useEffect(()=>{if(!timerFull)return;const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape')setTimerFull(false);};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey);},[timerFull]);
   const update=(next:LocalData)=>{setData(next);saveLocal(next);};
-  const startPicker=()=>{if(!pool.length||picking)return;setPicking(true);let turns=0;const spin=()=>{const next=pool[Math.floor(Math.random()*pool.length)];setCandidate(next);turns++;if(turns<18)pickRef.current=setTimeout(spin,65+turns*12);else{setPicking(false);onRandomAward?.(next.id);}};spin();};
+  const startPicker=useCallback(()=>{if(!pool.length||picking)return;setPicking(true);let turns=0;const spin=()=>{const next=pool[Math.floor(Math.random()*pool.length)];setCandidate(next);turns++;if(turns<18)pickRef.current=setTimeout(spin,65+turns*12);else{setPicking(false);onRandomAward?.(next.id);}};spin();},[pool,picking,onRandomAward]);
+  useEffect(()=>{if(autoPickTrigger<=lastAutoPick.current)return;lastAutoPick.current=autoPickTrigger;if(tool==='picker')startPicker();},[autoPickTrigger,tool,startPicker]);
   const spinTheme=()=>{if(themeSpin||!themeOptions.length)return;setThemeSpin(true);let turns=0;const choices=themeOptions.filter(theme=>theme.id!==currentTheme);const pool=choices.length?choices:themeOptions;const chosen=pool[Math.floor(Math.random()*pool.length)];const spin=()=>{setThemePreview(themeOptions[turns%themeOptions.length].id);turns++;if(turns<20){themeSpinRef.current=setTimeout(spin,45+turns*11);return;}setThemePreview(chosen.id);setThemeSpin(false);onThemeChange(classroomId,chosen.id);};spin();};
   const adjustGoal=()=>{const value=Math.max(1,Math.min(100000,Number(customGoal)||20));setCustomGoal(String(value));update({...data,goals:{...data.goals,[classroomId]:value}});};
   const openCertificate=(student:FunStudent|null)=>{setCertificate(student);if(!student)return;const day=new Date().toISOString().slice(0,10);const have=data.certificates[student.id]||[];if(have.some(c=>c.date===day&&c.classroom===classroom))return;update({...data,certificates:{...data.certificates,[student.id]:[...have,{date:day,classroom}]}});};
