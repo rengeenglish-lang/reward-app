@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { PDFDocumentProxy, PDFPageProxy, PDFDocumentLoadingTask, RenderTask } from 'pdfjs-dist';
+import type { ReactNode } from 'react';
 
-export default function FlipbookPdf({src,page,onPageCount,onPageChange}:{src:string;page:number;onPageCount:(count:number)=>void;onPageChange:(page:number)=>void}){
+export default function FlipbookPdf({src,page,onPageCount,onPageChange,exerciseAction}:{src:string;page:number;onPageCount:(count:number)=>void;onPageChange:(page:number)=>void;exerciseAction?:ReactNode}){
   const canvasRef=useRef<HTMLCanvasElement|null>(null);
   const documentRef=useRef<PDFDocumentProxy|null>(null);
   const renderToken=useRef(0);
@@ -67,6 +68,6 @@ export default function FlipbookPdf({src,page,onPageCount,onPageChange}:{src:str
   return <div className="flipbook-stage" aria-label="PDF flipbook reader">
     {loading&&<div className="flipbook-message" role="status">Opening your book…</div>}
     {error&&<div className="flipbook-message flipbook-error" role="alert">{error}</div>}
-    {!loading&&!error&&<><button type="button" className="flipbook-turn flipbook-turn-previous" onClick={()=>onPageChange(Math.max(1,page-1))} disabled={page<=1} aria-label="Turn to previous page">‹</button><div className={`flipbook-page ${turn?`turn-${turn}`:''}`}><div className="flipbook-spine" aria-hidden="true"/><canvas ref={canvasRef} className="flipbook-canvas" aria-label={`PDF page ${page}`}/></div><button type="button" className="flipbook-turn flipbook-turn-next" onClick={()=>onPageChange(page+1)} aria-label="Turn to next page">›</button></>}
+    {!loading&&!error&&<><button type="button" className="flipbook-turn flipbook-turn-previous" onClick={()=>onPageChange(Math.max(1,page-1))} disabled={page<=1} aria-label="Turn to previous page">‹</button><div className={`flipbook-page ${turn?`turn-${turn}`:''}`}><div className="flipbook-spine" aria-hidden="true"/><canvas ref={canvasRef} className="flipbook-canvas" aria-label={`PDF page ${page}`}/>{exerciseAction}</div><button type="button" className="flipbook-turn flipbook-turn-next" onClick={()=>onPageChange(page+1)} aria-label="Turn to next page">›</button></>}
   </div>;
 }
