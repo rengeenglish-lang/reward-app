@@ -218,7 +218,8 @@ export async function createStudent(classroomId: string,displayName: string,avat
   if(!groups.length) groups=await sql`INSERT INTO groups(classroom_id,name) SELECT id,'Class roster' FROM classrooms WHERE id=${classroom} AND archived_at IS NULL RETURNING id`;
   if(!groups.length) throw new Error('Active classroom not found');
   const rows=await sql`INSERT INTO students(group_id,display_name,avatar_key) VALUES(${groups[0].id},${person},${avatar}) RETURNING id,display_name,avatar_key,group_id`;
-  return rows[0];
+  if(!rows.length) throw new Error('Student could not be created');
+  return {id:String(rows[0].id),display_name:String(rows[0].display_name),avatar_key:String(rows[0].avatar_key),group_id:String(rows[0].group_id)};
 }
 export async function archiveStudent(id: string) { await requireTutor(); const key=uuid.parse(id); await sqlClient()`UPDATE students SET archived_at=now(),updated_at=now() WHERE id=${key} AND archived_at IS NULL`; }
 export async function updateStudent(id:string,displayName:string) { await requireTutor(); const key=uuid.parse(id),person=name.parse(displayName); const rows=await sqlClient()`UPDATE students SET display_name=${person},updated_at=now() WHERE id=${key} AND archived_at IS NULL RETURNING id,display_name`; if(!rows.length) throw new Error('Active student not found'); return rows[0]; }
@@ -229,7 +230,8 @@ export async function createStudents(classroomId:string,displayNames:string[]): 
   if(!groups.length) groups=await sql`INSERT INTO groups(classroom_id,name) SELECT id,'Class roster' FROM classrooms WHERE id=${classroom} AND archived_at IS NULL RETURNING id`;
   if(!groups.length) throw new Error('Active classroom not found');
   const group=uuid.parse(String(groups[0].id));
-  return sql`INSERT INTO students(group_id,display_name,avatar_key) SELECT ${group},person,avatars.avatar FROM unnest(${people}::text[]) WITH ORDINALITY AS names(person,n) CROSS JOIN LATERAL (SELECT (ARRAY['fox','bear','panda','lion','frog','tiger','koala','unicorn','penguin','octopus','dolphin','whale','turtle','butterfly','bee','ladybug','parrot','flamingo','peacock','rabbit','cat','dog','hamster','monkey','elephant','giraffe','zebra','crocodile','dinosaur','dragon','owl','chick','hedgehog','raccoon','squirrel','otter','seal','sloth','llama','deer','horse','mouse','wolf','bird','shell','star','rainbow','rocket','heart','sun','flower','cherry','cupcake','icecream','robot','alien'])[((n-1)%56)+1] AS avatar) avatars RETURNING id,display_name,avatar_key,group_id`;
+  const rows=await sql`INSERT INTO students(group_id,display_name,avatar_key) SELECT ${group},person,avatars.avatar FROM unnest(${people}::text[]) WITH ORDINALITY AS names(person,n) CROSS JOIN LATERAL (SELECT (ARRAY['fox','bear','panda','lion','frog','tiger','koala','unicorn','penguin','octopus','dolphin','whale','turtle','butterfly','bee','ladybug','parrot','flamingo','peacock','rabbit','cat','dog','hamster','monkey','elephant','giraffe','zebra','crocodile','dinosaur','dragon','owl','chick','hedgehog','raccoon','squirrel','otter','seal','sloth','llama','deer','horse','mouse','wolf','bird','shell','star','rainbow','rocket','heart','sun','flower','cherry','cupcake','icecream','robot','alien'])[((n-1)%56)+1] AS avatar) avatars RETURNING id,display_name,avatar_key,group_id`;
+  return rows.map(row=>({id:String(row.id),display_name:String(row.display_name),avatar_key:String(row.avatar_key),group_id:String(row.group_id)}));
 }
 
 export async function getGroupRoster(groupId: string,recordDate: string) {
