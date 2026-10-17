@@ -77,16 +77,18 @@
 .sparkle-dashboard .dojo-tile{min-height:102px;border:1px solid var(--spark-line);border-radius:18px;background:#fff;box-shadow:0 5px 14px #34235b09;transition:transform .16s,box-shadow .16s,border-color .16s}
 .sparkle-dashboard .dojo-tile:hover{transform:translateY(-2px);border-color:#cfc3ff;box-shadow:0 12px 24px #3c2b7515}
 .sparkle-dashboard .dojo-tile strong{color:#292e55}
-.sparkle-dashboard .dojo-tile.is-top-champ{--champ-color-a:#e6fbff;--champ-color-b:#fff6d9;--champ-color-c:#f5e9ff;--champ-border-a:#8edbe4;--champ-border-b:#ffcf62;--champ-border-c:#c1a5f6;animation:top-champ-float 3.8s ease-in-out infinite,top-champ-color 8s ease-in-out infinite;will-change:transform,background-color,border-color;}
-.sparkle-dashboard .dojo-tile.top-champ-0{--champ-color-a:#e5faff;--champ-color-b:#fff8dc;--champ-color-c:#e8f7ff;--champ-border-a:#82d7e3;--champ-border-b:#ffd36f;--champ-border-c:#8ed4ed;animation-delay:0s,-1.4s}
-.sparkle-dashboard .dojo-tile.top-champ-1{--champ-color-a:#fff7d9;--champ-color-b:#eafff4;--champ-color-c:#fff0e6;--champ-border-a:#ffd36f;--champ-border-b:#80dab6;--champ-border-c:#f5ad90;animation-delay:-.55s,-2.5s}
-.sparkle-dashboard .dojo-tile.top-champ-2{--champ-color-a:#f3eaff;--champ-color-b:#fff0f5;--champ-color-c:#e8faff;--champ-border-a:#c2a1f4;--champ-border-b:#f4aeca;--champ-border-c:#8bd7e4;animation-delay:-1.1s,-3.3s}
-.sparkle-dashboard .dojo-tile.top-champ-3{--champ-color-a:#e8fff3;--champ-color-b:#e9f5ff;--champ-color-c:#fff9df;--champ-border-a:#83d6ab;--champ-border-b:#8bc7ec;--champ-border-c:#efd16d;animation-delay:-1.65s,-4.2s}
-.sparkle-dashboard .dojo-tile.top-champ-4{--champ-color-a:#fff0e7;--champ-color-b:#f3eaff;--champ-color-c:#eafff8;--champ-border-a:#f4ad91;--champ-border-b:#c0a3ee;--champ-border-c:#83d7c3;animation-delay:-2.2s,-5.1s}
-.sparkle-dashboard .dojo-tile.top-champ-5{--champ-color-a:#ffeaf3;--champ-color-b:#e9faff;--champ-color-c:#f5edff;--champ-border-a:#ef9fc4;--champ-border-b:#8bd4e1;--champ-border-c:#bca5ec;animation-delay:-2.75s,-6s}
+.sparkle-dashboard .dojo-tile.is-top-champ{--champ-color-a:#baf4ff;--champ-color-b:#ffe889;--champ-color-c:#d9c4ff;--champ-border-a:#19a9c0;--champ-border-b:#e29b00;--champ-border-c:#8051db;animation:top-champ-float 3.8s ease-in-out infinite,top-champ-color 6s ease-in-out infinite;will-change:transform,background-color,border-color;}
+.sparkle-dashboard .dojo-tile.top-champ-0{--champ-color-a:#a9f0ff;--champ-color-b:#70dff0;--champ-color-c:#e4fbff;--champ-border-a:#109bb6;--champ-border-b:#168ea8;--champ-border-c:#6bc6d8;animation-delay:0s,-1.4s}
+.sparkle-dashboard .dojo-tile.top-champ-1{--champ-color-a:#ffe274;--champ-color-b:#ffc940;--champ-color-c:#fff3b5;--champ-border-a:#d18a00;--champ-border-b:#c27a00;--champ-border-c:#e8af24;animation-delay:-.55s,-2.5s}
+.sparkle-dashboard .dojo-tile.top-champ-2{--champ-color-a:#cbb1ff;--champ-color-b:#ad8cf5;--champ-color-c:#e7dcff;--champ-border-a:#7344d2;--champ-border-b:#6237c2;--champ-border-c:#a889e9;animation-delay:-1.1s,-3.3s}
+.sparkle-dashboard .dojo-tile.top-champ-3{--champ-color-a:#a4efbd;--champ-color-b:#70dfa3;--champ-color-c:#d9f8df;--champ-border-a:#168748;--champ-border-b:#08783f;--champ-border-c:#65ba78;animation-delay:-1.65s,-4.2s}
+.sparkle-dashboard .dojo-tile.top-champ-4{--champ-color-a:#ffad83;--champ-color-b:#ff806f;--champ-color-c:#ffd6a5;--champ-border-a:#dc5637;--champ-border-b:#cc4639;--champ-border-c:#ed8758;animation-delay:-2.2s,-5.1s}
+.sparkle-dashboard .dojo-tile.top-champ-5{--champ-color-a:#ffa9d1;--champ-color-b:#f780bb;--champ-color-c:#ffd2e8;--champ-border-a:#c83a80;--champ-border-b:#b92b71;--champ-border-c:#e674aa;animation-delay:-2.75s,-6s}
 @keyframes top-champ-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 @keyframes top-champ-color{0%,100%{background-color:var(--champ-color-a);border-color:var(--champ-border-a);box-shadow:0 5px 15px color-mix(in srgb,var(--champ-border-a) 24%,transparent)}50%{background-color:var(--champ-color-b);border-color:var(--champ-border-b);box-shadow:0 7px 20px color-mix(in srgb,var(--champ-border-b) 25%,transparent)}75%{background-color:var(--champ-color-c);border-color:var(--champ-border-c);box-shadow:0 6px 18px color-mix(in srgb,var(--champ-border-c) 24%,transparent)}}
-.sparkle-dashboard .dojo-tile.is-top-champ:hover{filter:saturate(1.08) brightness(1.02)}
+.sparkle-dashboard .dojo-tile.is-top-champ{border-width:2px;box-shadow:0 8px 22px color-mix(in srgb,var(--champ-border-a) 30%,transparent)}
+.sparkle-dashboard .dojo-tile.is-top-champ:hover{filter:saturate(1.14) brightness(1.02)}
+.sparkle-dashboard .top-champ-trophy{position:absolute;z-index:2;top:8px;left:8px;width:29px;height:29px;display:grid;place-items:center;border:2px solid #fff;border-radius:50%;background:linear-gradient(145deg,#fff3a6,#ffbf24);box-shadow:0 3px 8px #82540055;font-size:16px;line-height:1}
 .sparkle-dashboard .dojo-pts{background:#f2efff;color:#6850ce}
 .sparkle-dashboard .roster-card,.sparkle-dashboard .champion-section,.sparkle-dashboard .stat-card,.sparkle-dashboard .insight-card{border:1px solid var(--spark-line)!important;border-radius:21px!important;background:#fff!important;box-shadow:0 14px 38px #3c2b7510!important}
 .sparkle-dashboard .roster-head{background:linear-gradient(100deg,#fff,#fbfaff);border-color:var(--spark-line)}
