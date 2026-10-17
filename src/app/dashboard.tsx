@@ -165,7 +165,7 @@ export default function HomePage({initialData}:{initialData:InitialData}) {
   const presentList=students.filter(s=>!absentIds.has(s.id));
   const presentIds=rollCall.taken?presentList.map(s=>s.id):undefined;
   const rollLabel=rollCall.taken?`Roll call ${presentList.length}/${students.length}`:undefined;
-  const navGroups=[{title:'YOUR CLASSROOM',items:[{label:'Today',icon:Home},{label:'Classrooms',icon:GraduationCap}]},{title:'REWARDS & ACTIVITIES',items:[{label:'Reward draw',icon:Gift},{label:'Fun & focus',icon:Gamepad2}]},{title:'LEARNING RESOURCES',items:[{label:'Reading & resources',icon:BookOpen}]},{title:'STUDENT PROGRESS',items:[{label:'Student analysis',icon:BarChart3},{label:'Reports',icon:BarChart3},{label:'Teacher tools',icon:ClipboardCheck}]}];
+  const navGroups=[{title:'YOUR CLASSROOM',items:[{label:'Today',icon:Home},{label:'Classrooms',icon:GraduationCap}]},{title:'REWARDS & ACTIVITIES',items:[{label:'Reward draw',icon:Gift},{label:'Fun & focus',icon:Gamepad2}]},{title:'LEARNING RESOURCES',items:[{label:'Reading & resources',icon:BookOpen}]},{title:'STUDENT PROGRESS',items:[{label:'Reports',icon:BarChart3},{label:'Teacher tools',icon:ClipboardCheck}]}];
 
   return <main className="app-shell sparkle-dashboard" data-theme={activeTheme}>
     <MascotParade classroomId={classroomId} triggerKey={mascotParadeTrigger}/>
