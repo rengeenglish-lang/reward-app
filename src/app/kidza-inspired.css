@@ -206,6 +206,27 @@
 }
 .student-bubbles-toggle:hover { transform: translateY(-1px); }
 .student-bubbles-toggle:focus-visible { outline: 3px solid #39c7ad; outline-offset: 3px; }
+.toast {
+  z-index: 1250;
+  max-width: min(640px, calc(100vw - 24px));
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.toast-undo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  margin-left: 4px;
+  padding: 0 11px;
+  border: 1px solid #ffffff80;
+  border-radius: 999px;
+  background: #ffffff1c;
+  color: #fff;
+  font-weight: 900;
+}
+.toast-undo:hover { background: #ffffff33; }
+.toast-undo:disabled { opacity: .7; cursor: wait; }
 
 @media (max-width: 700px) {
   .app-shell.sparkle-dashboard[data-theme] .sparkle-today .welcome-row { padding: 13px 14px; }

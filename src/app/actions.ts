@@ -249,6 +249,14 @@ export async function awardStudentPoints(studentId:string,groupId:string,criteri
   return rows[0];
 }
 
+export async function undoStudentPointAward(awardId:string) {
+  await requireTutor();
+  const key=uuid.parse(awardId);
+  const rows=await sqlClient()`DELETE FROM student_point_awards WHERE id=${key} RETURNING id,student_id,group_id,criterion,points`;
+  if(!rows.length) throw new Error('This point award has already been removed');
+  return rows[0];
+}
+
 export async function createPrize(input: string,description?: string) {
   await requireTutor(); const prize=name.parse(input),detail=description?z.string().trim().max(500).parse(description):null;
   return (await sqlClient()`INSERT INTO prizes(name,description) VALUES(${prize},${detail}) RETURNING id,name,description,active`)[0];
