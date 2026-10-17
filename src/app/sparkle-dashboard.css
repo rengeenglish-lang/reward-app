@@ -134,15 +134,30 @@
 .annual-program-title-field{min-width:0}
 .annual-program-file{max-width:260px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .annual-program-status{margin:8px 2px;color:#21856d;font-size:12px;font-weight:800}
-.annual-program-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:15px}
+.annual-programs-list{display:grid;gap:16px;margin-top:18px}
 .annual-program-card{overflow:hidden;border:1px solid #eae6f4;border-radius:18px;background:#fff;box-shadow:0 8px 22px #30245d0c}
 .annual-program-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 14px 11px}
 .annual-program-year{display:inline-block;padding:4px 8px;border-radius:999px;background:#fff1c7;color:#76520a;font-size:10px;font-weight:900;letter-spacing:.04em}
 .annual-program-card h3{margin:8px 0 0;color:#292e55;font:800 14px/1.25 var(--font-playful),var(--font-rounded),sans-serif}
-.annual-program-image-link{position:relative;display:flex;align-items:center;justify-content:center;height:325px;overflow:hidden;background:linear-gradient(135deg,#f4f3fa,#fff)}
-.annual-program-image-link img{display:block;width:100%;height:100%;object-fit:contain}
-.annual-program-image-link span{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:5px;padding:7px 9px;border:1px solid #fff;border-radius:10px;background:#ffffffeb;color:#514183;font-size:10px;font-weight:900;opacity:0;transform:translateY(4px);transition:opacity .16s,transform .16s}
-.annual-program-image-link:hover span,.annual-program-image-link:focus-visible span{opacity:1;transform:translateY(0)}
-.annual-program-file-meta{margin:0;padding:10px 14px 12px;border-top:1px solid #f0edf6;color:#878aa0;font-size:10px;overflow-wrap:anywhere}
-@media(max-width:760px){.annual-program-form{grid-template-columns:1fr 1fr}.annual-program-title-field{grid-column:1/-1}.annual-program-file{max-width:none}.annual-program-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.annual-program-image-link{height:290px}}
-@media(max-width:460px){.annual-program-form{grid-template-columns:1fr}.annual-program-title-field{grid-column:auto}.annual-program-file,.annual-program-form>.primary-btn{width:100%;justify-content:center}.annual-program-grid{grid-template-columns:1fr}}
+.annual-program-card-head small{display:block;margin-top:4px;color:#858ba1;font-size:10px}
+.annual-program-table-scroll{overflow-x:auto;border-top:1px solid #f0edf6}
+.annual-program-table{width:100%;min-width:760px;border-collapse:collapse;text-align:left}
+.annual-program-table th{padding:10px 13px;background:#f7f5fc;color:#675d83;font-size:10px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
+.annual-program-table td{padding:11px 13px;border-top:1px solid #f1eef7;color:#3d4560;font-size:12px;line-height:1.45;vertical-align:top}
+.annual-program-table td:first-child{width:115px;color:#58439f;font-weight:900;white-space:nowrap}
+.annual-program-table td:nth-child(2){width:24%;font-weight:700}
+.annual-program-table td:nth-child(3){width:24%;font-weight:800}
+.annual-program-source-link{display:inline-flex;align-items:center;gap:6px;margin:11px 14px 13px;color:#5c43be;font-size:11px;font-weight:800;overflow-wrap:anywhere}
+.annual-program-add{margin-top:17px;padding:13px 15px;border:1px solid #e6e0f2;border-radius:16px;background:#fcfbff}
+.annual-program-add>summary{display:flex;align-items:center;gap:7px;color:#5d43bd;font-size:12px;font-weight:900;cursor:pointer;list-style:none}
+.annual-program-add>summary::-webkit-details-marker{display:none}
+.annual-program-editor-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:17px 0 10px}
+.annual-program-editor-head h3{margin:0;color:#292e55;font-size:13px}
+.annual-program-editor-head p{margin:4px 0 0;color:#858ba1;font-size:10px}
+.annual-program-event-editor{overflow-x:auto;border:1px solid #ebe7f3;border-radius:13px;background:#fff}
+.annual-program-event-labels,.annual-program-event-row{display:grid;grid-template-columns:minmax(125px,.8fr) minmax(160px,1fr) minmax(160px,1fr) minmax(200px,1.2fr) 38px;align-items:center;gap:8px;min-width:760px;padding:9px 10px}
+.annual-program-event-labels{background:#f7f5fc;color:#675d83;font-size:10px;font-weight:900}
+.annual-program-event-row{border-top:1px solid #f1eef7}
+.annual-program-event-row .field-select{min-width:0;margin:0;padding:8px;font-size:11px}
+@media(max-width:760px){.annual-program-form{grid-template-columns:1fr 1fr}.annual-program-title-field{grid-column:1/-1}.annual-program-file{max-width:none}.annual-program-table{min-width:740px}}
+@media(max-width:460px){.annual-program-form{grid-template-columns:1fr}.annual-program-title-field{grid-column:auto}.annual-program-file{width:100%;justify-content:center}.annual-program-editor-head{align-items:flex-start;flex-direction:column}}

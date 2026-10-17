@@ -3,7 +3,6 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState, useTransition } from 'react';
 import { Camera, CalendarDays, ClipboardList, Lightbulb, Lock, Plus, RotateCcw, Trash2, Unlock } from 'lucide-react';
 import StudentAnalysis from './student-analysis';
-import DepartmentTimeline from './department-timeline';
 import AnnualPrograms from './annual-programs';
 import UnitPlans from './unit-plans';
 import PypProjects from './pyp-projects';
@@ -15,7 +14,7 @@ import { GRADES, NOTE_KINDS, PYP_THEMES, kindLabel, type NoteKind, type TeacherN
 import { PypThemePanel } from './pyp-theme';
 import { useThemeNames } from './pyp-themes';
 
-type Section = 'program' | 'notes' | 'students' | 'units' | 'timeline' | 'annual' | 'ideas' | 'pyp';
+type Section = 'program' | 'notes' | 'students' | 'units' | 'annual' | 'ideas' | 'pyp';
 const DAYS = [{ n: 1, label: 'Monday' }, { n: 2, label: 'Tuesday' }, { n: 3, label: 'Wednesday' }, { n: 4, label: 'Thursday' }, { n: 5, label: 'Friday' }];
 const today = () => { const d = new Date(); const p = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
 const noteTag = (n: Pick<TeacherNote, 'kind' | 'grade' | 'theme'>) => [kindLabel(n.kind), n.grade ? `Grade ${n.grade}` : '', n.theme || ''].filter(Boolean).join(' · ');
@@ -200,7 +199,7 @@ function TodayStrip() {
 export default function TeacherIssues({ initialSection = 'program' }: { initialSection?: Section }) {
   const [section, setSection] = useState<Section>(initialSection);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
-  const tabs: Array<[Section, string, string, string]> = [['program', '🗓️', 'Lesson program', 'Your weekly timetable'], ['units', '📘', 'Unit plans', 'Type or scan pictures'], ['notes', '📝', 'Meeting & project notes', 'Type or scan a photo'], ['students', '🧠', 'Student analysis', 'Academic & behaviour'], ['timeline', '🧭', 'Department timeline', 'What comes next'], ['annual', '📅', 'Yearly programs', 'English department calendar'], ['ideas', '💡', 'PYP projects', 'Suggest a project by theme'], ['pyp', '🌟', 'PYP theme', 'Grade 4 theme & your own names']];
+  const tabs: Array<[Section, string, string, string]> = [['program', '🗓️', 'Lesson program', 'Your weekly timetable'], ['units', '📘', 'Unit plans', 'Type or scan pictures'], ['notes', '📝', 'Meeting & project notes', 'Type or scan a photo'], ['students', '🧠', 'Student analysis', 'Academic & behaviour'], ['annual', '📅', 'Yearly programs', 'English department calendar'], ['ideas', '💡', 'PYP projects', 'Suggest a project by theme'], ['pyp', '🌟', 'PYP theme', 'Grade 4 theme & your own names']];
   return <div className="page-wrap alternate ti-page">
     <p className="eyebrow">FOR YOU, THE TEACHER</p>
     <h1>{initialSection === 'students' ? <>Student <em>analysis</em></> : <>Teacher <em>tools</em></>}</h1>
@@ -211,7 +210,6 @@ export default function TeacherIssues({ initialSection = 'program' }: { initialS
     {section === 'units' && <UnitPlans />}
     {section === 'notes' && <MeetingNotes draft={draft} setDraft={setDraft} />}
     {section === 'students' && <StudentAnalysis />}
-    {section === 'timeline' && <DepartmentTimeline />}
     {section === 'annual' && <AnnualPrograms />}
     {section === 'pyp' && <PypThemePanel />}
     {section === 'ideas' &&<PypProjects />}
