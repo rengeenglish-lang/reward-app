@@ -42,35 +42,26 @@ function LessonProgram() {
     if (!file) return;
     setReadingProgram(true); setSaved('Reading the timetable picture…');
     try {
-      const { createWorker } = await import('tesseract.js');
-      const worker = await createWorker('eng');
-      let lines: Array<{ text: string; bbox: { x0: number; x1: number; y0: number; y1: number } }>;
-      try {
-        const result = await worker.recognize(file);
-        lines = result.data.lines.map((line) => ({ text: line.text.trim(), bbox: line.bbox })).filter((line) => line.text);
-      } finally { await worker.terminate(); }
-
+      const text = await readImageText(file);
+      const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
       const dayPattern = /\b(monday|tuesday|wednesday|thursday|friday)\b/i;
       const dayIds: Record<string, number> = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5 };
-      const headers = lines.flatMap((line) => {
-        const match = line.text.match(dayPattern);
-        return match ? [{ day: dayIds[match[1].toLowerCase()], x: (line.bbox.x0 + line.bbox.x1) / 2 }] : [];
-      });
-      if (!headers.length) throw new Error('I could not find weekday headings. Include Monday to Friday in the picture.');
-
+      const foundDays = lines.flatMap((line) => { const match = line.match(dayPattern); return match ? [dayIds[match[1].toLowerCase()]] : []; });
+      if (!foundDays.length) throw new Error('I could not find weekday headings. Include Monday to Friday in the picture.');
       const imported: Record<number, Slot[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+      let currentDay: number | null = null;
       for (const line of lines) {
-        const time = line.text.match(/\b(\d{1,2}[:.]\d{2})\s*(?:-|–|—|to)\s*(\d{1,2}[:.]\d{2})\b/i);
+        const dayHeader = line.match(dayPattern);
+        if (dayHeader) currentDay = dayIds[dayHeader[1].toLowerCase()];
+        const time = line.match(/\b(\d{1,2}[:.]\d{2})\s*(?:-|–|—|to)\s*(\d{1,2}[:.]\d{2})\b/i);
         if (!time) continue;
-        const cls = line.text.match(/\b(\d{1,2}\s*[/.\-]\s*[A-Za-z]{1,3}|\d{1,2}\s*[A-Za-z]{1,3}|[A-Za-z]{2,}\s*\d{1,2})\b/);
-        if (!cls) continue;
-        const period = line.text.match(/\bP\s*(\d{1,2})\b/i);
-        const x = (line.bbox.x0 + line.bbox.x1) / 2;
-        const day = headers.reduce((closest, header) => Math.abs(header.x - x) < Math.abs(closest.x - x) ? header : closest).day;
+        const cls = line.match(/\b(\d{1,2}\s*[/.\-]\s*[A-Za-z]{1,3}|\d{1,2}\s*[A-Za-z]{1,3}|[A-Za-z]{2,}\s*\d{1,2})\b/);
+        if (!cls || currentDay === null) continue;
+        const period = line.match(/\bP\s*(\d{1,2})\b/i);
         const normalizeTime = (value: string) => value.replace('.', ':').padStart(5, '0');
         const start = normalizeTime(time[1]), end = normalizeTime(time[2]);
         if (start >= end) continue;
-        imported[day].push({ period: Number(period?.[1] || imported[day].length + 1), start, end, cls: cls[1].replace(/\s*([/.\-])\s*/, '$1').replace(/\s+/g, ' ').trim() });
+        imported[currentDay].push({ period: Number(period?.[1] || imported[currentDay].length + 1), start, end, cls: cls[1].replace(/\s*([/.\-])\s*/, '$1').replace(/\s+/g, ' ').trim() });
       }
       const count = Object.values(imported).reduce((total, slots) => total + slots.length, 0);
       if (!count) throw new Error('I could not find lesson rows. Use a clear picture showing class names and start/end times.');
