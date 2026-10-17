@@ -5,6 +5,7 @@ import { upload } from '@vercel/blob/client';
 import { BookMarked, ExternalLink, FileText, Globe2, Maximize2, Minimize2, Plus, X, Lightbulb } from 'lucide-react';
 import { bookrWeeks, isIssued, issueDate, latestFriday } from '@/lib/bookr-schedule';
 import { readingAnswerBanks } from '@/lib/reading-answers';
+import FlipbookPdf from './flipbook-pdf';
 
 type SavedSite = { id: string; name: string; url: string };
 type StoredMaterial = { id: string; name: string; file?: Blob; size: number };
@@ -91,6 +92,7 @@ export default function ClassroomSites() {
   const [materialIsCloud, setMaterialIsCloud] = useState(false);
   const [materialUrl, setMaterialUrl] = useState('');
   const [pdfPage, setPdfPage] = useState(1);
+  const [pdfTotalPages, setPdfTotalPages] = useState(0);
   const [pdfPageInput, setPdfPageInput] = useState('1');
   const [pdfPageReady, setPdfPageReady] = useState(false);
   const [materialBusy, setMaterialBusy] = useState(false);
@@ -99,6 +101,7 @@ export default function ClassroomSites() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [answerBankId, setAnswerBankId] = useState(readingAnswerBanks[0]?.id || '');
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(() => new Set());
+  const [revealsReady, setRevealsReady] = useState(false);
   const [hub, setHub] = useState<'bookr' | 'pdf' | 'sites' | 'answers'>('bookr');
   const [bookrStart, setBookrStart] = useState('');
   const [bookrWeekOverrides, setBookrWeekOverrides] = useState<Record<number, boolean>>({});
@@ -149,6 +152,16 @@ export default function ClassroomSites() {
     try { localStorage.setItem('ezgili-classroom-pdf-page', String(pdfPage)); } catch { /* bookmark is best effort */ }
     setPdfPageInput(String(pdfPage));
   }, [pdfPage, pdfPageReady]);
+  useEffect(() => {
+    try { const saved=JSON.parse(localStorage.getItem('ezgili-reading-reveals')||'[]'); if(Array.isArray(saved))setRevealedAnswers(new Set(saved.filter((item):item is string=>typeof item==='string'))); } catch { /* start with unrevealed answers */ }
+    setRevealsReady(true);
+  }, []);
+  useEffect(() => {
+    if(!revealsReady)return;
+    try { localStorage.setItem('ezgili-reading-reveals',JSON.stringify([...revealedAnswers])); } catch { /* answer reveals remain available for this visit */ }
+  }, [revealedAnswers,revealsReady]);
+  const onPdfPageCount=useCallback((count:number)=>{setPdfTotalPages(count);setPdfPage(current=>Math.min(current,count));},[]);
+  const goToPdfPage=useCallback((requestedPage:number)=>{const page=Math.max(1,Math.min(pdfTotalPages||9999,Math.floor(requestedPage)||1));setPdfPage(page);setPdfPageInput(String(page));},[pdfTotalPages]);
 
   useEffect(() => {
     setSites(readSites());
@@ -279,6 +292,7 @@ export default function ClassroomSites() {
   };
 
   const answerBank = readingAnswerBanks.find((bank) => bank.id === answerBankId) || readingAnswerBanks[0];
+  const pdfExercise = readingAnswerBanks.find((bank) => bank.pdfPage === pdfPage);
   const openExercisePage = (event: MouseEvent<HTMLAnchorElement>, pdfPage: number) => {
     event.preventDefault();
     if (!material) {
@@ -290,23 +304,15 @@ export default function ClassroomSites() {
     if (!source) return;
     setActiveSite(null);
     setHub('pdf');
-    setMaterialUrl(`${source.split('#')[0]}#page=${pdfPage}`);
+    setMaterialUrl(source.split('#')[0]);
+    goToPdfPage(pdfPage);
     window.setTimeout(() => viewerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   };
   const toggleAnswer = (id: string) => setRevealedAnswers((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const exerciseIsFullyRevealed=(bank:typeof readingAnswerBanks[number])=>bank.answers.every((_,index)=>revealedAnswers.has(`${bank.id}-${index}`));
+  const revealNextAnswer=(bank:typeof readingAnswerBanks[number])=>setRevealedAnswers(current=>{const next=new Set(current);const index=bank.answers.findIndex((_,i)=>!next.has(`${bank.id}-${i}`));if(index>=0)next.add(`${bank.id}-${index}`);return next;});
+  const toggleAllAnswers=(bank:typeof readingAnswerBanks[number])=>setRevealedAnswers(current=>{const next=new Set(current);const hide=bank.answers.every((_,index)=>next.has(`${bank.id}-${index}`));bank.answers.forEach((_,index)=>{const id=`${bank.id}-${index}`;if(hide)next.delete(id);else next.add(id);});return next;});
   const allExerciseAnswersRevealed = Boolean(answerBank?.answers.length) && answerBank!.answers.every((_, index) => revealedAnswers.has(`${answerBank!.id}-${index}`));
-  const toggleAllExerciseAnswers = () => {
-    if (!answerBank) return;
-    setRevealedAnswers((current) => {
-      const next = new Set(current);
-      answerBank.answers.forEach((_, index) => {
-        const id = `${answerBank.id}-${index}`;
-        if (allExerciseAnswersRevealed) next.delete(id);
-        else next.add(id);
-      });
-      return next;
-    });
-  };
 
   const viewerControls = <div className="classroom-site-controls">
     <button className="outline-btn" type="button" onClick={()=>setEnlarged((value)=>!value)} aria-pressed={enlarged}><Maximize2 size={15}/>{enlarged?'Normal size':'Enlarge panel'}</button>
@@ -352,7 +358,7 @@ export default function ClassroomSites() {
       </section>}
 
       {hub==='pdf'&&<section id="pdf-material" className="panel classroom-material-add">
-        <div className="panel-title"><div className="panel-icon coral"><FileText size={19}/></div><div><h2>Shared PDF material</h2><p>Upload once and it stays in every classroom on every device. PDFs open unchanged in the browser viewer.</p></div></div>
+        <div className="panel-title"><div className="panel-icon coral"><FileText size={19}/></div><div><h2>Shared PDF material</h2><p>Upload once and it stays in every classroom on every device. Read it here as a page-turning flipbook.</p></div></div>
         <div className="material-upload-row"><label className="outline-btn material-upload-label"><Plus size={16}/>{materialBusy?`Saving PDF… ${materialProgress}%`:material?'Replace PDF material':'Add a PDF'}<input type="file" accept="application/pdf,.pdf" onChange={uploadPdf} disabled={materialBusy}/></label>{materialBusy&&<progress className="material-upload-progress" max="100" value={materialProgress} aria-label="PDF upload progress"/>}{material&&<div className="material-current"><FileText size={16}/><span><strong>{material.name}</strong><small>{formatSize(material.size)} · {materialIsCloud?'Shared securely across classrooms and devices':'Saved on this browser; moving it to shared storage…'}</small></span><button type="button" className="outline-btn material-open" onClick={()=>{setActiveSite(null);setMaterialUrl(objectUrlRef.current||'/api/classroom-material/file')}}>Open PDF</button><button type="button" className="material-remove" onClick={removePdf} aria-label="Remove PDF material">Remove</button></div>}</div>
       </section>}
 
@@ -373,15 +379,15 @@ export default function ClassroomSites() {
       </section>}
 
       {hub==='pdf'&&material&&materialUrl&&<section ref={viewerRef} className={`classroom-site-viewer ${enlarged?'enlarged':''} ${isFullscreen?'fullscreen':''}`} aria-label={`${material.name} PDF viewer`}>
-        <header className="classroom-site-viewer-head"><div className="classroom-site-viewer-title"><FileText size={18}/><div><strong>{material.name}</strong><small>{formatSize(material.size)} · Bookmark saved at page {pdfPage}</small></div></div><div className="pdf-page-controls" aria-label="Saved PDF page controls"><button type="button" className="outline-btn" onClick={()=>setPdfPage(page=>Math.max(1,page-1))} aria-label="Previous page">‹</button><label><span>Page</span><input type="number" min="1" max="9999" value={pdfPageInput} aria-label="PDF page number" onChange={event=>setPdfPageInput(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'){const page=Math.max(1,Math.floor(Number(pdfPageInput)||1));setPdfPage(page);}}}/><button type="button" className="outline-btn" onClick={()=>setPdfPage(Math.max(1,Math.floor(Number(pdfPageInput)||1)))}>Go</button></label><button type="button" className="outline-btn" onClick={()=>setPdfPage(page=>page+1)} aria-label="Next page">›</button></div><a className="outline-btn material-open" href={`${materialUrl}#page=${pdfPage}`} target="_blank" rel="noreferrer"><ExternalLink size={15}/> Open in browser tab</a>{viewerControls}<button className="icon-btn" type="button" aria-label="Close PDF" onClick={()=>setMaterialUrl('')}><X size={18}/></button></header>
-        <iframe key={`${materialUrl}#page=${pdfPage}`} className="classroom-site-frame pdf-material-frame" src={`${materialUrl}#page=${pdfPage}`} title={`${material.name} PDF, page ${pdfPage}`} allow="fullscreen" allowFullScreen/>
+        <header className="classroom-site-viewer-head"><div className="classroom-site-viewer-title"><FileText size={18}/><div><strong>{material.name}</strong><small>{formatSize(material.size)} · Page {pdfPage}{pdfTotalPages?` of ${pdfTotalPages}`:''} · bookmark saved</small></div></div><div className="pdf-page-controls" aria-label="Saved PDF page controls"><button type="button" className="outline-btn" onClick={()=>goToPdfPage(pdfPage-1)} aria-label="Previous page">‹</button><label><span>Page</span><input type="number" min="1" max={pdfTotalPages||9999} value={pdfPageInput} aria-label="PDF page number" onChange={event=>setPdfPageInput(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'){goToPdfPage(Number(pdfPageInput));}}}/><button type="button" className="outline-btn" onClick={()=>goToPdfPage(Number(pdfPageInput))}>Go</button></label><button type="button" className="outline-btn" onClick={()=>goToPdfPage(pdfPage+1)} aria-label="Next page">›</button></div><a className="outline-btn material-open" href={`${materialUrl}#page=${pdfPage}`} target="_blank" rel="noreferrer"><ExternalLink size={15}/> Open in browser tab</a>{viewerControls}<button className="icon-btn" type="button" aria-label="Close PDF" onClick={()=>setMaterialUrl('')}><X size={18}/></button></header>
+        {pdfExercise&&<section className="pdf-exercise-reveal" aria-label={`Answer reveal for ${pdfExercise.title}, exercise page ${pdfExercise.printedPage}`}><div className="pdf-exercise-reveal-head"><div><small>EXERCISE · STUDENT BOOK PAGE {pdfExercise.printedPage}</small><strong>{pdfExercise.title}</strong></div><div><button type="button" className="fun-action secondary" disabled={pdfExercise.answers.every((_,index)=>revealedAnswers.has(`${pdfExercise.id}-${index}`))} onClick={()=>revealNextAnswer(pdfExercise)}>Reveal next answer</button><button type="button" className="fun-action secondary" onClick={()=>toggleAllAnswers(pdfExercise)}>{exerciseIsFullyRevealed(pdfExercise)?'Hide all answers':'Reveal all answers'}</button></div></div><div className="pdf-exercise-answers">{pdfExercise.answers.map((item,index)=>{const id=`${pdfExercise.id}-${index}`;return revealedAnswers.has(id)?<p key={id}><b>{index+1}.</b> <strong>{item.matching?'Answer line':'Answer'}:</strong> {item.answer}</p>:null})}</div></section>}<FlipbookPdf key={materialUrl} src={materialUrl} page={pdfPage} onPageCount={onPdfPageCount} onPageChange={goToPdfPage}/>
         <p className="classroom-site-note">The last page is saved in this browser, even after you close the site. Use the page controls to update the shared bookmark before switching activities.</p>
       </section>}
 
       {hub==='answers'&&<section className="panel answer-reveal-panel" aria-labelledby="answer-reveal-title">
         <div className="answer-reveal-heading"><div className="panel-icon purple"><Lightbulb size={19}/></div><div><p className="eyebrow">READ, THINK, THEN REVEAL</p><h2 id="answer-reveal-title">Story answer reveal</h2><p>Reveal answers individually or show all answers for the selected exercise. Matching answers show the complete line.</p></div></div>
-        <label className="answer-reveal-select"><span className="field-label">Reading</span><select className="field-select" value={answerBank?.id || ''} onChange={(event)=>{setAnswerBankId(event.target.value);setRevealedAnswers(new Set())}}>{readingAnswerBanks.map((bank)=><option key={bank.id} value={bank.id}>Unit {bank.unit} · {bank.kind} · {bank.title} · Exercise p. {bank.printedPage}</option>)}</select></label>
-        {answerBank&&<><div className="answer-reveal-meta"><strong>Exercises: Student Book p. {answerBank.printedPage}</strong><span>PDF page {answerBank.pdfPage} · {answerBank.answers.length} answer reveals</span></div><div className="answer-reveal-tools"><span>Choose how to reveal answers</span><button type="button" className="fun-action secondary answer-reveal-all-button" aria-controls="answer-reveal-list" aria-expanded={allExerciseAnswersRevealed} onClick={toggleAllExerciseAnswers}>{allExerciseAnswersRevealed?'Hide all answers in this exercise':'Reveal all answers in this exercise'}</button></div><div id="answer-reveal-list" className="answer-reveal-list">{answerBank.answers.map((item,index)=>{const id=`${answerBank.id}-${index}`;const isRevealed=revealedAnswers.has(id);return <article className={`answer-reveal-item ${isRevealed?'is-revealed':''}`} key={id}><div className="answer-reveal-question"><span className="answer-reveal-number">{index+1}</span><div><p>{item.prompt}</p><a className="answer-reveal-pdf-link" href={material ? `${materialIsCloud?'/api/classroom-material/file':objectUrlRef.current}#page=${answerBank.pdfPage}` : '#pdf-material'} onClick={(event)=>openExercisePage(event,answerBank.pdfPage)}>Student Book p. {answerBank.printedPage} · Open in PDF</a></div></div><button type="button" className="fun-action secondary answer-reveal-button" aria-expanded={isRevealed} onClick={()=>toggleAnswer(id)}>{isRevealed?'Hide answer':'View answer'}</button>{isRevealed&&<p className={`answer-reveal-answer ${item.matching?'matching-answer':''}`}><strong>{item.matching?'Answer line':'Answer'}:</strong> {item.answer}</p>}</article>})}</div></>}
+        <label className="answer-reveal-select"><span className="field-label">Reading</span><select className="field-select" value={answerBank?.id || ''} onChange={(event)=>setAnswerBankId(event.target.value)}>{readingAnswerBanks.map((bank)=><option key={bank.id} value={bank.id}>Unit {bank.unit} · {bank.kind} · {bank.title} · Exercise p. {bank.printedPage}</option>)}</select></label>
+        {answerBank&&<><div className="answer-reveal-meta"><strong>Exercises: Student Book p. {answerBank.printedPage}</strong><span>PDF page {answerBank.pdfPage} · {answerBank.answers.length} answer reveals</span></div><div className="answer-reveal-tools"><div className="answer-reveal-sequential"><button type="button" className="fun-action secondary answer-reveal-all-button" disabled={!answerBank||allExerciseAnswersRevealed} onClick={()=>answerBank&&revealNextAnswer(answerBank)}>Reveal next answer</button><small>{answerBank?.answers.filter((_,index)=>revealedAnswers.has(`${answerBank.id}-${index}`)).length||0} of {answerBank?.answers.length||0} revealed</small></div><button type="button" className="fun-action secondary answer-reveal-all-button" aria-controls="answer-reveal-list" aria-expanded={allExerciseAnswersRevealed} onClick={()=>answerBank&&toggleAllAnswers(answerBank)}>{allExerciseAnswersRevealed?'Hide all answers in this exercise':'Reveal all answers in this exercise'}</button></div><div id="answer-reveal-list" className="answer-reveal-list">{answerBank.answers.map((item,index)=>{const id=`${answerBank.id}-${index}`;const isRevealed=revealedAnswers.has(id);return <article className={`answer-reveal-item ${isRevealed?'is-revealed':''}`} key={id}><div className="answer-reveal-question"><span className="answer-reveal-number">{index+1}</span><div><p>{item.prompt}</p><a className="answer-reveal-pdf-link" href={material ? `${materialIsCloud?'/api/classroom-material/file':objectUrlRef.current}#page=${answerBank.pdfPage}` : '#pdf-material'} onClick={(event)=>openExercisePage(event,answerBank.pdfPage)}>Student Book p. {answerBank.printedPage} · Open in PDF</a></div></div><button type="button" className="fun-action secondary answer-reveal-button" aria-expanded={isRevealed} onClick={()=>toggleAnswer(id)}>{isRevealed?'Hide answer':'View answer'}</button>{isRevealed&&<p className={`answer-reveal-answer ${item.matching?'matching-answer':''}`}><strong>{item.matching?'Answer line':'Answer'}:</strong> {item.answer}</p>}</article>})}</div></>}
       </section>}
     </div>
   );
