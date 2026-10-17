@@ -1,0 +1,195 @@
+/* Kidza-inspired classroom polish: joyful color, friendly shapes, and bright paper surfaces. */
+.app-shell.sparkle-dashboard[data-theme] {
+  --kidza-ink: #24274b;
+  --kidza-muted: #767e9a;
+  --kidza-violet: #7048df;
+  --kidza-coral: #ff6f76;
+  --kidza-sun: #ffc83d;
+  --kidza-mint: #38c6a6;
+  --kidza-sky: #53b9e9;
+  background:
+    radial-gradient(ellipse at 88% 3%, #ffe08c65 0 8%, transparent 28rem),
+    radial-gradient(ellipse at 3% 38%, #71ded138 0 7%, transparent 29rem),
+    linear-gradient(145deg, #f8f6ff 0%, #f1faff 48%, #fff7ee 100%);
+}
+
+.app-shell.sparkle-dashboard[data-theme] .sidebar {
+  background:
+    radial-gradient(circle at 90% 7%, #ffcc5540 0 4px, transparent 5px),
+    radial-gradient(circle at 12% 24%, #48d5bb38 0 5px, transparent 6px),
+    linear-gradient(165deg, #29224e 0%, #352a68 48%, #174c60 100%);
+  box-shadow: 9px 0 32px #26214c20;
+}
+.app-shell.sparkle-dashboard[data-theme] .brand-home { color: #fff; }
+.app-shell.sparkle-dashboard[data-theme] .brand-mark {
+  background: linear-gradient(145deg, #ffe36e, #ff9e6b);
+  color: #523a91;
+  box-shadow: 0 5px 0 #ce775644, 0 8px 17px #100c2c45;
+}
+.app-shell.sparkle-dashboard[data-theme] .class-switch {
+  border-color: #ffffff35;
+  background: linear-gradient(110deg, #ffffff1b, #ffffff0c);
+  box-shadow: inset 0 1px #ffffff20, 0 5px 13px #15113124;
+}
+.app-shell.sparkle-dashboard[data-theme] .class-switch strong { color: #fff3b0; }
+.app-shell.sparkle-dashboard[data-theme] .class-switch small,
+.app-shell.sparkle-dashboard[data-theme] .class-switch > svg:last-child { color: #d7d5f2; }
+.app-shell.sparkle-dashboard[data-theme] .switch-icon {
+  color: #fff;
+  background: linear-gradient(145deg, #41ceb5, #49a8e9);
+  box-shadow: 0 3px 9px #11123836;
+}
+.app-shell.sparkle-dashboard[data-theme] .nav-item { color: #e0def3; }
+.app-shell.sparkle-dashboard[data-theme] .nav-item:hover { color: #fff; background: #ffffff19; }
+.app-shell.sparkle-dashboard[data-theme] .nav-item.active {
+  color: #38295e;
+  background: linear-gradient(100deg, #ffe16a, #ffc979 56%, #ff9c89);
+  box-shadow: 0 4px 0 #d8846655, 0 8px 18px #17123038;
+}
+.app-shell.sparkle-dashboard[data-theme] .nav-group-label,
+.app-shell.sparkle-dashboard[data-theme] .workspace-label,
+.app-shell.sparkle-dashboard[data-theme] .nav-label { color: #bcb9de; }
+.app-shell.sparkle-dashboard[data-theme] .group-item { color: #e0def3; }
+.app-shell.sparkle-dashboard[data-theme] .group-item:hover,
+.app-shell.sparkle-dashboard[data-theme] .group-item.selected { color: #fff; background: #ffffff19; }
+.app-shell.sparkle-dashboard[data-theme] .teacher-card { border-color: #ffffff2b; background: transparent; }
+.app-shell.sparkle-dashboard[data-theme] .teacher-card strong { color: #fff; }
+.app-shell.sparkle-dashboard[data-theme] .teacher-card small { color: #cbc9e4; }
+.app-shell.sparkle-dashboard[data-theme] .teacher-avatar {
+  color: #45336e;
+  background: linear-gradient(145deg, #ffe37e, #ffb28d);
+  box-shadow: 0 3px 9px #10112f55;
+}
+.app-shell.sparkle-dashboard[data-theme] .sidebar .icon-btn { color: #e4e0ff; }
+.app-shell.sparkle-dashboard[data-theme] .sidebar .icon-btn:hover { color: #fff; background: #ffffff1c; }
+
+.app-shell.sparkle-dashboard[data-theme] .main-area {
+  background:
+    radial-gradient(ellipse at 89% 2%, color-mix(in srgb, var(--theme-accent, #8d70ed) 17%, transparent), transparent 31rem),
+    radial-gradient(ellipse at 2% 31%, #4ed1b51c, transparent 27rem),
+    linear-gradient(145deg, #f8f6ff 0%, #f2f9ff 53%, #fff9f0 100%);
+}
+.app-shell.sparkle-dashboard[data-theme] .topbar {
+  border-bottom: 2px solid #e8e0ff;
+  box-shadow: 0 5px 18px #3329690a;
+}
+.app-shell.sparkle-dashboard[data-theme] .crumb strong { color: var(--kidza-violet); }
+.app-shell.sparkle-dashboard[data-theme] .page-wrap { position: relative; }
+.app-shell.sparkle-dashboard[data-theme] .sparkle-today .welcome-row {
+  isolation: isolate;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 95% 15%, #fff 0 3px, transparent 4px),
+    radial-gradient(circle at 88% 78%, #ffcd5755 0 6px, transparent 7px),
+    linear-gradient(105deg, #ffffffd9, #fffdf7d9 70%, #f7f3ffdd);
+  border: 1px solid #fff;
+  box-shadow: 0 7px 0 #7b61cf15, 0 14px 30px #30295f0a;
+  padding: 17px 21px;
+}
+.app-shell.sparkle-dashboard[data-theme] .sparkle-today .welcome-row:before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 8px;
+  height: 8px;
+  left: 46%;
+  top: 19px;
+  border-radius: 50%;
+  background: var(--kidza-coral);
+  box-shadow: 28px 28px 0 var(--kidza-sun), 56px 5px 0 var(--kidza-mint);
+  opacity: .8;
+}
+.app-shell.sparkle-dashboard[data-theme] .sparkle-today .welcome-row h1 { color: var(--kidza-ink); }
+.app-shell.sparkle-dashboard[data-theme] .sparkle-today .welcome-row h1 em {
+  background: linear-gradient(95deg, var(--kidza-violet), var(--kidza-coral), #f0a51c);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+.app-shell.sparkle-dashboard[data-theme] .sparkle-today .welcome-row .eyebrow { color: var(--kidza-violet); }
+.app-shell.sparkle-dashboard[data-theme] .sparkle-mascot {
+  background: linear-gradient(145deg, #fff08b, #ffba77 57%, #ff8f9f);
+  box-shadow: 0 5px 0 #d76f5d44, 0 12px 20px #e9a54d48;
+}
+.app-shell.sparkle-dashboard[data-theme] .sparkle-quick-section {
+  border: 1px solid #e8e0ff;
+  background: linear-gradient(145deg, #fff, #fffdf8 68%, #f8f5ff);
+  box-shadow: 0 6px 0 #7b61cf12, 0 16px 34px #30295f0b;
+}
+.app-shell.sparkle-dashboard[data-theme] .sparkle-section-head h2 { color: var(--kidza-ink); }
+.app-shell.sparkle-dashboard[data-theme] .sparkle-quick {
+  border-color: #e9e5f3;
+  box-shadow: 0 4px 0 #443b7110, 0 7px 14px #34235b08;
+}
+.app-shell.sparkle-dashboard[data-theme] .sparkle-quick:nth-child(4n + 1) { border-bottom: 3px solid #ffc83d; }
+.app-shell.sparkle-dashboard[data-theme] .sparkle-quick:nth-child(4n + 2) { border-bottom: 3px solid #38c6a6; }
+.app-shell.sparkle-dashboard[data-theme] .sparkle-quick:nth-child(4n + 3) { border-bottom: 3px solid #ff7c7b; }
+.app-shell.sparkle-dashboard[data-theme] .sparkle-quick:nth-child(4n + 4) { border-bottom: 3px solid #65b8eb; }
+.app-shell.sparkle-dashboard[data-theme] .sparkle-quick:hover {
+  transform: translateY(-3px) rotate(-.35deg);
+  box-shadow: 0 7px 0 #7048df20, 0 15px 26px #3c2b7518;
+}
+.app-shell.sparkle-dashboard[data-theme] .sparkle-quick-icon { box-shadow: inset 0 -3px #28234a0d; }
+.app-shell.sparkle-dashboard[data-theme] .lesson-start-card {
+  border: 2px solid #ffffff !important;
+  background: linear-gradient(112deg, #5b48ce 0%, #8a4fd5 57%, #dc589c 100%) !important;
+  box-shadow: 0 6px 0 #43328850, 0 15px 25px #724cc538 !important;
+}
+.app-shell.sparkle-dashboard[data-theme] .lesson-start-button,
+.app-shell.sparkle-dashboard[data-theme] .lesson-stop-button {
+  background: linear-gradient(145deg, #ffe879, #ffbe50);
+  box-shadow: 0 4px 0 #d8873a;
+}
+.app-shell.sparkle-dashboard[data-theme] .stat-card,
+.app-shell.sparkle-dashboard[data-theme] .roster-card,
+.app-shell.sparkle-dashboard[data-theme] .champion-section,
+.app-shell.sparkle-dashboard[data-theme] .insight-card,
+.app-shell.sparkle-dashboard[data-theme] .panel,
+.app-shell.sparkle-dashboard[data-theme] .settings-panel,
+.app-shell.sparkle-dashboard[data-theme] .recent-panel,
+.app-shell.sparkle-dashboard[data-theme] .report-table,
+.app-shell.sparkle-dashboard[data-theme] .fun-card,
+.app-shell.sparkle-dashboard[data-theme] .timer-panel {
+  border-color: #e5e0f3 !important;
+  box-shadow: 0 5px 0 #574b8f12, 0 13px 28px #2c27500b !important;
+}
+.app-shell.sparkle-dashboard[data-theme] .primary-btn {
+  background: linear-gradient(105deg, #6e4de6, #a348d0 58%, #f06686);
+  box-shadow: 0 4px 0 #52379666, 0 10px 18px #8057d533;
+}
+.app-shell.sparkle-dashboard[data-theme] .primary-btn:hover { filter: saturate(1.15) brightness(1.04); }
+.app-shell.sparkle-dashboard[data-theme] .check-button.checked {
+  background: linear-gradient(145deg, #40cfb0, #189b91) !important;
+  border-color: #19998c !important;
+  box-shadow: 0 3px 0 #08766d !important;
+}
+.app-shell.sparkle-dashboard[data-theme] :is(button, a, input, select):focus-visible {
+  outline: 3px solid #ffbd43;
+  outline-offset: 3px;
+}
+
+.landing-page {
+  background:
+    radial-gradient(circle at 12% 21%, #fff6a8 0 5px, transparent 6px),
+    radial-gradient(circle at 91% 19%, #fff 0 4px, transparent 5px),
+    radial-gradient(circle at 82% 81%, #7ce8e5 0 7%, transparent 29%),
+    radial-gradient(circle at 15% 14%, #fff29f 0 5%, transparent 25%),
+    linear-gradient(132deg, #ffb34f 0%, #ff7585 32%, #c365dc 67%, #656fe5 100%);
+}
+.landing-hero-card {
+  background: linear-gradient(155deg, #fffffffa 0%, #fffdf7f7 75%, #f6f2fffa 100%);
+}
+.landing-pill { box-shadow: 0 3px 0 #efcf7840; }
+.landing-hero-card h1 { color: #29284d; }
+.landing-signin {
+  background: linear-gradient(105deg, #5f4bd6, #a347d0 55%, #ef5d83);
+}
+.landing-footer span:first-child { letter-spacing: 1.5px; }
+
+@media (max-width: 700px) {
+  .app-shell.sparkle-dashboard[data-theme] .sparkle-today .welcome-row { padding: 13px 14px; }
+  .app-shell.sparkle-dashboard[data-theme] .sparkle-today .welcome-row:before { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell.sparkle-dashboard[data-theme] .sparkle-quick:hover { transform: none; }
+}

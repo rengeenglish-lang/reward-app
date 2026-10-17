@@ -4,6 +4,7 @@ import './globals.css';
 import './ui-refresh.css';
 import './premium-refresh.css';
 import './sparkle-dashboard.css';
+import './kidza-inspired.css';
 import FloatingTimer from './floating-timer';
 import BallotAlert from './ballot-alert-overlay';
 
