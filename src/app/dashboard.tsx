@@ -138,7 +138,7 @@ export default function HomePage({initialData}:{initialData:InitialData}) {
   const weekly=useWeeklyGoals(classroomId,earned);
 
   useEffect(()=>{if(!bookReminderOpenId.current)bookReminderOpenId.current=`open-${Date.now()}-${Math.random().toString(36).slice(2)}`;const key=lessonInfo.startedAt?`lesson-${lessonInfo.startedAt}`:bookReminderOpenId.current;let checked=false;try{checked=localStorage.getItem(`ezgili-books-returned:${key}`)==='yes';}catch{}setBookReminderKey(key);setBooksReturnedChecked(checked);setBookReminderOpen(!checked);},[lessonInfo.startedAt]);
-  useEffect(()=>{if(!bookReminderKey||booksReturnedChecked)return;const reminder=setInterval(()=>setBookReminderOpen(true),90000);return()=>clearInterval(reminder);},[bookReminderKey,booksReturnedChecked]);
+  useEffect(()=>{if(!bookReminderKey||booksReturnedChecked)return;const reminder=setInterval(()=>setBookReminderOpen(true),15*60*1000);return()=>clearInterval(reminder);},[bookReminderKey,booksReturnedChecked]);
   const confirmBooksReturned=()=>{if(!bookReminderKey)return;try{localStorage.setItem(`ezgili-books-returned:${bookReminderKey}`,'yes');}catch{}setBooksReturnedChecked(true);setBookReminderOpen(false);};
 
   useEffect(()=>{setClassroom(classMap.get(classroomId)||'Choose a classroom');const dbStudents=(initialData.students as Array<{id:string;display_name:string;avatar_key:string;group_id:string;classroom_id:string;lifetime_points?:number;homework_complete?:number;class_participation?:number;speaking_effort?:number;project_complete?:number;class_readiness?:number;speaking_day_rules?:number}>).filter(s=>s.classroom_id===classroomId);setStudents(dbStudents.map(mapStudent));setDrawStudentId('');setReportData(null);},[classroomId]);
