@@ -212,7 +212,7 @@ export async function archiveGroup(id: string) {
   await sql`UPDATE groups SET archived_at=now(),updated_at=now() WHERE id=${key} AND archived_at IS NULL`;
   await sql`UPDATE students SET archived_at=now(),updated_at=now() WHERE group_id=${key} AND archived_at IS NULL`;
 }
-export async function createStudent(classroomId: string,displayName: string,avatarKey: string) {
+export async function createStudent(classroomId: string,displayName: string,avatarKey: string): Promise<{id:string;display_name:string;avatar_key:string;group_id:string}> {
   await requireTutor(); const classroom=uuid.parse(classroomId),person=name.parse(displayName),avatar=z.enum(avatarKeys).parse(avatarKey),sql=sqlClient();
   let groups=await sql`SELECT id FROM groups WHERE classroom_id=${classroom} AND archived_at IS NULL ORDER BY created_at,id LIMIT 1`;
   if(!groups.length) groups=await sql`INSERT INTO groups(classroom_id,name) SELECT id,'Class roster' FROM classrooms WHERE id=${classroom} AND archived_at IS NULL RETURNING id`;
@@ -223,7 +223,7 @@ export async function createStudent(classroomId: string,displayName: string,avat
 export async function archiveStudent(id: string) { await requireTutor(); const key=uuid.parse(id); await sqlClient()`UPDATE students SET archived_at=now(),updated_at=now() WHERE id=${key} AND archived_at IS NULL`; }
 export async function updateStudent(id:string,displayName:string) { await requireTutor(); const key=uuid.parse(id),person=name.parse(displayName); const rows=await sqlClient()`UPDATE students SET display_name=${person},updated_at=now() WHERE id=${key} AND archived_at IS NULL RETURNING id,display_name`; if(!rows.length) throw new Error('Active student not found'); return rows[0]; }
 export async function updateStudentAvatar(id:string,avatarKey:string) { await requireTutor(); const key=uuid.parse(id),avatar=z.enum(avatarKeys).parse(avatarKey); const rows=await sqlClient()`UPDATE students SET avatar_key=${avatar},updated_at=now() WHERE id=${key} AND archived_at IS NULL RETURNING id,avatar_key`; if(!rows.length) throw new Error('Active student not found'); return rows[0]; }
-export async function createStudents(classroomId:string,displayNames:string[]) {
+export async function createStudents(classroomId:string,displayNames:string[]): Promise<Array<{id:string;display_name:string;avatar_key:string;group_id:string}>> {
   await requireTutor(); const classroom=uuid.parse(classroomId),people=z.array(name).min(1).max(100).parse(displayNames),sql=sqlClient();
   let groups=await sql`SELECT id FROM groups WHERE classroom_id=${classroom} AND archived_at IS NULL ORDER BY created_at,id LIMIT 1`;
   if(!groups.length) groups=await sql`INSERT INTO groups(classroom_id,name) SELECT id,'Class roster' FROM classrooms WHERE id=${classroom} AND archived_at IS NULL RETURNING id`;
