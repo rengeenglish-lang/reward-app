@@ -128,3 +128,21 @@
 @media(max-width:700px){.sparkle-dashboard .sparkle-today .welcome-row{min-height:90px;padding:6px 2px 12px}.sparkle-dashboard .sparkle-today .welcome-row h1{font-size:28px}.sparkle-dashboard .sparkle-mascot{width:62px;height:62px;border-radius:19px}.sparkle-dashboard .sparkle-mascot img{width:58px;height:58px}.sparkle-dashboard .sparkle-today .welcome-row:after{right:70px}.sparkle-dashboard .sparkle-toolbar{padding:10px;margin-bottom:14px}.sparkle-dashboard .sparkle-quick-section{padding:14px;margin-bottom:14px}.sparkle-section-head h2{font-size:19px}.sparkle-dashboard .sparkle-quick{padding:10px 8px;gap:8px}.sparkle-quick-icon{width:34px;height:34px;font-size:19px}.sparkle-quick strong{font-size:11px}.sparkle-quick small{font-size:9px}.sparkle-dashboard .lesson-start-card{grid-template-columns:auto minmax(0,1fr);padding:14px}.sparkle-dashboard .lesson-start-button,.sparkle-dashboard .lesson-stop-button,.sparkle-dashboard .lesson-countdown{grid-column:2;grid-row:auto;justify-self:start}.sparkle-dashboard .lesson-auto{grid-column:1 / -1}.sparkle-dashboard .dojo-grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr))}}
 @media(max-width:420px){.sparkle-dashboard .sparkle-section-head{align-items:start}.sparkle-dashboard .sparkle-text-link{font-size:10px}.sparkle-dashboard .sparkle-quick-grid{gap:7px}.sparkle-dashboard .sparkle-quick{align-items:flex-start;flex-direction:column}.sparkle-dashboard .sparkle-quick small{min-height:12px}}
 @media(prefers-reduced-motion:reduce){.sparkle-dashboard .sparkle-quick,.sparkle-dashboard .dojo-tile{transition:none}.sparkle-dashboard .dojo-tile.is-top-champ{animation:none;background:var(--champ-color-a);border-color:var(--champ-border-a)}}
+
+.annual-program-form{display:grid;grid-template-columns:minmax(130px,.5fr) minmax(220px,1fr) auto auto;align-items:end;gap:10px;margin:17px 0 8px;padding:16px;border:1px solid #eeeaf8;border-radius:18px;background:linear-gradient(120deg,#fbfaff,#fffdf7)}
+.annual-program-form>label:not(.outline-btn){display:grid;gap:6px}
+.annual-program-title-field{min-width:0}
+.annual-program-file{max-width:260px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.annual-program-status{margin:8px 2px;color:#21856d;font-size:12px;font-weight:800}
+.annual-program-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:15px}
+.annual-program-card{overflow:hidden;border:1px solid #eae6f4;border-radius:18px;background:#fff;box-shadow:0 8px 22px #30245d0c}
+.annual-program-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 14px 11px}
+.annual-program-year{display:inline-block;padding:4px 8px;border-radius:999px;background:#fff1c7;color:#76520a;font-size:10px;font-weight:900;letter-spacing:.04em}
+.annual-program-card h3{margin:8px 0 0;color:#292e55;font:800 14px/1.25 var(--font-playful),var(--font-rounded),sans-serif}
+.annual-program-image-link{position:relative;display:flex;align-items:center;justify-content:center;height:325px;overflow:hidden;background:linear-gradient(135deg,#f4f3fa,#fff)}
+.annual-program-image-link img{display:block;width:100%;height:100%;object-fit:contain}
+.annual-program-image-link span{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:5px;padding:7px 9px;border:1px solid #fff;border-radius:10px;background:#ffffffeb;color:#514183;font-size:10px;font-weight:900;opacity:0;transform:translateY(4px);transition:opacity .16s,transform .16s}
+.annual-program-image-link:hover span,.annual-program-image-link:focus-visible span{opacity:1;transform:translateY(0)}
+.annual-program-file-meta{margin:0;padding:10px 14px 12px;border-top:1px solid #f0edf6;color:#878aa0;font-size:10px;overflow-wrap:anywhere}
+@media(max-width:760px){.annual-program-form{grid-template-columns:1fr 1fr}.annual-program-title-field{grid-column:1/-1}.annual-program-file{max-width:none}.annual-program-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.annual-program-image-link{height:290px}}
+@media(max-width:460px){.annual-program-form{grid-template-columns:1fr}.annual-program-title-field{grid-column:auto}.annual-program-file,.annual-program-form>.primary-btn{width:100%;justify-content:center}.annual-program-grid{grid-template-columns:1fr}}
