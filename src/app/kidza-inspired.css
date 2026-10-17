@@ -116,6 +116,46 @@
   object-fit: contain;
   filter: drop-shadow(0 2px 2px #26274b22);
 }
+.app-shell.sparkle-dashboard[data-theme] .topbar > .fun-goal-strip {
+  flex: 0 0 238px;
+  min-width: 188px;
+  margin: 0;
+  padding: 5px 9px;
+  gap: 7px;
+  border-color: color-mix(in srgb, var(--theme-accent, #8066b7) 30%, white);
+  border-radius: 13px;
+  background: linear-gradient(105deg, color-mix(in srgb, var(--theme-accent, #8066b7) 13%, white), #fff);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--theme-accent, #8066b7) 12%, white);
+}
+.app-shell.sparkle-dashboard[data-theme] .topbar > .fun-goal-strip .fun-goal-icon {
+  width: 29px;
+  height: 29px;
+  border-radius: 10px;
+  font-size: 16px;
+}
+.app-shell.sparkle-dashboard[data-theme] .topbar > .fun-goal-strip .fun-goal-copy { gap: 1px; }
+.app-shell.sparkle-dashboard[data-theme] .topbar > .fun-goal-strip .fun-goal-copy strong {
+  color: var(--theme-dark, #34304f);
+  font: 900 9px/1.1 var(--display);
+}
+.app-shell.sparkle-dashboard[data-theme] .topbar > .fun-goal-strip .fun-goal-copy > span {
+  overflow: hidden;
+  color: var(--theme-dark, #34304f);
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-shell.sparkle-dashboard[data-theme] .topbar > .fun-goal-strip .fun-goal-track {
+  height: 4px;
+  background: color-mix(in srgb, var(--theme-accent, #8066b7) 14%, white);
+}
+.app-shell.sparkle-dashboard[data-theme] .topbar > .fun-goal-strip .fun-goal-track i {
+  background: linear-gradient(90deg, var(--theme-accent, #8066b7), color-mix(in srgb, var(--theme-accent, #8066b7) 53%, #ff8c77));
+}
+.app-shell.sparkle-dashboard[data-theme] .topbar > .fun-goal-strip .fun-goal-percent {
+  color: var(--theme-dark, #34304f);
+  font-size: 10px;
+}
 .app-shell.sparkle-dashboard[data-theme] .page-wrap { position: relative; }
 .app-shell.sparkle-dashboard[data-theme] .sparkle-today .welcome-row {
   isolation: isolate;
@@ -277,14 +317,30 @@
   .app-shell.sparkle-dashboard[data-theme] .topbar-classroom-greeting strong { font-size: 11px; }
   .app-shell.sparkle-dashboard[data-theme] .topbar-greeting-copy,
   .app-shell.sparkle-dashboard[data-theme] .topbar-greeting-mascot { display: none; }
+  .app-shell.sparkle-dashboard[data-theme] .topbar > .fun-goal-strip { flex-basis: 170px; min-width: 150px; }
   .student-bubbles-toggle { top: 68px; right: 12px; min-height: 36px; padding-inline: 11px; font-size: 11px; }
 }
 @media (max-width: 560px) {
+  .app-shell.sparkle-dashboard[data-theme] .topbar {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "menu crumb . actions" "greeting greeting goal goal";
+    height: auto;
+    min-height: 54px;
+    gap: 6px 8px;
+    padding: 7px 10px 8px;
+  }
+  .app-shell.sparkle-dashboard[data-theme] .mobile-menu-btn { grid-area: menu; }
+  .app-shell.sparkle-dashboard[data-theme] .crumb { grid-area: crumb; }
+  .app-shell.sparkle-dashboard[data-theme] .top-actions { grid-area: actions; }
   .app-shell.sparkle-dashboard[data-theme] .crumb { flex: none; min-width: auto; }
   .app-shell.sparkle-dashboard[data-theme] .crumb svg,
   .app-shell.sparkle-dashboard[data-theme] .crumb strong { display: none; }
-  .app-shell.sparkle-dashboard[data-theme] .topbar-classroom-greeting { flex: 1; margin-inline: 2px; }
+  .app-shell.sparkle-dashboard[data-theme] .topbar-classroom-greeting { grid-area: greeting; min-width: 0; max-width: none; margin: 0; }
   .app-shell.sparkle-dashboard[data-theme] .topbar-classroom-greeting strong { font-size: 10px; }
+  .app-shell.sparkle-dashboard[data-theme] .topbar > .fun-goal-strip { grid-area: goal; flex: none; min-width: 0; padding: 4px 6px; gap: 5px; }
+  .app-shell.sparkle-dashboard[data-theme] .topbar > .fun-goal-strip .fun-goal-icon { display: none; }
+  .app-shell.sparkle-dashboard[data-theme] .topbar > .fun-goal-strip .fun-goal-percent { font-size: 9px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .app-shell.sparkle-dashboard[data-theme] .sparkle-quick:hover { transform: none; }
