@@ -69,7 +69,17 @@ export default function HomePage({initialData}:{initialData:InitialData}) {
   const [awardBusyFor,setAwardBusyFor]=useState<Set<string>>(new Set());
   const [milestoneQueue,setMilestoneQueue]=useState<Array<{studentId:string;name:string;avatar:string;milestone:number}>>([]);
   const [dockOpen,setDockOpen]=useState(false);
+  const [profileMenuOpen,setProfileMenuOpen]=useState(false);
+  const profileMenuRef=useRef<HTMLDivElement|null>(null);
   useEffect(()=>{try{if(localStorage.getItem('ezgili-today-view')==='list')setTodayView('list');}catch{}},[]);
+  useEffect(()=>{
+    if(!profileMenuOpen)return;
+    const closeOnOutside=(event:PointerEvent)=>{if(!profileMenuRef.current?.contains(event.target as Node))setProfileMenuOpen(false);};
+    const closeOnEscape=(event:KeyboardEvent)=>{if(event.key==='Escape')setProfileMenuOpen(false);};
+    document.addEventListener('pointerdown',closeOnOutside);
+    document.addEventListener('keydown',closeOnEscape);
+    return()=>{document.removeEventListener('pointerdown',closeOnOutside);document.removeEventListener('keydown',closeOnEscape);};
+  },[profileMenuOpen]);
   const chooseView=(view:'tiles'|'list')=>{setTodayView(view);try{localStorage.setItem('ezgili-today-view',view);}catch{}};
   const [funTool,setFunTool] = useState('picker');
   const [randomAwardTrigger,setRandomAwardTrigger]=useState(0);
@@ -176,7 +186,7 @@ export default function HomePage({initialData}:{initialData:InitialData}) {
       <div className="brand"><Link href="/" className="brand-home" aria-label="Ezgili Champs landing page"><Image className="brand-logo-icon" src="/brand/ezgili-champs-mascot.png" alt="" width={38} height={38}/><span>Ezgili Champs</span></Link><button aria-label={sidebar?'Collapse sidebar':'Expand sidebar'} title={sidebar?'Collapse sidebar':'Expand sidebar'} className="icon-btn collapse-btn" onClick={()=>setSidebar(!sidebar)}>{sidebar?<ChevronLeft size={17}/>:<ChevronRight size={17}/>}</button></div>
       
       <nav>{navGroups.map(group=><div className="nav-group" key={group.title}><div className="nav-label nav-group-label">{group.title}</div>{group.items.map(item=><button key={item.label} onClick={()=>{navigateTab(item.label);setMobileMenuOpen(false)}} className={`nav-item ${tab===item.label?'active':''}`}><item.icon size={18}/><span>{item.label}</span></button>)}</div>)}<button type="button" className={`nav-item nav-tools${dockOpen?' active':''}`} aria-expanded={dockOpen} onClick={()=>{setDockOpen(open=>!open);setMobileMenuOpen(false)}}><span className="nav-tools-icon" aria-hidden="true">🧰</span><span>Quick tools</span></button></nav>
-      <div className="side-bottom"><button className={`nav-item ${tab==='Settings'?'active':''}`} onClick={()=>{navigateTab('Settings');setMobileMenuOpen(false)}}><Settings size={18}/><span>Settings</span></button><button className="nav-item" onClick={()=>startTransition(async()=>{await signOut();})}><LogOut size={18}/><span>Sign out</span></button><div className="teacher-card"><div className="teacher-avatar">{String(initialData.tutor.display_name).split(' ').map(n=>n[0]).slice(0,2).join('')}</div><div><strong>{String(initialData.tutor.display_name)}</strong><small>Class teacher</small></div><MoreHorizontal size={19}/></div></div>
+      <div className="side-bottom"><div className="teacher-card" ref={profileMenuRef}><button type="button" className="teacher-profile-toggle" aria-haspopup="menu" aria-expanded={profileMenuOpen} onClick={()=>setProfileMenuOpen(open=>!open)}><div className="teacher-avatar">{String(initialData.tutor.display_name).split(' ').map(n=>n[0]).slice(0,2).join('')}</div><span><strong>{String(initialData.tutor.display_name)}</strong><small>Class teacher</small></span><MoreHorizontal size={19}/></button>{profileMenuOpen&&<div className="teacher-profile-menu" role="menu" aria-label="Profile menu"><button type="button" role="menuitem" onClick={()=>{setProfileMenuOpen(false);navigateTab('Settings');setMobileMenuOpen(false)}}><Settings size={17}/><span>Settings</span></button><button type="button" role="menuitem" onClick={()=>{setProfileMenuOpen(false);startTransition(async()=>{await signOut();})}}><LogOut size={17}/><span>Sign out</span></button></div>}</div></div>
     </aside>
     {mobileMenuOpen&&<button className="mobile-sidebar-backdrop" aria-label="Close navigation menu" onClick={()=>setMobileMenuOpen(false)}/>}
     <section className="main-area">
