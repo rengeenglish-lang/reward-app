@@ -22,3 +22,5 @@ nav{gap:6px}.nav-item{height:45px;border-radius:14px;color:#d2d8f2;font-size:13p
 @media(prefers-reduced-motion:reduce){.landing-logo{animation:none}}
 
 .daily-checkin-heading{align-items:center;gap:16px;flex-wrap:wrap}.checkin-heading-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap}.checkin-heading-actions .toolbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.checkin-heading-actions .outline-btn{white-space:nowrap}@media(max-width:760px){.daily-checkin-heading{align-items:flex-start}.checkin-heading-actions{width:100%;justify-content:space-between;gap:8px}.checkin-heading-actions .toolbar-actions{flex-wrap:wrap}}
+
+.back-page-button{flex:none;color:#555d85;border-radius:12px}.back-page-button:hover{background:#f1edff;color:#694dd4}.app-shell[data-theme] .back-page-button{color:#fff}.app-shell[data-theme] .back-page-button:hover{background:#ffffff1d;color:#fff}
