@@ -94,6 +94,18 @@
 .sparkle-dashboard .points-visibility-toggle{height:38px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 11px;border:1px solid #ded5f6;border-radius:12px;background:#fff;color:#55427f;font-size:11px;font-weight:900;white-space:nowrap}
 .sparkle-dashboard .points-visibility-toggle:hover{border-color:#b7a4ec;background:#f8f5ff}
 .sparkle-dashboard .dojo-points-hidden .dojo-pts{min-width:38px;background:#e7e4ef;color:#746e83;font-size:10px;letter-spacing:2px}
+.book-return-reminder-backdrop{position:fixed;z-index:250;inset:0;display:grid;place-items:center;padding:20px;background:rgba(32,27,58,.48);backdrop-filter:blur(5px)}
+.book-return-reminder{position:relative;width:min(100%,440px);display:flex;flex-direction:column;align-items:center;padding:32px 30px 25px;border:1px solid #e5dcfa;border-radius:26px;background:linear-gradient(150deg,#fff 20%,#fff9e8);box-shadow:0 28px 90px #201b3a55;text-align:center;animation:book-reminder-in .24s cubic-bezier(.2,1.2,.3,1)}
+.book-return-reminder-icon{display:grid;place-items:center;width:68px;height:68px;margin-bottom:16px;border:3px solid white;border-radius:22px;background:linear-gradient(145deg,#ffefad,#ffe1b8);box-shadow:0 7px 16px #ce9e3550;font-size:36px}
+.book-return-reminder-kicker{color:#7955cb;font-size:10px;font-weight:900;letter-spacing:1.4px}
+.book-return-reminder h2{margin:8px 0;color:#2b2c54;font:900 clamp(22px,4vw,29px)/1.12 var(--font-playful),var(--font-rounded),sans-serif}
+.book-return-reminder p{max-width:340px;margin:0;color:#68728b;font-size:13px;line-height:1.55}
+.book-return-confirm{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin:22px 0 8px;padding:14px;border:2px solid #b6e5ce;border-radius:16px;background:#edfff5;color:#176b4a;font-size:14px;font-weight:900;cursor:pointer}
+.book-return-confirm input{width:21px;height:21px;margin:0;accent-color:#19875e}
+.book-return-later{margin-top:8px;padding:9px 12px;border:0;background:transparent;color:#766c8d;font-size:12px;font-weight:800;text-decoration:underline;text-underline-offset:3px}
+.book-return-later:hover{color:#594082}
+@keyframes book-reminder-in{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){.book-return-reminder{animation:none}}
 .sparkle-dashboard .roster-card,.sparkle-dashboard .champion-section,.sparkle-dashboard .stat-card,.sparkle-dashboard .insight-card{border:1px solid var(--spark-line)!important;border-radius:21px!important;background:#fff!important;box-shadow:0 14px 38px #3c2b7510!important}
 .sparkle-dashboard .roster-head{background:linear-gradient(100deg,#fff,#fbfaff);border-color:var(--spark-line)}
 .sparkle-dashboard .roster-title{color:#292e55}
