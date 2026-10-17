@@ -185,10 +185,32 @@
   background: linear-gradient(105deg, #5f4bd6, #a347d0 55%, #ef5d83);
 }
 .landing-footer span:first-child { letter-spacing: 1.5px; }
+.student-bubbles-toggle {
+  position: fixed;
+  z-index: 30;
+  top: 82px;
+  right: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: linear-gradient(110deg, #fff, #fff9e9);
+  box-shadow: 0 4px 0 #593c8f35, 0 9px 22px #38307628;
+  color: #4c3b8f;
+  font: 800 12px var(--font-rounded), sans-serif;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.student-bubbles-toggle:hover { transform: translateY(-1px); }
+.student-bubbles-toggle:focus-visible { outline: 3px solid #39c7ad; outline-offset: 3px; }
 
 @media (max-width: 700px) {
   .app-shell.sparkle-dashboard[data-theme] .sparkle-today .welcome-row { padding: 13px 14px; }
   .app-shell.sparkle-dashboard[data-theme] .sparkle-today .welcome-row:before { display: none; }
+  .student-bubbles-toggle { top: 68px; right: 12px; min-height: 36px; padding-inline: 11px; font-size: 11px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .app-shell.sparkle-dashboard[data-theme] .sparkle-quick:hover { transform: none; }

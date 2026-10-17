@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 type StudentBubble = { id: string; name: string; avatar: string; points: number };
 type BubblePlacement = { x: number; y: number; size: number };
 
-export default function StudentBubbles({ students, label = 'Our classroom champs' }: { students: StudentBubble[]; label?: string }) {
+export default function StudentBubbles({ students, label = 'Our classroom champs', showToggle = false }: { students: StudentBubble[]; label?: string; showToggle?: boolean }) {
+  const [visible, setVisible] = useState(true);
   const [popping, setPopping] = useState<Set<string>>(() => new Set());
   const [popped, setPopped] = useState<Set<string>>(() => new Set());
   const [placements, setPlacements] = useState<Record<string, BubblePlacement>>({});
@@ -15,7 +17,7 @@ export default function StudentBubbles({ students, label = 'Our classroom champs
       const width = window.innerWidth;
       const height = window.innerHeight;
       const protectedRects = Array.from(document.querySelectorAll<HTMLElement>(
-        '.landing-hero-card, .login-form-panel, .landing-header, .landing-footer, .login-home-button',
+        '.landing-hero-card, .login-form-panel, .landing-header, .landing-footer, .login-home-button, .student-bubbles-toggle',
       )).map(element => {
         const rect = element.getBoundingClientRect();
         return { left: rect.left - 8, right: rect.right + 8, top: rect.top - 8, bottom: rect.bottom + 8 };
@@ -74,7 +76,16 @@ export default function StudentBubbles({ students, label = 'Our classroom champs
   if (!students.length) return null;
   const remaining = students.filter(student => !popped.has(student.id));
   return <div className="student-bubble-screen" role="region" aria-label={label}>
-      {remaining.map((student, index) => {
+      {showToggle && <button
+        type="button"
+        className="student-bubbles-toggle"
+        aria-pressed={visible}
+        onClick={() => setVisible(current => !current)}
+      >
+        {visible ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+        <span>{visible ? 'Hide bubbles' : 'Show bubbles'}</span>
+      </button>}
+      {visible && remaining.map((student, index) => {
         const placement = placements[student.id];
         if (!placement) return null;
         return <button
@@ -98,6 +109,6 @@ export default function StudentBubbles({ students, label = 'Our classroom champs
         <span className="student-bubble-burst" aria-hidden="true">✦　✧　✦</span>
       </button>;
       })}
-      {!remaining.length && <p className="student-bubble-all-popped">Hooray for everyone! 🎉</p>}
+      {visible && !remaining.length && <p className="student-bubble-all-popped">Hooray for everyone! 🎉</p>}
     </div>;
 }

@@ -495,9 +495,6 @@ button.student-avatar:hover{transform:scale(1.06)}
 .lesson-panel{position:relative;margin:10px 0 12px;border-radius:22px;overflow:hidden;background:#fff;box-shadow:0 5px 0 rgba(60,40,110,.10),0 14px 30px rgba(60,40,110,.10)}
 .lesson-panel .lesson-start-card{margin:0;border:0;border-radius:0;box-shadow:none;background:linear-gradient(110deg,#fff,#fff4df 60%,#ffedf5);padding:26px 18px 12px}
 .lesson-goal-part{position:relative;padding:26px 18px 12px;background:linear-gradient(110deg,#eefaf3,#f4f0ff);border-top:3px dashed #d9d2ee}
-.lesson-panel .lesson-start-card::before,.lesson-goal-part::before{position:absolute;left:18px;top:8px;font:900 10px var(--font);letter-spacing:.14em}
-.lesson-panel .lesson-start-card::before{content:"🔔 LESSON";color:#b0602f}
-.lesson-goal-part::before{content:"🌈 CLASS GOAL";color:#5b4a9a}
 .lesson-panel .lesson-start-card{position:relative}
 .lesson-goal-part .wk-track,.lesson-goal-part .fun-goal-strip{margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent}
 .today-layout>.champion-section{display:flex;align-items:center;gap:14px;margin:0 0 6px;padding:8px 14px;border-radius:20px;box-shadow:0 3px 0 #f1e6c9}
