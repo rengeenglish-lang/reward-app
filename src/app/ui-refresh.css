@@ -767,3 +767,16 @@ button.student-avatar:hover{transform:scale(1.06)}
 @keyframes bookrBounce{to{transform:translateY(-12px) scale(1.04)}}
 @keyframes bookrFade{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.bookr-confetti i,.bookr-celebrate-emoji{animation:none}}
+
+/* BOOKR: read-all button and extra books */
+.bookr-readall{min-width:92px;padding:7px 10px;border:0;border-radius:12px;background:linear-gradient(180deg,#9d84e8,#8566d6);color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer;box-shadow:inset 0 2px 0 rgba(255,255,255,.4),0 4px 0 #5b3fa8;transition:transform .1s,box-shadow .1s}
+.bookr-readall:active{transform:translateY(3px);box-shadow:inset 0 2px 4px rgba(0,0,0,.25),0 1px 0 #5b3fa8}
+.bookr-readall.on{background:linear-gradient(180deg,#6fd09a,#4caf7d);box-shadow:inset 0 2px 0 rgba(255,255,255,.4),0 4px 0 #2d7d52}
+.bookr-readall:focus-visible,.bookr-extra button:focus-visible,.bookr-extra input:focus-visible{outline:3px solid var(--purple,#8566d6);outline-offset:2px}
+.bookr-hint{display:block;font-weight:600;font-size:10px;color:#8a84a3;margin-top:2px}
+.bookr-extra{display:inline-flex;align-items:center;gap:4px}
+.bookr-extra button{width:28px;height:28px;border:0;border-radius:50%;background:#efe9ff;color:#41336f;font:inherit;font-size:16px;font-weight:900;line-height:1;cursor:pointer;box-shadow:0 2px 0 #d7cdf2}
+.bookr-extra button:disabled{opacity:.4;cursor:default}
+.bookr-extra input{width:54px;padding:5px 6px;border:2px solid #e6e1f5;border-radius:10px;text-align:center;font:inherit;font-weight:800;color:inherit;background:#fff}
+.bookr-total small{display:block;font-size:11px;font-weight:700;color:#8a84a3}
+.bookr-matrix{min-width:760px}
