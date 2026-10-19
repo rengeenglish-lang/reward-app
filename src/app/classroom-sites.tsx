@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { upload } from '@vercel/blob/client';
 import { BookMarked, ExternalLink, FileText, Globe2, Maximize2, Minimize2, Plus, X, Lightbulb } from 'lucide-react';
+import BookrReading, { type ReaderClass, type ReaderStudent } from './bookr-reading';
 import { bookrWeeks, isIssued, issueDate, latestFriday } from '@/lib/bookr-schedule';
 import { readingAnswerBanks } from '@/lib/reading-answers';
 import FlipbookPdf from './flipbook-pdf';
@@ -82,7 +83,7 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function ClassroomSites() {
+export default function ClassroomSites({ classrooms = [], students = [], classroomId = '' }: { classrooms?: ReaderClass[]; students?: ReaderStudent[]; classroomId?: string }) {
   const [sites, setSites] = useState<SavedSite[]>([]);
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
@@ -103,7 +104,7 @@ export default function ClassroomSites() {
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(() => new Set());
   const [revealsReady, setRevealsReady] = useState(false);
   const [answerWindowBankId,setAnswerWindowBankId]=useState<string|null>(null);
-  const [hub, setHub] = useState<'bookr' | 'pdf' | 'sites' | 'answers'>('bookr');
+  const [hub, setHub] = useState<'bookr' | 'reading' | 'pdf' | 'sites' | 'answers'>('bookr');
   const [bookrStart, setBookrStart] = useState('');
   const [bookrWeekOverrides, setBookrWeekOverrides] = useState<Record<number, boolean>>({});
   const viewerRef = useRef<HTMLElement | null>(null);
@@ -328,7 +329,9 @@ export default function ClassroomSites() {
       <p className="eyebrow">YOUR READING HUB</p>
       <h1>Reading &amp; <em>resources</em></h1>
       <p className="subhead">BOOKR books, the anthology, websites and answer keys, all in one place.</p>
-      <div className="hub-tiles" role="tablist">{([['bookr','📚','BOOKR books','Weekly Friday issue'],['pdf','📖','Anthology PDF','Shared material'],['sites','🌐','Websites','Saved classroom links'],['answers','💡','Answer reveal','Story answers']] as const).map(([id,icon,label,note])=><button key={id} role="tab" aria-selected={hub===id} className={`hub-tile ${hub===id?'active':''}`} onClick={()=>setHub(id)}><span className="hub-tile-icon" aria-hidden="true">{icon}</span><strong>{label}</strong><small>{note}</small></button>)}</div>
+      <div className="hub-tiles" role="tablist">{([['bookr','📚','BOOKR books','Weekly Friday issue'],['reading','✅','Read / not read','Tick who read each book'],['pdf','📖','Anthology PDF','Shared material'],['sites','🌐','Websites','Saved classroom links'],['answers','💡','Answer reveal','Story answers']] as const).map(([id,icon,label,note])=><button key={id} role="tab" aria-selected={hub===id} className={`hub-tile ${hub===id?'active':''}`} onClick={()=>setHub(id)}><span className="hub-tile-icon" aria-hidden="true">{icon}</span><strong>{label}</strong><small>{note}</small></button>)}</div>
+
+      {hub==='reading'&&bookrStart&&<BookrReading classrooms={classrooms} students={students} startFriday={bookrStart} initialClassroomId={classroomId}/>}
 
       {hub==='bookr'&&bookrStart&&<section id="bookr-panel" className="panel bookr-panel" aria-labelledby="bookr-title">
         <div className="panel-title"><div className="panel-icon coral"><BookMarked size={19}/></div><div><h2 id="bookr-title">BOOKR books · weekly issue</h2><p>New books are issued every Friday. Cambridge Primary Path 3 · Grade 4.</p></div></div>
