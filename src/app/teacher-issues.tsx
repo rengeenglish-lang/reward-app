@@ -5,6 +5,7 @@ import { Camera, CalendarDays, ClipboardList, Lightbulb, Lock, Plus, RotateCcw, 
 import StudentAnalysis from './student-analysis';
 import AnnualPrograms from './annual-programs';
 import UnitPlans from './unit-plans';
+import OneOnOne from './one-on-one';
 import PypProjects from './pyp-projects';
 import { readImageText } from './read-image-text';
 import { LESSONS, getProgram, resetProgram, saveProgram, type Slot } from './lesson-schedule';
@@ -14,7 +15,7 @@ import { GRADES, NOTE_KINDS, PYP_THEMES, kindLabel, type NoteKind, type TeacherN
 import { PypThemePanel } from './pyp-theme';
 import { useThemeNames } from './pyp-themes';
 
-type Section = 'program' | 'notes' | 'students' | 'units' | 'annual' | 'pyp';
+type Section = 'program' | 'notes' | 'students' | 'units' | 'annual' | 'pyp' | 'oneonone';
 const DAYS = [{ n: 1, label: 'Monday' }, { n: 2, label: 'Tuesday' }, { n: 3, label: 'Wednesday' }, { n: 4, label: 'Thursday' }, { n: 5, label: 'Friday' }];
 const today = () => { const d = new Date(); const p = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
 const noteTag = (n: Pick<TeacherNote, 'kind' | 'grade' | 'theme'>) => [kindLabel(n.kind), n.grade ? `Grade ${n.grade}` : '', n.theme || ''].filter(Boolean).join(' · ');
@@ -210,7 +211,7 @@ function PypTools() {
 export default function TeacherIssues({ initialSection = 'program' }: { initialSection?: Section }) {
   const [section, setSection] = useState<Section>(initialSection);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
-  const tabs: Array<[Section, string, string, string]> = [['program', '🗓️', 'Lesson program', 'Your weekly timetable'], ['units', '📘', 'Unit plans', 'Type or scan pictures'], ['notes', '📝', 'Meeting & project notes', 'Type or scan a photo'], ['students', '🧠', 'Student analysis', 'Academic & behaviour'], ['annual', '📅', 'Yearly programs', 'English department calendar'], ['pyp', '🌟', 'PYP', 'Themes, projects & planning']];
+  const tabs: Array<[Section, string, string, string]> = [['program', '🗓️', 'Lesson program', 'Your weekly timetable'], ['units', '📘', 'Unit plans', 'Type or scan pictures'], ['notes', '📝', 'Meeting & project notes', 'Type or scan a photo'], ['students', '🧠', 'Student analysis', 'Academic & behaviour'], ['annual', '📅', 'Yearly programs', 'English department calendar'], ['pyp', '🌟', 'PYP', 'Themes, projects & planning'], ['oneonone', '🤝', 'One-on-one roster', 'Weak students first']];
   return <div className="page-wrap alternate ti-page">
     <p className="eyebrow">FOR YOU, THE TEACHER</p>
     <h1>{initialSection === 'students' ? <>Student <em>analysis</em></> : <>Teacher <em>tools</em></>}</h1>
@@ -223,5 +224,6 @@ export default function TeacherIssues({ initialSection = 'program' }: { initialS
     {section === 'students' && <StudentAnalysis />}
     {section === 'annual' && <AnnualPrograms />}
     {section === 'pyp' && <PypTools />}
+    {section === 'oneonone' && <OneOnOne />}
   </div>;
 }
