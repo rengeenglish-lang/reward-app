@@ -307,7 +307,8 @@ export async function getReport(classroomId: string,start: string,end: string) {
     COALESCE(sum(a.points) FILTER (WHERE a.criterion='project_complete'),0)::int AS project_complete,
     COALESCE(sum(a.points) FILTER (WHERE a.criterion='class_readiness'),0)::int AS class_readiness,
     COALESCE(sum(a.points) FILTER (WHERE a.criterion='speaking_day_rules'),0)::int AS speaking_day_rules,
-    COALESCE(sum(a.points) FILTER (WHERE a.criterion='book_return'),0)::int AS book_return
+    COALESCE(sum(a.points) FILTER (WHERE a.criterion='book_return'),0)::int AS book_return,
+    COALESCE(sum(a.points) FILTER (WHERE a.criterion='book_read'),0)::int AS book_read
     FROM students s JOIN groups g ON g.id=s.group_id
     LEFT JOIN student_point_awards a ON a.student_id=s.id AND a.awarded_on BETWEEN ${from} AND ${to}
     WHERE g.classroom_id=${classroom} AND g.archived_at IS NULL AND s.archived_at IS NULL

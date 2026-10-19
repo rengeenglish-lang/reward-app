@@ -791,3 +791,4 @@ button.student-avatar:hover{transform:scale(1.06)}
 .bookr-celebrate-names span b{flex:none}
 @media (max-height:640px){.bookr-celebrate-emoji{font-size:56px}.bookr-celebrate-card p{font-size:16px;margin-bottom:8px}}
 .bookr-confetti{position:fixed;inset:0;overflow:hidden;pointer-events:none}
+.bookr-points-note{margin:4px 0 12px;padding:8px 12px;border-radius:12px;background:#fff7e6;border:2px dashed #f0cf8a;font-size:13px;font-weight:700;color:#7a5a10}

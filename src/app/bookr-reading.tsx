@@ -124,6 +124,7 @@ export default function BookrReading({ classrooms, students, startFriday, initia
   return (
     <section className="panel bookr-reading" aria-labelledby="bookr-reading-title">
       <div className="panel-title"><div className="panel-icon coral">✅</div><div><h2 id="bookr-reading-title">Read / not read</h2><p>Pick a class and a week, then tick the students who have read each book. Add your own number of extra books for students who read more than the homework. The student with the most books is the best reader and is congratulated whenever this list opens.</p></div></div>
+      <p className="bookr-points-note" role="note">⭐ Every book read earns <strong>double points</strong> (2 points) automatically, including extra books. Unticking a book takes its points back.</p>
 
       <div className="bookr-reading-pick">
         <label><span className="field-label">Class</span><select className="field-select" value={classroomId} onChange={(event) => setClassroomId(event.target.value)}>{classrooms.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
