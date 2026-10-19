@@ -12,6 +12,10 @@ export default function StudentBubbles({ students, label = 'Our classroom champs
   const [popped, setPopped] = useState<Set<string>>(() => new Set());
   const [placements, setPlacements] = useState<Record<string, BubblePlacement>>({});
 
+  // Remember the choice, so hiding the bubbles on one page keeps them hidden on the other.
+  useEffect(() => { try { if (localStorage.getItem('ezgili-hide-bubbles') === 'on') setVisible(false); } catch { /* storage can be blocked */ } }, []);
+  const toggleVisible = () => setVisible((current) => { const next = !current; try { localStorage.setItem('ezgili-hide-bubbles', next ? 'off' : 'on'); } catch { /* ignore */ } return next; });
+
   useEffect(() => {
     const arrange = () => {
       const width = window.innerWidth;
@@ -80,7 +84,7 @@ export default function StudentBubbles({ students, label = 'Our classroom champs
         type="button"
         className="student-bubbles-toggle"
         aria-pressed={visible}
-        onClick={() => setVisible(current => !current)}
+        onClick={toggleVisible}
       >
         {visible ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
         <span>{visible ? 'Hide bubbles' : 'Show bubbles'}</span>
