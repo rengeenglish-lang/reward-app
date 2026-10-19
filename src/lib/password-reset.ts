@@ -37,8 +37,8 @@ export async function sendResetEmail(to: string, link: string): Promise<boolean>
       body: JSON.stringify({
         from: process.env.RESET_EMAIL_FROM,
         to: [to],
-        subject: 'Reset your Ezgili Champs password',
-        text: `Someone asked to reset the tutor password for Ezgili Champs.\n\nOpen this link within ${RESET_TOKEN_MINUTES} minutes to choose a new password:\n${link}\n\nIf this was not you, ignore this email. Your password stays the same.`,
+        subject: 'Reset your Class Champs password',
+        text: `Someone asked to reset the tutor password for Class Champs.\n\nOpen this link within ${RESET_TOKEN_MINUTES} minutes to choose a new password:\n${link}\n\nIf this was not you, ignore this email. Your password stays the same.`,
       }),
     });
     if (!res.ok) console.error('Reset email failed', res.status, await res.text().catch(() => ''));

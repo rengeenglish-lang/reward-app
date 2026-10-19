@@ -60,7 +60,7 @@ export default function StudentProfile({ student, classroomId, classroom, onClos
             {fun.certificates.map((c, i) => (
               <li key={`${c.date}-${i}`} className={`sp-cert${printing === i ? ' print-cert' : ''}`}>
                 <span className="sp-cert-stars" aria-hidden="true">✦ ✿ ✦</span>
-                <small>EZGILI CHAMPS PRESENTS</small>
+                <small>CLASS CHAMPS PRESENTS</small>
                 <strong>Superstar Certificate</strong>
                 <p>This certificate celebrates <b>{shortName(student.name)}</b> for bringing kindness, courage and wonderful effort to <b>{c.classroom}</b>.</p>
                 <footer><span>{new Date(c.date + 'T12:00:00').toLocaleDateString()}</span><button type="button" className="sp-print" onClick={() => print(i)}>🖨️ Print</button></footer>

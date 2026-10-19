@@ -12,13 +12,13 @@ const rounded = Nunito({ subsets: ['latin'], weight: 'variable', variable: '--fo
 const playful = Fredoka({ subsets: ['latin'], weight: 'variable', variable: '--font-playful', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'Ezgili Champs · Classroom rewards',
+  title: 'Class Champs · Classroom rewards',
   description: 'A cheerful classroom rewards dashboard for growing minds.',
   icons: {
     icon: [
       { url: '/favicon.ico?v=20261004-2', type: 'image/x-icon', sizes: 'any' },
     ],
-    apple: '/brand/ezgili-champs-mascot.png?v=20261004-2',
+    apple: '/brand/class-champs-mascot.png?v=20261004-2',
   },
 };
 

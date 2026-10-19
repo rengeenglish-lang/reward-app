@@ -5,7 +5,7 @@ import { className, currentLesson, nextLesson, scheduleClock, type Slot } from '
 /**
  * The lesson countdown and the weekly timetable live here, outside any page.
  * A lesson starts by itself at the start of each timetable period and ends with the school bell.
- * It only runs while Ezgili Champs is open in a browser tab.
+ * It only runs while Class Champs is open in a browser tab.
  */
 export type LessonState = {
   deadline: number | null; classroom: string; label: string;

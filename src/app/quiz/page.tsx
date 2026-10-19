@@ -3,7 +3,7 @@ import { currentTutor } from '@/lib/session';
 import QuizApp from './quiz-app';
 
 export const metadata: Metadata = {
-  title: 'SnapQuiz · Ezgili Champs',
+  title: 'SnapQuiz · Class Champs',
   description: 'Turn a photo of questions into a game with sentence-builder and multiple-choice rounds.',
 };
 export const dynamic = 'force-dynamic';

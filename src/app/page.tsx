@@ -12,7 +12,7 @@ export default async function LandingPage() {
     <div className="landing-sunburst landing-sunburst-two" aria-hidden="true">✿</div>
     <div className="landing-orbit landing-orbit-one" aria-hidden="true"/>
     <div className="landing-orbit landing-orbit-two" aria-hidden="true"/>
-    <header className="landing-header"><Link className="landing-brand" href="/" aria-label="Ezgili Champs home"><Image src="/brand/ezgili-champs-mascot.png" alt="" width={38} height={38}/><span>Ezgili Champs</span></Link><span className="landing-header-note">Little wins. Big smiles.</span></header>
+    <header className="landing-header"><Link className="landing-brand" href="/" aria-label="Class Champs home"><Image src="/brand/class-champs-mascot.png" alt="" width={38} height={38}/><span>Class Champs</span></Link><span className="landing-header-note">Little wins. Big smiles.</span></header>
     <StudentBubbles students={students} label="Student name bubbles on the welcome page" showToggle />
     <section className="landing-hero" aria-labelledby="landing-title">
       <div className="landing-sticker landing-sticker-left" aria-hidden="true"><span>🌟</span><small>KINDNESS<br/>COUNTS!</small></div>
@@ -20,7 +20,7 @@ export default async function LandingPage() {
       <div className="landing-sparkle landing-sparkle-a" aria-hidden="true">✦</div><div className="landing-sparkle landing-sparkle-b" aria-hidden="true">✧</div>
       <div className="landing-hero-card">
         <div className="landing-pill"><span/> YOUR HAPPY CLASSROOM STARTS HERE</div>
-        <Image className="landing-logo" src="/brand/ezgili-champs.png" alt="Ezgili Champs — cheerful star mascot" width={300} height={300} priority />
+        <Image className="landing-logo" src="/brand/class-champs.png" alt="Class Champs — cheerful star mascot" width={300} height={300} priority />
         <h1 id="landing-title">Are you ready?</h1>
         <p>Big cheers for brave tries, kind hearts, and every little win.</p>
         <Link className="landing-signin" href="/login">Sign in <span aria-hidden="true">→</span></Link>
