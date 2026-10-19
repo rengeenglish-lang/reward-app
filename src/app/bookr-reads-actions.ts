@@ -36,3 +36,31 @@ export async function setBookrReadMany(studentIds: string[], weekNo: number, boo
   if (read) await sql`INSERT INTO bookr_reads (student_id, week, book) SELECT x, ${w}, ${b} FROM unnest(string_to_array(${csv}, ',')::uuid[]) AS x ON CONFLICT DO NOTHING`;
   else await sql`DELETE FROM bookr_reads WHERE week = ${w} AND book = ${b} AND student_id = ANY(string_to_array(${csv}, ',')::uuid[])`;
 }
+
+export type BookrExtra = { student_id: string; extra: number };
+
+/** The extra books the teacher added for each student of a classroom. */
+export async function getBookrExtras(classroomId: string): Promise<BookrExtra[]> {
+  await requireTutor();
+  const id = uuid.parse(classroomId);
+  const rows = await sqlClient()`SELECT e.student_id, e.extra::int AS extra FROM bookr_extra e JOIN students s ON s.id = e.student_id JOIN groups g ON g.id = s.group_id WHERE g.classroom_id = ${id}`;
+  return rows as BookrExtra[];
+}
+
+/** Sets the number of extra books for a student. Zero removes it. */
+export async function setBookrExtra(studentId: string, extra: number): Promise<void> {
+  await requireTutor();
+  const s = uuid.parse(studentId), n = z.number().int().min(0).max(500).parse(extra);
+  const sql = sqlClient();
+  if (n === 0) await sql`DELETE FROM bookr_extra WHERE student_id = ${s}`;
+  else await sql`INSERT INTO bookr_extra (student_id, extra) VALUES (${s}, ${n}) ON CONFLICT (student_id) DO UPDATE SET extra = ${n}, updated_at = now()`;
+}
+
+/** Ticks (or unticks) all three books of a week for one student with a single click. */
+export async function setBookrWeekForStudent(studentId: string, weekNo: number, read: boolean): Promise<void> {
+  await requireTutor();
+  const s = uuid.parse(studentId), w = week.parse(weekNo);
+  const sql = sqlClient();
+  if (read) await sql`INSERT INTO bookr_reads (student_id, week, book) SELECT ${s}, ${w}, b FROM generate_series(0, 2) AS b ON CONFLICT DO NOTHING`;
+  else await sql`DELETE FROM bookr_reads WHERE student_id = ${s} AND week = ${w}`;
+}
