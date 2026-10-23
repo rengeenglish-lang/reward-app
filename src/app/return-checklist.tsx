@@ -34,12 +34,29 @@ export default function ReturnChecklist({ classroomId, classroom, onPointsAwarde
     finally { setBusy(null); }
   };
 
+  const returnAll = async () => {
+    if (busy || !out.length || !window.confirm(`Mark all ${out.length} ${out.length === 1 ? 'book' : 'books'} as returned? Each student gets +10 points.`)) return;
+    setBusy('all');
+    let done = 0;
+    for (const r of out) {
+      try {
+        const result = await setReaderStatus(r.id, 'returned') as { points_awarded?: boolean };
+        setReaders((cur) => cur && { ...cur, rows: cur.rows.map((x) => (x.id === r.id ? { ...x, returned: true, lost: false } : x)) });
+        if (result.points_awarded) onPointsAwarded?.(r.student_id, 10);
+        done++;
+      } catch { break; }
+    }
+    setNote(done === out.length ? `📚 All ${done} ${done === 1 ? 'book is' : 'books are'} back · +10 points each!` : `Marked ${done} of ${out.length} as returned. Please try again for the rest.`);
+    setBusy(null);
+  };
+
   if (!classroomId) return null;
   return (
     <section className="fun-card readers-card return-checklist" aria-labelledby="return-checklist-title">
       <div className="readers-head">
         <span className="readers-emoji" aria-hidden="true">📚</span>
         <div><h2 id="return-checklist-title">BOOK RETURN CHECKLIST</h2><p>{classroom || 'Your class'} · {out.length === 0 ? 'every book is back 🎉' : `${out.length} ${out.length === 1 ? 'book' : 'books'} still out`}</p></div>
+        {out.length > 1 && <button type="button" className="fun-action primary" disabled={busy !== null} onClick={returnAll}>✅ Mark all returned</button>}
         {onOpenReaders && <button type="button" className="text-link" onClick={onOpenReaders}>Open Our Readers</button>}
       </div>
       {error && <p className="book-error" role="alert">{error}</p>}

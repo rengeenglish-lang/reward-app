@@ -106,6 +106,17 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
     catch{setReaders(cur=>cur&&{...cur,rows:cur.rows.map(row=>row.id===r.id?{...row,returned:previous==='returned',lost:previous==='lost'}:row)});setNote('Could not save the book status. Please try again.');}
     finally{setUpdatingReader(null);}
   };
+  const returnAll=async()=>{
+    const pending=(readers?.rows||[]).filter(r=>!r.returned&&!r.lost);
+    if(updatingReader||!pending.length||!window.confirm(`Mark all ${pending.length} ${pending.length===1?'book':'books'} as returned? Each student gets +10 points.`))return;
+    setUpdatingReader('all');let done=0;
+    for(const r of pending){
+      try{const result=await api.setReaderStatus(r.id,'returned');setReaders(cur=>cur&&{...cur,rows:cur.rows.map(row=>row.id===r.id?{...row,returned:true,lost:false}:row)});if(result.points_awarded)onPointsAwarded?.(r.student_id,10);done++;}
+      catch{break;}
+    }
+    setNote(done===pending.length?`All ${done} ${done===1?'book is':'books are'} back! +10 points each.`:`Marked ${done} of ${pending.length} as returned. Please try again for the rest.`);
+    setUpdatingReader(null);
+  };
   const giveToClass = async () => {
     if (!picked) return;
     try { const n = await api.assignBookToClass(classroomId, picked.id, presentOnly && presentIds ? presentIds : undefined); setNote(n ? `Gave “${picked.title}” to ${n} student${n === 1 ? '' : 's'}.` : `Everyone already has “${picked.title}”.`); await loadReaders(); }
@@ -263,6 +274,7 @@ export default function BookPickerCard({ classroomId, classroom, api = serverApi
                   <span className="chip-stat">📕 Returned <b>{backCount}</b>/{rows.length}</span>
                   <span className="chip-stat lost-stat">⚠️ Lost <b>{lostCount}</b></span>
                   <span className="chip-stat">⭐ Projects done <b>{doneCount}</b>/{rows.length}</span>
+                  {rows.some((r)=>!r.returned&&!r.lost)&&<button type="button" className="fun-action primary" disabled={updatingReader!==null} onClick={returnAll}>✅ Mark all returned</button>}
                   <div className="seg" role="group" aria-label="Show">
                     {([['all', 'Everyone'], ['out', 'Not returned'], ['lost', 'Lost'], ['project', 'Project to do']] as const).map(([id, label]) => (
                       <button key={id} type="button" className={filter === id ? 'on' : ''} aria-pressed={filter === id} onClick={() => setFilter(id)}>{label}</button>
