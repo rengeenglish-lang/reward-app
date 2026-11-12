@@ -249,6 +249,27 @@ export async function awardStudentPoints(studentId:string,groupId:string,criteri
   return rows[0];
 }
 
+/** Awards the same points to several students in one go (a group, or the whole class). One award row per student, so each can be undone. */
+export async function awardStudentPointsMany(studentIds:string[],criterion:string,points:number) {
+  const tutor=await requireTutor();
+  const ids=z.array(uuid).min(1).max(300).parse(studentIds),key=pointCriterion.parse(criterion),amount=z.number().int().min(1).max(1000).parse(points),csv=ids.join(','),date=new Intl.DateTimeFormat('en-CA',{timeZone:tutor.timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const rows=await sqlClient()`INSERT INTO student_point_awards(student_id,group_id,criterion,points,awarded_on)
+    SELECT s.id,s.group_id,${key},${amount},${date}::date FROM students s JOIN groups g ON g.id=s.group_id
+    WHERE s.id = ANY(string_to_array(${csv},',')::uuid[]) AND s.archived_at IS NULL AND g.archived_at IS NULL
+    RETURNING id,student_id,criterion,points,awarded_on`;
+  if(!rows.length) throw new Error('No active students to award');
+  return rows;
+}
+
+/** Takes back a whole batch of awards (the Undo after awarding a group or the class). */
+export async function undoStudentPointAwards(awardIds:string[]) {
+  await requireTutor();
+  const ids=z.array(uuid).min(1).max(300).parse(awardIds),csv=ids.join(',');
+  const rows=await sqlClient()`DELETE FROM student_point_awards WHERE id = ANY(string_to_array(${csv},',')::uuid[]) RETURNING id,student_id,criterion,points`;
+  if(!rows.length) throw new Error('These point awards have already been removed');
+  return rows;
+}
+
 export async function undoStudentPointAward(awardId:string) {
   await requireTutor();
   const key=uuid.parse(awardId);
