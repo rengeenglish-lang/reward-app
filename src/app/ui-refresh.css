@@ -838,3 +838,50 @@ button.student-avatar:hover{transform:scale(1.06)}
 .oo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
 .oo-check{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px}
 @media (max-width:640px){.oo-sessions>li{grid-template-columns:1fr}}
+
+/* ---------- Student randomizer ---------- */
+.randomizer-btn{font-size:15px;padding-inline:18px}
+.sparkle-quick-grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))!important}
+.sparkle-quick.qi0 .sparkle-quick-icon{background:#e4dcff}.sparkle-quick.qi5 .sparkle-quick-icon{background:#ffe3d6}
+.rz-backdrop{position:fixed;inset:0;z-index:960;display:grid;place-items:center;padding:16px;background:rgba(30,18,70,.6)}
+.rz-card{position:relative;width:min(640px,100%);max-height:calc(100dvh - 32px);overflow:auto;padding:26px 22px 20px;border-radius:30px;background:linear-gradient(160deg,#fff,#f5f0ff);color:#27364b;text-align:center;box-shadow:0 24px 70px rgba(20,10,60,.45)}
+.rz-close{position:absolute;top:12px;right:12px;width:40px;height:40px;border:0;border-radius:50%;background:#eceaf6;color:#41336f;cursor:pointer;display:grid;place-items:center}
+.rz-kicker{margin:0 0 10px;font-weight:900;font-size:12px;letter-spacing:.14em;color:#7a6aa8}
+.rz-stage{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:230px;padding:18px;border-radius:24px;background:#fff;border:3px dashed #d9d2ee}
+.rz-stage.spinning{border-style:solid;border-color:#8566d6}
+.rz-stage.picked{border-style:solid;border-color:#4caf7d;background:linear-gradient(160deg,#f2fff7,#fff)}
+.rz-avatar{font-size:clamp(64px,16vw,110px);line-height:1}
+.rz-name{font-family:var(--display,inherit);font-size:clamp(30px,7vw,56px);line-height:1.1;overflow-wrap:anywhere}
+.rz-stage small{font-size:16px;font-weight:800;color:#6b6585}
+.rz-empty{margin:0;font-weight:800;color:#6b6585}
+.rz-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:16px 0 8px}
+.rz-pick{font-size:18px;padding:12px 26px}
+.rz-fair{display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:700;cursor:pointer}
+.rz-fair input{width:18px;height:18px;accent-color:var(--purple,#8566d6)}
+.rz-left{margin:6px 0 0;font-size:13px;font-weight:700;color:#8a84a3}
+
+/* ---------- Award a group or the whole class ---------- */
+.bulk-emoji{display:block;font-size:44px;line-height:1}
+.bulk-award .award-mode-switch{margin:10px auto 6px}
+.bulk-here{display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 0 8px;font-size:13px;font-weight:700}
+.bulk-pick{margin:8px 0 4px;text-align:left}
+.bulk-pick-tools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.bulk-pick-tools button{border:0;border-radius:99px;padding:5px 13px;background:#efe9ff;color:#41336f;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.bulk-students{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px;max-height:210px;overflow:auto}
+.bulk-students label{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:12px;background:#faf8ff;border:2px solid #efeaf9;font-size:14px;cursor:pointer}
+.bulk-students label.on{background:#e9e2ff;border-color:var(--purple,#8566d6)}
+.bulk-students input{width:18px;height:18px;accent-color:var(--purple,#8566d6);flex:none}
+.bulk-step{margin:14px 0 6px;font-family:var(--display,inherit);font-size:17px;text-align:left}
+.bulk-amount{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.bulk-amount button{border:2px solid #e6e1f5;border-radius:12px;padding:7px 16px;background:#faf8ff;font:inherit;font-weight:900;cursor:pointer;box-shadow:0 3px 0 #e1dbf3}
+.bulk-amount button.on{background:var(--purple,#8566d6);border-color:var(--purple,#8566d6);color:#fff;box-shadow:0 3px 0 #5b3fa8}
+.bulk-amount input{width:84px;padding:8px 10px;border:2px solid #e6e1f5;border-radius:12px;font:inherit;font-weight:800;text-align:center}
+
+/* ---------- A cross on the celebration screen, and Undo in the far left corner ---------- */
+.milestone-close{position:fixed;top:16px;right:16px;z-index:5;width:52px;height:52px;border:0;border-radius:50%;background:#fff;color:#41336f;cursor:pointer;display:grid;place-items:center;box-shadow:0 4px 0 rgba(60,40,110,.2),0 10px 24px rgba(40,20,90,.3)}
+.milestone-close:hover{background:#fff4f0;color:#c0392b}
+.milestone-close:focus-visible,.undo-corner:focus-visible{outline:3px solid var(--purple,#8566d6);outline-offset:3px}
+.undo-corner{position:fixed;top:16px;left:16px;z-index:1400;display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:0 18px;border:2px solid #fff;border-radius:999px;background:linear-gradient(180deg,#8d75e9,#6b4fd0);color:#fff;font:800 15px var(--font-rounded),sans-serif;cursor:pointer;box-shadow:0 4px 0 #3f2a8a,0 10px 24px rgba(30,15,80,.35)}
+.undo-corner:hover{filter:brightness(1.08)}
+.undo-corner:active{transform:translateY(3px);box-shadow:0 1px 0 #3f2a8a}
+.undo-corner:disabled{opacity:.7;cursor:wait}
